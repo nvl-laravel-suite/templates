@@ -4,6 +4,8 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-21
+
 ### Added
 
 - Added tenant template graphs, immutable platform catalog grants/copies,
