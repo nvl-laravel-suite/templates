@@ -1,12 +1,12 @@
 # NVL Templates — API and usage
 
-[← NVL Laravel Suite](../../../README.md)
+[← NVL Laravel Suite](https://github.com/nvl-laravel-suite)
 
 ## Quick reference
 
 | Item | Value |
 |---|---|
-| Installed through | `composer require nvl/laravel-suite:^2.0` |
+| Installed through | `composer require nvl/templates:^2.0` |
 | Module identifier | `nvl/templates` |
 | PHP namespace | `Nvl\Templates` |
 | Service provider | `Nvl\Templates\Providers\TemplatesServiceProvider` |
@@ -74,7 +74,7 @@ templates
 ## Installation
 
 ```bash
-composer require nvl/laravel-suite:^2.0
+composer require nvl/templates:^2.0
 php artisan migrate
 php artisan nvl:content:definitions:sync
 php artisan nvl:templates:sync
