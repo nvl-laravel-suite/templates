@@ -23,7 +23,7 @@ final class PdfHtmlGuard
     public function validate(string $html): void
     {
         $maximum = TemplatesConfiguration::positiveInteger(
-            'templates.pdf.maximum_html_bytes',
+            'nvl-templates.pdf.maximum_html_bytes',
             1_048_576,
         );
 
@@ -118,17 +118,17 @@ final class PdfHtmlGuard
      */
     private function validateRemoteResource(array $parts, string $scheme): void
     {
-        if (! (bool) config('templates.pdf.remote_assets.enabled', false)) {
+        if (! (bool) config('nvl-templates.pdf.remote_assets.enabled', false)) {
             throw new InvalidArgumentException('Remote PDF assets are disabled.');
         }
 
         if ($scheme !== 'https'
-            && ! (bool) config('templates.pdf.remote_assets.allow_http', false)) {
+            && ! (bool) config('nvl-templates.pdf.remote_assets.allow_http', false)) {
             throw new InvalidArgumentException('Remote PDF assets require HTTPS.');
         }
 
         $host = strtolower(is_string($parts['host'] ?? null) ? $parts['host'] : '');
-        $allowed = config('templates.pdf.remote_assets.allowed_hosts', []);
+        $allowed = config('nvl-templates.pdf.remote_assets.allowed_hosts', []);
 
         if ($host === ''
             || ! is_array($allowed)
@@ -152,7 +152,7 @@ final class PdfHtmlGuard
 
     private function validateDataUri(string $resource): void
     {
-        if (! (bool) config('templates.pdf.data_images.enabled', true)) {
+        if (! (bool) config('nvl-templates.pdf.data_images.enabled', true)) {
             throw new InvalidArgumentException('PDF data images are disabled.');
         }
 
@@ -166,7 +166,7 @@ final class PdfHtmlGuard
 
         $encoded = $matches['data'];
         $maximum = TemplatesConfiguration::positiveInteger(
-            'templates.pdf.data_images.maximum_bytes',
+            'nvl-templates.pdf.data_images.maximum_bytes',
             2_097_152,
         );
 

@@ -17,7 +17,7 @@ final class TemplatesConfiguration
      */
     public static function connection(): ?string
     {
-        $connection = config('templates.connection');
+        $connection = config('nvl-templates.connection');
 
         return is_string($connection) && $connection !== '' ? $connection : null;
     }
@@ -35,7 +35,7 @@ final class TemplatesConfiguration
      */
     public static function limit(string $key, int $default): int
     {
-        $value = config("templates.limits.{$key}", $default);
+        $value = config("nvl-templates.limits.{$key}", $default);
 
         if (! is_int($value) || $value < 1) {
             throw new InvalidArgumentException("templates.limits.{$key} must be a positive integer.");

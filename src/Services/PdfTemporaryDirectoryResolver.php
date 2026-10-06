@@ -46,12 +46,12 @@ final readonly class PdfTemporaryDirectoryResolver
     private function validatedPath(bool $create, ?string $override = null): string
     {
         $configured = $override ?? TemplatesConfiguration::string(
-            'templates.pdf.temp_path',
+            'nvl-templates.pdf.temp_path',
             storage_path('framework/cache/nvl-templates/mpdf'),
         );
         $snapshot = $this->context->snapshot();
 
-        if ((bool) config('tenancy.enabled', false)) {
+        if ((bool) config('nvl-tenancy.enabled', false)) {
             $scope = match ($snapshot->mode) {
                 TenantContextMode::Tenant => 'tenant/'.$snapshot->tenantId?->value,
                 TenantContextMode::Platform => 'platform',
@@ -62,7 +62,7 @@ final readonly class PdfTemporaryDirectoryResolver
                 .DIRECTORY_SEPARATOR.'work'
                 .DIRECTORY_SEPARATOR.Str::uuid();
         }
-        $allowedRoots = config('templates.pdf.allowed_temp_roots', [storage_path()]);
+        $allowedRoots = config('nvl-templates.pdf.allowed_temp_roots', [storage_path()]);
 
         if (! is_array($allowedRoots) || $allowedRoots === []) {
             throw new InvalidArgumentException(

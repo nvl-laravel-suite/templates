@@ -140,7 +140,7 @@ final readonly class StoredTemplateRenderResolver
         }
 
         if (! hash_equals((string) $version->content_hash, $snapshot->version)
-            || $snapshot->ownerType !== TemplateVersion::CONTENT_OWNER_TYPE
+            || $snapshot->ownerType !== $version->getMorphClass()
             || $snapshot->ownerId !== $version->id
             || $snapshot->group !== TemplateVersion::CONTENT_GROUP) {
             throw new TemplateResolutionException(

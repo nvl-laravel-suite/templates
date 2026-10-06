@@ -210,7 +210,7 @@ abstract class BaseTemplate implements TemplateInterface
             'language' => $this->language,
             'composition' => $this->composition,
         ])->render();
-        $configuredMaximum = config('templates.pdf.maximum_html_bytes', 1_048_576);
+        $configuredMaximum = config('nvl-templates.pdf.maximum_html_bytes', 1_048_576);
         $maximum = is_int($configuredMaximum) ? $configuredMaximum : 1_048_576;
 
         if ($maximum < 1 || strlen($html) > $maximum) {
@@ -261,7 +261,7 @@ abstract class BaseTemplate implements TemplateInterface
     public function getStorageDisk(): ?string
     {
         $disk = $this->options['storage_disk']
-            ?? config('templates.rendering.output.disk');
+            ?? config('nvl-templates.rendering.output.disk');
 
         return is_string($disk) && $disk !== '' ? $disk : null;
     }

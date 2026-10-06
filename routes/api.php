@@ -7,7 +7,7 @@ use Nvl\Templates\Http\Controllers\TemplateRenderController;
 use Nvl\Templates\Http\Controllers\TemplatesController;
 use Nvl\Templates\Support\TemplatesRouteConfiguration;
 
-if ((bool) config('templates.routes.management.enabled', false)) {
+if ((bool) config('nvl-templates.routes.management.enabled', false)) {
     Route::prefix(TemplatesRouteConfiguration::path('management'))
         ->name(TemplatesRouteConfiguration::name('management'))
         ->middleware(TemplatesRouteConfiguration::middleware('management'))
@@ -31,7 +31,7 @@ if ((bool) config('templates.routes.management.enabled', false)) {
         });
 }
 
-if ((bool) config('templates.routes.render.enabled', false)) {
+if ((bool) config('nvl-templates.routes.render.enabled', false)) {
     Route::prefix(TemplatesRouteConfiguration::path('render'))
         ->name(TemplatesRouteConfiguration::name('render'))
         ->middleware(TemplatesRouteConfiguration::middleware('render'))

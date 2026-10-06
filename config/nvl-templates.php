@@ -34,13 +34,13 @@ return [
     'routes' => [
         'management' => [
             'enabled' => false,
-            'prefix' => 'api/v1/templates',
+            'prefix' => 'nvl/api/v1/templates',
             'name' => 'nvl.templates.management.',
             'middleware' => ['api', 'auth', 'throttle:60,1'],
         ],
         'render' => [
             'enabled' => false,
-            'prefix' => 'api/v1/templates/render',
+            'prefix' => 'nvl/api/v1/templates/render',
             'name' => 'nvl.templates.render.',
             'middleware' => ['api', 'auth', 'throttle:60,1'],
         ],

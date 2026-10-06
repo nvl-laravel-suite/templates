@@ -11,11 +11,11 @@ See the [installation and publishing guide](https://github.com/nvl-laravel-suite
 
 | Item | Value |
 |---|---|
-| Installed through | `composer require nvl/templates:^2.0` |
+| Installed through | `composer require nvl/templates:^5.0` |
 | Module identifier | `nvl/templates` |
 | PHP namespace | `Nvl\Templates` |
 | Service provider | `Nvl\Templates\Providers\TemplatesServiceProvider` |
-| Configuration | `config/templates.php` |
+| Configuration | `config/nvl-templates.php` |
 
 `nvl/templates` is a composable Laravel 13 package for rendering
 source-controlled Blade templates as HTML, PDF, or application-defined output.
@@ -79,7 +79,7 @@ templates
 ## Installation
 
 ```bash
-composer require nvl/templates:^2.0
+composer require nvl/templates:^5.0
 php artisan migrate
 php artisan nvl:content:definitions:sync
 php artisan nvl:templates:sync
@@ -92,16 +92,16 @@ automatically.
 Publish only the artifacts the application needs to own:
 
 ```bash
-php artisan vendor:publish --tag=templates-config
-php artisan vendor:publish --tag=templates-migrations
-php artisan vendor:publish --tag=templates-views
-php artisan vendor:publish --tag=templates-skills
+php artisan vendor:publish --tag=nvl-templates-config
+php artisan vendor:publish --tag=nvl-templates-migrations
+php artisan vendor:publish --tag=nvl-templates-views
+php artisan vendor:publish --tag=nvl-templates-skills
 ```
 
 Choose exactly one migration owner. For automatic vendor loading, leave
-`templates.migrations.enabled=true` and do not publish `templates-migrations`.
-For host-owned migrations, publish `templates-migrations`, set
-`templates.migrations.enabled=false` before the first migration, and maintain
+`nvl-templates.migrations.enabled=true` and do not publish `nvl-templates-migrations`.
+For host-owned migrations, publish `nvl-templates-migrations`, set
+`nvl-templates.migrations.enabled=false` before the first migration, and maintain
 the copied files as application migrations. Never run both sources; Laravel
 retimestamps published migrations.
 
@@ -114,7 +114,7 @@ php artisan nvl:templates:views:publish \
     --force
 ```
 
-The destination must remain beneath `templates.views.allowed_publish_roots`.
+The destination must remain beneath `nvl-templates.views.allowed_publish_roots`.
 Existing files are preserved unless `--force` is supplied. Source links,
 destination traversal, and symlink escapes are rejected.
 
@@ -168,7 +168,7 @@ constructing the Template. The database adapter performs its configured
 template authorization internally.
 
 Renderer output is rejected when its size/checksum facts are inconsistent,
-when it exceeds `templates.limits.output_bytes`, when its MIME type or filename
+when it exceeds `nvl-templates.limits.output_bytes`, when its MIME type or filename
 is unsafe, or when PDF bytes do not have a PDF signature.
 
 Applications can extend `Nvl\Templates\Template` for domain-specific,
@@ -195,7 +195,7 @@ final class InvoiceTemplate extends Template
 ```
 
 The `view` argument may be omitted to use
-`templates.views.defaults.<renderer>`.
+`nvl-templates.views.defaults.<renderer>`.
 
 ## Blade contract and bundled views
 
@@ -302,7 +302,7 @@ title, author, creator, subject, keywords, header/footer views and data,
 watermark, compression, and PDF/A behavior can be set globally or per
 template.
 
-Global defaults live in `templates.pdf.defaults`. A per-template non-null
+Global defaults live in `nvl-templates.pdf.defaults`. A per-template non-null
 option overrides its corresponding default.
 
 PDF safety defaults:
@@ -407,12 +407,12 @@ Use `$assets->get()`, `$assets->getFile()`, `$assets->fileUrl()`, and
 Asset inputs fail closed:
 
 - local files must be regular files beneath
-  `templates.compatibility.assets.allowed_local_roots`;
+  `nvl-templates.compatibility.assets.allowed_local_roots`;
 - local, inline, and generated data are size bounded;
 - inline values must be complete base64 image data URIs whose detected bytes
   match the declared image MIME type;
 - remote values require HTTPS and an exact host in
-  `templates.pdf.remote_assets.allowed_hosts`;
+  `nvl-templates.pdf.remote_assets.allowed_hosts`;
 - frame, sticker, and scoped asset handles are resolved through
   `TemplateAssetResolver`; the default resolver returns no assets.
 
@@ -438,7 +438,7 @@ revision can be pinned:
 ```
 
 `path` requires a local Media disk and the resulting file must remain under
-`templates.compatibility.assets.allowed_local_roots`. `url` uses Media's
+`nvl-templates.compatibility.assets.allowed_local_roots`. `url` uses Media's
 public or signed-private delivery and still obeys the Templates remote-resource
 policy. Missing Media, stale revisions, and unavailable named variations throw
 `TemplateResolutionException`. `MediaTemplateAssetRegistry::registerAdoptionAliases()`
@@ -471,8 +471,8 @@ The Content block catalog also permits the allowlisted `scope in [...]` filter.
 numbering, protection, watermark, header/footer, frame, sticker, variant,
 generation, preview, download, and storage methods. `EngineConfig::setTempDir`
 is supported, but every override must remain beneath
-`templates.pdf.allowed_temp_roots`. Image-error diagnostics require both
-application debug mode and `templates.pdf.allow_debug_image_errors`; this
+`nvl-templates.pdf.allowed_temp_roots`. Image-error diagnostics require both
+application debug mode and `nvl-templates.pdf.allow_debug_image_errors`; this
 prevents diagnostic paths from leaking in production output.
 
 `setHeaderHtml()` and `setFooterHtml()` are intended only for trusted
@@ -566,7 +566,7 @@ Package-owned UUID tables are:
 
 Actor and owner identifiers are strings so consumers may use integers, UUIDs,
 ULIDs, or other scalar keys. Table names and the database connection are
-configurable. `templates.migrations.enabled` defaults to `true`.
+configurable. `nvl-templates.migrations.enabled` defaults to `true`.
 
 Only management title/description belongs to `templates_i18n`. Editable
 document content, locale rows, structured values, and Media IDs belong to
@@ -704,7 +704,7 @@ assignment changes cannot alter accepted work.
 
 Configure queue, connection, attempts, timeout, lease duration, unique-lock
 duration, pending-recovery age, backoff, recovery batch size, payload
-retention, and private output disk under `templates.rendering`. Keep
+retention, and private output disk under `nvl-templates.rendering`. Keep
 `pending_recovery_seconds` greater than `unique_for`, and keep the queue
 connection’s `retry_after` greater than the job timeout; the doctor verifies
 both constraints.
@@ -735,13 +735,13 @@ Management and stored-render routes are independently disabled by default:
 'routes' => [
     'management' => [
         'enabled' => true,
-        'prefix' => 'api/v1/templates',
+        'prefix' => 'nvl/api/v1/templates',
         'name' => 'nvl.templates.management.',
         'middleware' => ['api', 'auth:sanctum', 'throttle:60,1'],
     ],
     'render' => [
         'enabled' => true,
-        'prefix' => 'api/v1/templates/render',
+        'prefix' => 'nvl/api/v1/templates/render',
         'name' => 'nvl.templates.render.',
         'middleware' => ['api', 'auth:sanctum', 'throttle:60,1'],
     ],
@@ -851,7 +851,7 @@ per row fails closed.
 
 Use this staged sequence:
 
-1. Disable `templates.migrations.enabled` while a conflicting canonical table
+1. Disable `nvl-templates.migrations.enabled` while a conflicting canonical table
    name is still owned by the legacy system.
 2. Rename legacy tables to explicit staging names and list them under
    `staging_tables` in the manifest.
@@ -867,7 +867,7 @@ Use this staged sequence:
 6. Run `--apply`. Template and Content writes use their public Actions,
    optimistic revisions, publication rules, and locale/value validation.
 7. Re-run `--apply`; every entry must report `unchanged`. Copy the returned
-   `media_aliases` map into `templates.assets.media.aliases`, validate output,
+   `media_aliases` map into `nvl-templates.assets.media.aliases`, validate output,
    then remove staging in a separate forward-only host migration.
 
 The apply phase is restart-safe and reconciles target counts, but it may span
@@ -976,20 +976,20 @@ NVL Templates is open-sourced under the MIT License.
 Declare a model once in `config/nvl-core.php`:
 
 ```php
-'owners' => ['article' => Article::class],
+'owners' => [Article::class],
 ```
 
-Enable this package capability separately in `config/templates.php`:
+Enable this package capability separately in `config/nvl-templates.php`:
 
 ```php
 'owners' => [
-    'articles.detail' => ['owner' => 'article', 'resolver' => ArticleTemplateResolver::class],
+    'articles.detail' => ['owner' => Article::class, 'resolver' => ArticleTemplateResolver::class],
 ],
 ```
 
 Keep resolver visibility and identifier checks, assignment scopes, and template mutation authorization. Routing aliases may differ from shared owner aliases. Core registration does not add the model to this package's allowlist.
 
-Existing package class/resolver/handler registrations remain accepted for one major cycle. Run `php artisan nvl:doctor --strict --format=json` to inspect compatibility diagnostics. See [UPGRADING.md](UPGRADING.md) before changing a persisted morph type.
+Laravel's `getMorphClass()` determines stored identity. These class declarations do not install host morph maps. Keep resolvers, handlers and authorization independent; use `nvl:doctor --strict --format=json` to review legacy alias mismatches or stored identity drift. See [UPGRADING.md](UPGRADING.md) before changing the host's morph map.
 
 ## Shared consumer diagnostics
 
@@ -998,13 +998,13 @@ Run `php artisan nvl:doctor --strict --format=json` to combine the read-only che
 
 ## Shared infrastructure options
 
-Configure `templates.queue.connection` and `templates.queue.name`, or inherit the corresponding `nvl-core.queue` values and Laravel's selected connection/queue. Historical `rendering.connection` and `rendering.queue` inputs remain supported for one major cycle; canonical values take precedence. Render retries, backoff, timeout, and lease bounds remain under `rendering`.
+Configure `nvl-templates.queue.connection` and `nvl-templates.queue.name`, or inherit the corresponding `nvl-core.queue` values and Laravel's selected connection/queue. Historical `rendering.connection` and `rendering.queue` inputs remain supported for one major cycle; canonical values take precedence. Render retries, backoff, timeout, and lease bounds remain under `rendering`.
 
-Template unique dispatch and overlap locks select `templates.locks.store`, then Core's store, then `cache.default`. Management/render middleware can inherit `nvl-core.routes.middleware` by setting the relevant package middleware value to null. `templates.authorization.guard` inherits Core's guard; bare `auth` entries use an explicitly selected guard, while explicit `auth:guard` entries keep their selection. Host authorization contracts still decide access.
+Template unique dispatch and overlap locks select `nvl-templates.locks.store`, then Core's store, then `cache.default`. Management/render middleware can inherit `nvl-core.routes.middleware` by setting the relevant package middleware value to null. `nvl-templates.authorization.guard` inherits Core's guard; bare `auth` entries use an explicitly selected guard, while explicit `auth:guard` entries keep their selection. Host authorization contracts still decide access.
 
 ## Next major: isolated schema identities
 
-Use `templates.tables.<logical-key>` for every table and `templates.connection` for its database connection. Null connection inherits `nvl-core.connection`, then Laravel's default. Tables are resolved at runtime by the package table definition helper.
+Use `nvl-templates.tables.<logical-key>` for every table and `nvl-templates.connection` for its database connection. Null connection inherits `nvl-core.connection`, then Laravel's default. Tables are resolved at runtime by the package table definition helper.
 
 | Logical key | New default | Previous name |
 | --- | --- | --- |
@@ -1016,4 +1016,10 @@ Use `templates.tables.<logical-key>` for every table and `templates.connection` 
 | `tenant_grants` | `nvl_templates_tenant_grants` | `template_tenant_grants` |
 | `tenant_grant_locks` | `nvl_templates_tenant_grant_locks` | `template_tenant_grant_locks` |
 
-Migration filenames contain `nvl_templates_`. Existing installations must complete the upgrade in `UPGRADING.md` before running new migrations. A pending creator rejects an existing target before any migration in the batch runs; legacy storage with old history needs an ownership decision.
+Migration filenames contain `nvl_templates_`. Existing installations must complete the upgrade in `UPGRADING.md` before running new migrations. A pending creator rejects an existing target before that owned migration runs; use `nvl:schema:preflight` for an explicit whole-batch check; legacy storage with old history needs an ownership decision.
+
+Owned cache and lock identities follow `nvl:<package>:<purpose>:…`. Render overlap locks use `nvl:templates:render-overlap:` while retaining Laravel release timing and the inherited cache store. Native Laravel dispatch uniqueness remains framework-owned and includes the job class. Generic foreign overlap locks are never acquired or removed. See [UPGRADING](UPGRADING.md) for coordinated worker and lock lease cutover.
+
+## Canonical configuration ownership
+
+Use `nvl-templates` settings in `config/nvl-templates.php` and canonical package environment names. Old generic roots are foreign unless an upgrading NVL host explicitly selects them in Core's default-off compatibility. Canonical false/null/empty values win; no old roots are populated or written back. Keep logical package/resource IDs unchanged. Review [Core's rename inventory and cache/worker cutover](https://github.com/nvl-laravel-suite/core/blob/main/UPGRADING.md#major-5-canonical-configuration-and-environment).

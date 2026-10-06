@@ -110,7 +110,7 @@ final readonly class QueueTemplateRenderAction
                     }
 
                     $render = TemplateRender::query()->create([
-                        ...(config('tenancy.enabled') === true ? ['tenant_id' => $model->tenant_id] : []),
+                        ...(config('nvl-tenancy.enabled') === true ? ['tenant_id' => $model->tenant_id] : []),
                         'template_id' => $model->id,
                         'template_version_id' => $resolved->version->id,
                         'template_assignment_id' => $resolved->assignment?->id,

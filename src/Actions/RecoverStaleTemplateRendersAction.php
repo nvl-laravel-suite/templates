@@ -40,12 +40,12 @@ final readonly class RecoverStaleTemplateRendersAction
             ->transaction(function (): Collection {
                 $envelope = TenantJobEnvelope::capture($this->context);
                 $limit = TemplatesConfiguration::positiveInteger(
-                    'templates.rendering.recovery_batch_size',
+                    'nvl-templates.rendering.recovery_batch_size',
                     100,
                 );
                 $pendingCutoff = now()->subSeconds(
                     TemplatesConfiguration::positiveInteger(
-                        'templates.rendering.pending_recovery_seconds',
+                        'nvl-templates.rendering.pending_recovery_seconds',
                         660,
                     ),
                 );

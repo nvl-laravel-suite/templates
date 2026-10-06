@@ -133,7 +133,7 @@ final readonly class PdfService implements PdfServiceInterface
             throw new InvalidArgumentException('Template storage output path is invalid.');
         }
 
-        $configuredDisk = config('templates.rendering.output.disk');
+        $configuredDisk = config('nvl-templates.rendering.output.disk');
         $disk = $template->getStorageDisk()
             ?? (is_string($configuredDisk) ? $configuredDisk : 'local');
         $written = $this->storage->disk($disk)->put(

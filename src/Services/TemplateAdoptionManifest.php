@@ -86,7 +86,7 @@ final readonly class TemplateAdoptionManifest
             );
         }
 
-        $maximumRecords = config('templates.adoption.maximum_records', 10_000);
+        $maximumRecords = config('nvl-templates.adoption.maximum_records', 10_000);
 
         if (! is_int($maximumRecords) || $maximumRecords < 1) {
             throw new InvalidArgumentException(

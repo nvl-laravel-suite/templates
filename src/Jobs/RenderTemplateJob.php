@@ -56,15 +56,15 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
         $this->onConnection(PackageOptions::queueConnection('templates'));
         $this->onQueue(PackageOptions::queueName('templates'));
         $this->tries = TemplatesConfiguration::positiveInteger(
-            'templates.rendering.tries',
+            'nvl-templates.rendering.tries',
             3,
         );
         $this->timeout = TemplatesConfiguration::positiveInteger(
-            'templates.rendering.timeout',
+            'nvl-templates.rendering.timeout',
             60,
         );
         $this->uniqueFor = TemplatesConfiguration::positiveInteger(
-            'templates.rendering.unique_for',
+            'nvl-templates.rendering.unique_for',
             600,
         );
     }
@@ -100,7 +100,7 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
      */
     public function backoff(): array
     {
-        $backoff = config('templates.rendering.backoff', [10, 30, 90]);
+        $backoff = config('nvl-templates.rendering.backoff', [10, 30, 90]);
 
         if (! is_array($backoff)) {
             return [10, 30, 90];
@@ -123,12 +123,13 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
     {
         $releaseAfter = $this->backoff()[0] ?? 10;
         $leaseSeconds = TemplatesConfiguration::positiveInteger(
-            'templates.rendering.lease_seconds',
+            'nvl-templates.rendering.lease_seconds',
             75,
         );
 
         return [
             (new TemplateRenderOverlapLock("nvl-templates-render:{$this->renderId}"))
+                ->withPrefix('nvl:templates:render-overlap:')
                 ->releaseAfter($releaseAfter)
                 ->expireAfter($leaseSeconds),
         ];
@@ -164,7 +165,7 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
             'failed_at' => now(),
         ];
 
-        if (! (bool) config('templates.rendering.store_payload', true)) {
+        if (! (bool) config('nvl-templates.rendering.store_payload', true)) {
             $updates['payload'] = null;
             $updates['settings'] = null;
         }

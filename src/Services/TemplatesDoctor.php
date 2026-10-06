@@ -79,17 +79,17 @@ final class TemplatesDoctor
             'definitions' => array_keys($definitions->all()),
             'owners' => $owners->aliases(),
             'management_routes' => (bool) config(
-                'templates.routes.management.enabled',
+                'nvl-templates.routes.management.enabled',
                 false,
             ),
             'render_routes' => (bool) config(
-                'templates.routes.render.enabled',
+                'nvl-templates.routes.render.enabled',
                 false,
             ),
             'queue' => PackageOptions::queueName('templates'),
             'pdf.version' => Mpdf::VERSION,
             'pdf.remote_assets' => (bool) config(
-                'templates.pdf.remote_assets.enabled',
+                'nvl-templates.pdf.remote_assets.enabled',
                 false,
             ),
         ];
@@ -109,7 +109,7 @@ final class TemplatesDoctor
         PdfTemporaryDirectoryResolver $temporaryDirectories,
         Factory $views,
     ): array {
-        $defaultRenderer = config('templates.default_renderer', 'blade');
+        $defaultRenderer = config('nvl-templates.default_renderer', 'blade');
 
         return [
             'renderer.default' => is_string($defaultRenderer)
@@ -201,15 +201,15 @@ final class TemplatesDoctor
             'maximum_per_page',
             'output_bytes',
         ] as $key) {
-            $value = config("templates.limits.{$key}");
+            $value = config("nvl-templates.limits.{$key}");
 
             if (! is_int($value) || $value < 1) {
                 return false;
             }
         }
 
-        $perPage = config('templates.limits.per_page');
-        $maximumPerPage = config('templates.limits.maximum_per_page');
+        $perPage = config('nvl-templates.limits.per_page');
+        $maximumPerPage = config('nvl-templates.limits.maximum_per_page');
 
         return is_int($perPage)
             && is_int($maximumPerPage)
@@ -220,7 +220,7 @@ final class TemplatesDoctor
         Factory $views,
         string $renderer,
     ): bool {
-        $view = config("templates.views.defaults.{$renderer}");
+        $view = config("nvl-templates.views.defaults.{$renderer}");
 
         return is_string($view) && $views->exists($view);
     }
@@ -288,13 +288,13 @@ final class TemplatesDoctor
 
     private function queueConfigurationIsValid(): bool
     {
-        $tries = config('templates.rendering.tries');
-        $timeout = config('templates.rendering.timeout');
-        $lease = config('templates.rendering.lease_seconds');
-        $uniqueFor = config('templates.rendering.unique_for');
-        $pendingRecovery = config('templates.rendering.pending_recovery_seconds');
-        $batchSize = config('templates.rendering.recovery_batch_size');
-        $backoff = config('templates.rendering.backoff');
+        $tries = config('nvl-templates.rendering.tries');
+        $timeout = config('nvl-templates.rendering.timeout');
+        $lease = config('nvl-templates.rendering.lease_seconds');
+        $uniqueFor = config('nvl-templates.rendering.unique_for');
+        $pendingRecovery = config('nvl-templates.rendering.pending_recovery_seconds');
+        $batchSize = config('nvl-templates.rendering.recovery_batch_size');
+        $backoff = config('nvl-templates.rendering.backoff');
 
         if (! is_int($tries)
             || $tries < 1
@@ -327,7 +327,7 @@ final class TemplatesDoctor
         $connection = PackageOptions::queueConnection('templates');
 
         $retryAfter = config("queue.connections.{$connection}.retry_after");
-        $timeout = config('templates.rendering.timeout');
+        $timeout = config('nvl-templates.rendering.timeout');
 
         return $retryAfter === null
             || (is_int($retryAfter)
@@ -337,11 +337,11 @@ final class TemplatesDoctor
 
     private function outputDiskIsConfigured(): bool
     {
-        if (! (bool) config('templates.rendering.output.persist', true)) {
+        if (! (bool) config('nvl-templates.rendering.output.persist', true)) {
             return true;
         }
 
-        $disk = config('templates.rendering.output.disk');
+        $disk = config('nvl-templates.rendering.output.disk');
 
         return is_string($disk)
             && $disk !== ''

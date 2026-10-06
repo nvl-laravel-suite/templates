@@ -89,7 +89,7 @@ final readonly class ProcessTemplateRenderAction
                 }
 
                 $leaseSeconds = TemplatesConfiguration::positiveInteger(
-                    'templates.rendering.lease_seconds',
+                    'nvl-templates.rendering.lease_seconds',
                     75,
                 );
                 $render->fill([
@@ -130,7 +130,7 @@ final readonly class ProcessTemplateRenderAction
                 $fileName = sprintf(
                     '%s-%s.%s',
                     TemplatesConfiguration::string(
-                        'templates.rendering.output.filename_prefix',
+                        'nvl-templates.rendering.output.filename_prefix',
                         'template-render',
                     ),
                     $render->id,
@@ -138,9 +138,9 @@ final readonly class ProcessTemplateRenderAction
                 );
                 $this->outputGuard->validateFilename($fileName);
 
-                if ((bool) config('templates.rendering.output.persist', true)) {
+                if ((bool) config('nvl-templates.rendering.output.persist', true)) {
                     $disk = TemplatesConfiguration::string(
-                        'templates.rendering.output.disk',
+                        'nvl-templates.rendering.output.disk',
                         'local',
                     );
                     $render->addMediaFromString($result->content)
@@ -158,10 +158,10 @@ final readonly class ProcessTemplateRenderAction
                     'completed_at' => now(),
                     'failed_at' => null,
                     'failure' => null,
-                    'payload' => (bool) config('templates.rendering.store_payload', true)
+                    'payload' => (bool) config('nvl-templates.rendering.store_payload', true)
                         ? $render->payload
                         : null,
-                    'settings' => (bool) config('templates.rendering.store_payload', true)
+                    'settings' => (bool) config('nvl-templates.rendering.store_payload', true)
                         ? $render->settings
                         : null,
                 ])->save();

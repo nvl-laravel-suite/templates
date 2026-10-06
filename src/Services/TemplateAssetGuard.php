@@ -65,7 +65,7 @@ final class TemplateAssetGuard
 
         $size = filesize($resolved);
         $maximum = TemplatesConfiguration::positiveInteger(
-            'templates.compatibility.assets.maximum_bytes',
+            'nvl-templates.compatibility.assets.maximum_bytes',
             5_242_880,
         );
 
@@ -106,7 +106,7 @@ final class TemplateAssetGuard
         $this->imageMimeType($declaredMimeType);
         $bytes = base64_decode(str_replace(["\r", "\n"], '', $matches[2]), true);
         $maximum = TemplatesConfiguration::positiveInteger(
-            'templates.compatibility.assets.maximum_inline_bytes',
+            'nvl-templates.compatibility.assets.maximum_inline_bytes',
             2_097_152,
         );
 
@@ -140,11 +140,11 @@ final class TemplateAssetGuard
 
     public function remote(string $url): void
     {
-        $enabled = (bool) config('templates.pdf.remote_assets.enabled', false);
+        $enabled = (bool) config('nvl-templates.pdf.remote_assets.enabled', false);
         $scheme = parse_url($url, PHP_URL_SCHEME);
         $host = parse_url($url, PHP_URL_HOST);
-        $allowedHosts = config('templates.pdf.remote_assets.allowed_hosts', []);
-        $allowHttp = (bool) config('templates.pdf.remote_assets.allow_http', false);
+        $allowedHosts = config('nvl-templates.pdf.remote_assets.allowed_hosts', []);
+        $allowHttp = (bool) config('nvl-templates.pdf.remote_assets.allow_http', false);
 
         if (! $enabled
             || ! is_string($scheme)
@@ -177,7 +177,7 @@ final class TemplateAssetGuard
     private function withinAllowedRoot(string $path): bool
     {
         $roots = config(
-            'templates.compatibility.assets.allowed_local_roots',
+            'nvl-templates.compatibility.assets.allowed_local_roots',
             [resource_path(), storage_path('app')],
         );
 

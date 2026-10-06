@@ -14,7 +14,7 @@ final class TemplatesRouteConfiguration
 {
     public static function path(string $group): string
     {
-        $path = config("templates.routes.{$group}.prefix", "api/v1/templates/{$group}");
+        $path = config("nvl-templates.routes.{$group}.prefix", "nvl/api/v1/templates/{$group}");
 
         if (! is_string($path)) {
             throw new InvalidArgumentException("templates.routes.{$group}.prefix must be a string.");
@@ -36,7 +36,7 @@ final class TemplatesRouteConfiguration
 
     public static function name(string $group): string
     {
-        $name = config("templates.routes.{$group}.name", "nvl.templates.{$group}.");
+        $name = config("nvl-templates.routes.{$group}.name", "nvl.templates.{$group}.");
 
         if (! is_string($name)) {
             throw new InvalidArgumentException("templates.routes.{$group}.name must be a string.");

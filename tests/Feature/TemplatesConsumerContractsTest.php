@@ -78,16 +78,16 @@ it('supports the complete opt-in management and render HTTP workflow', function 
     Queue::fake();
     $this->be(new GenericUser(['id' => 'consumer-actor']));
     config()->set([
-        'templates.routes.management.enabled' => true,
-        'templates.routes.management.middleware' => ['api'],
-        'templates.routes.render.enabled' => true,
-        'templates.routes.render.middleware' => ['api'],
+        'nvl-templates.routes.management.enabled' => true,
+        'nvl-templates.routes.management.middleware' => ['api'],
+        'nvl-templates.routes.render.enabled' => true,
+        'nvl-templates.routes.render.middleware' => ['api'],
     ]);
     require __DIR__.'/../../routes/api.php';
     Route::getRoutes()->refreshNameLookups();
 
     $owner = TestTemplateOwner::query()->create(['name' => 'Ada']);
-    $created = $this->postJson('/api/v1/templates', [
+    $created = $this->postJson('/nvl/api/v1/templates', [
         'key' => 'welcome',
         'status' => 'active',
         'translations' => [
@@ -98,25 +98,25 @@ it('supports the complete opt-in management and render HTTP workflow', function 
     expect($created)->toBeArray();
     $templateId = $created['id'];
 
-    $this->getJson('/api/v1/templates?per_page=1')
+    $this->getJson('/nvl/api/v1/templates?per_page=1')
         ->assertOk()
         ->assertJsonPath('meta.total', 1)
         ->assertJsonPath('meta.per_page', 1);
-    $this->getJson("/api/v1/templates/{$templateId}")
+    $this->getJson("/nvl/api/v1/templates/{$templateId}")
         ->assertOk()
         ->assertJsonPath('data.key', 'welcome');
-    $updated = $this->putJson("/api/v1/templates/{$templateId}", [
+    $updated = $this->putJson("/nvl/api/v1/templates/{$templateId}", [
         'status' => 'active',
         'expectedRevision' => $created['revision'],
         'metadata' => ['channel' => 'email'],
         'translations' => ['en' => ['title' => 'Updated welcome']],
     ])->assertOk()->json('data');
 
-    $version = $this->postJson("/api/v1/templates/{$templateId}/versions", [
+    $version = $this->postJson("/nvl/api/v1/templates/{$templateId}/versions", [
         'metadata' => ['campaign' => 'onboarding'],
     ])->assertCreated()->json('data');
     $versionId = $version['id'];
-    $version = $this->putJson("/api/v1/templates/versions/{$versionId}", [
+    $version = $this->putJson("/nvl/api/v1/templates/versions/{$versionId}", [
         'expectedRevision' => $version['revision'],
         'metadata' => ['campaign' => 'activation'],
     ])->assertOk()->json('data');
@@ -138,11 +138,11 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         ContentActorData::system(),
     );
 
-    $published = $this->postJson("/api/v1/templates/versions/{$versionId}/publish", [
+    $published = $this->postJson("/nvl/api/v1/templates/versions/{$versionId}/publish", [
         'expectedRevision' => $version['revision'],
     ])->assertOk()->json('data');
 
-    $assignment = $this->putJson("/api/v1/templates/{$templateId}/assignments", [
+    $assignment = $this->putJson("/nvl/api/v1/templates/{$templateId}/assignments", [
         'ownerType' => 'member',
         'ownerId' => $owner->id,
         'profile' => 'default',
@@ -151,7 +151,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         'expectedRevision' => 0,
     ])->assertOk()->json('data');
 
-    $inline = $this->postJson('/api/v1/templates/render/welcome', [
+    $inline = $this->postJson('/nvl/api/v1/templates/render/welcome', [
         'locale' => 'en',
         'payload' => ['name' => 'Ada'],
         'ownerType' => 'member',
@@ -160,7 +160,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         ->assertHeader('content-type', 'text/plain; charset=UTF-8')
         ->assertContent('Welcome:Ada');
 
-    $queuedResponse = $this->postJson('/api/v1/templates/render/welcome/queue', [
+    $queuedResponse = $this->postJson('/nvl/api/v1/templates/render/welcome/queue', [
         'locale' => 'en',
         'payload' => ['name' => 'Ada'],
         'ownerType' => 'member',
@@ -169,14 +169,14 @@ it('supports the complete opt-in management and render HTTP workflow', function 
     ])->assertAccepted();
     $queued = $queuedResponse->json('data');
 
-    $this->getJson('/api/v1/templates/render/renders')
+    $this->getJson('/nvl/api/v1/templates/render/renders')
         ->assertOk()
         ->assertJsonPath('meta.total', 1);
-    $this->getJson('/api/v1/templates/render/renders/'.$queued['id'])
+    $this->getJson('/nvl/api/v1/templates/render/renders/'.$queued['id'])
         ->assertOk()
         ->assertJsonPath('data.status', 'pending')
         ->assertJsonMissingPath('data.payload');
-    $this->deleteJson('/api/v1/templates/assignments/'.$assignment['id'], [
+    $this->deleteJson('/nvl/api/v1/templates/assignments/'.$assignment['id'], [
         'expectedRevision' => $assignment['revision'],
     ])->assertOk()->assertJsonPath('data.deleted', true);
 
@@ -307,7 +307,7 @@ it('rejects malformed JSON schemas and unsafe route group configuration', functi
 
     foreach ($routeConfigurations as $configuration) {
         config()->set(
-            'templates.routes.probe.'.$configuration['key'],
+            'nvl-templates.routes.probe.'.$configuration['key'],
             $configuration['value'],
         );
 
@@ -316,9 +316,9 @@ it('rejects malformed JSON schemas and unsafe route group configuration', functi
     }
 
     config()->set([
-        'templates.routes.probe.prefix' => '/api/v2/templates/',
-        'templates.routes.probe.name' => 'consumer.templates',
-        'templates.routes.probe.middleware' => ['api', 'auth'],
+        'nvl-templates.routes.probe.prefix' => '/api/v2/templates/',
+        'nvl-templates.routes.probe.name' => 'consumer.templates',
+        'nvl-templates.routes.probe.middleware' => ['api', 'auth'],
     ]);
 
     expect(TemplatesRouteConfiguration::path('probe'))->toBe('api/v2/templates')
@@ -518,8 +518,8 @@ it('supports the complete class-template compatibility workflow', function (): v
     ))->toThrow(InvalidArgumentException::class);
 
     config()->set([
-        'templates.pdf.remote_assets.enabled' => true,
-        'templates.pdf.remote_assets.allowed_hosts' => ['assets.example.test'],
+        'nvl-templates.pdf.remote_assets.enabled' => true,
+        'nvl-templates.pdf.remote_assets.allowed_hosts' => ['assets.example.test'],
     ]);
     $template->registerUrlAsset('remote-logo', 'https://assets.example.test/logo.png');
 
@@ -772,7 +772,7 @@ it('rejects dishonest or unsafe renderer output facts', function (): void {
         ->and(fn () => $guard->validate($context, $result(subject: "bad\nsubject")))
         ->toThrow(InvalidArgumentException::class);
 
-    config()->set('templates.limits.output_bytes', 2);
+    config()->set('nvl-templates.limits.output_bytes', 2);
     expect(fn () => $guard->validate($context, $result(content: 'large')))
         ->toThrow(InvalidArgumentException::class);
 });
@@ -900,7 +900,7 @@ it('fails closed across stored core PDF content and filesystem options', functio
             ->toThrow(InvalidArgumentException::class);
     }
 
-    $pdfDefaults = config('templates.pdf.defaults');
+    $pdfDefaults = config('nvl-templates.pdf.defaults');
     $invalidPdfDefaults = [
         'invalid',
         ['unknown' => true],
@@ -913,11 +913,11 @@ it('fails closed across stored core PDF content and filesystem options', functio
     ];
 
     foreach ($invalidPdfDefaults as $defaults) {
-        config()->set('templates.pdf.defaults', $defaults);
+        config()->set('nvl-templates.pdf.defaults', $defaults);
         expect(fn () => $pdfResolver->resolve($pdfContext(new TypedPdfOptions)))
             ->toThrow(InvalidArgumentException::class);
     }
-    config()->set('templates.pdf.defaults', $pdfDefaults);
+    config()->set('nvl-templates.pdf.defaults', $pdfDefaults);
 
     $contentGuard = app(TemplateContentGuard::class);
     expect($contentGuard->schema(['type' => 'object']))->toBe(['type' => 'object'])
@@ -928,9 +928,9 @@ it('fails closed across stored core PDF content and filesystem options', functio
         ->toThrow(InvalidArgumentException::class);
 
     config()->set([
-        'templates.limits.settings_depth' => 1,
-        'templates.limits.renderer_options_items' => 1,
-        'templates.limits.metadata_bytes' => 2,
+        'nvl-templates.limits.settings_depth' => 1,
+        'nvl-templates.limits.renderer_options_items' => 1,
+        'nvl-templates.limits.metadata_bytes' => 2,
     ]);
     expect(fn () => $contentGuard->settings(['nested' => ['too' => 'deep']]))
         ->toThrow(InvalidArgumentException::class)
@@ -1011,8 +1011,8 @@ it('executes maintenance commands in text JSON guarded and repeatable modes', fu
     $root = storage_path('framework/testing/template-view-publish');
     File::ensureDirectoryExists($root);
     config()->set([
-        'templates.views.publish_path' => $root.'/views',
-        'templates.views.allowed_publish_roots' => [$root],
+        'nvl-templates.views.publish_path' => $root.'/views',
+        'nvl-templates.views.allowed_publish_roots' => [$root],
     ]);
 
     try {
@@ -1026,7 +1026,7 @@ it('executes maintenance commands in text JSON guarded and repeatable modes', fu
             ->assertSuccessful()
             ->expectsOutputToContain('Published');
 
-        config()->set('templates.views.allowed_publish_roots', []);
+        config()->set('nvl-templates.views.allowed_publish_roots', []);
         expect(fn () => $this->artisan('nvl:templates:views:publish')->run())
             ->toThrow(InvalidArgumentException::class);
     } finally {

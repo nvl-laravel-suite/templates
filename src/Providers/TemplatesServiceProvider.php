@@ -10,10 +10,12 @@ use Nvl\Content\Contracts\ContentOwnerRegistrar;
 use Nvl\Content\Services\ContentCatalogCopyRegistry;
 use Nvl\Data\Services\TypeScriptSourceRegistry;
 use Nvl\Support\Doctor\PackageDoctorContributor;
+use Nvl\Support\OwnerRegistry;
 use Nvl\Support\Providers\SupportServiceProvider;
 use Nvl\Support\Providers\TenantServiceProvider;
 use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
 use Nvl\Support\Traits\MergesPackageConfiguration;
+use Nvl\Support\Traits\RegistersNamespacedResources;
 use Nvl\Templates\Console\AdoptTemplatesCommand;
 use Nvl\Templates\Console\PublishTemplateViewsCommand;
 use Nvl\Templates\Console\RecoverTemplateRendersCommand;
@@ -50,6 +52,7 @@ use Nvl\Translatable\Services\TranslationResourceRegistry;
 final class TemplatesServiceProvider extends ServiceProvider
 {
     use MergesPackageConfiguration;
+    use RegistersNamespacedResources;
 
     /**
      * Register package configuration, contracts, and renderer registry.
@@ -60,7 +63,7 @@ final class TemplatesServiceProvider extends ServiceProvider
         PackageDoctorContributor::register($this->app, 'nvl/templates', fn (): array => PackageDoctorContributor::reportChecks($this->app->make(TemplatesDoctor::class)->inspect(), 'nvl:templates:doctor'));
 
         $this->app->register(TenantServiceProvider::class);
-        $this->mergePackageConfiguration(__DIR__.'/../../config/templates.php', 'templates');
+        $this->mergePackageConfiguration(__DIR__.'/../../config/nvl-templates.php', 'templates');
         (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class));
         $this->app->booted(function (): void {
             if ($this->app->bound(TenantAdoptionRegistry::class)) {
@@ -68,7 +71,7 @@ final class TemplatesServiceProvider extends ServiceProvider
             }
         });
         $authorization = config(
-            'templates.authorization.class',
+            'nvl-templates.authorization.class',
             ConfiguredTemplateAuthorization::class,
         );
 
@@ -85,7 +88,7 @@ final class TemplatesServiceProvider extends ServiceProvider
             ConfiguredTemplatePayloadValidator::class,
         );
         $this->app->bindIf(PdfServiceInterface::class, PdfService::class);
-        $assetDriver = config('templates.assets.driver', 'null');
+        $assetDriver = config('nvl-templates.assets.driver', 'null');
 
         if (! is_string($assetDriver) || ! in_array($assetDriver, ['null', 'media'], true)) {
             throw new InvalidArgumentException('templates.assets.driver must be null or media.');
@@ -115,6 +118,7 @@ final class TemplatesServiceProvider extends ServiceProvider
         ContentOwnerRegistrar $contentOwners,
         ContentCatalogCopyRegistry $catalogCopies,
     ): void {
+        $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, ['template-version']);
         $assets = $this->app->make(MediaTemplateAssetRegistry::class);
         $typeScriptSources->register(__DIR__.'/..', 'nvl/templates');
         $this->registerRenderers($renderers);
@@ -143,7 +147,7 @@ final class TemplatesServiceProvider extends ServiceProvider
                 'Content owner alias [template-version] must resolve to TemplateVersion.',
             );
         }
-        if ((bool) config('templates.migrations.enabled', true)) {
+        if ((bool) config('nvl-templates.migrations.enabled', true)) {
             $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
         }
 
@@ -168,7 +172,7 @@ final class TemplatesServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__.'/../../config/templates.php' => config_path('templates.php'),
+            __DIR__.'/../../config/nvl-templates.php' => config_path('nvl-templates.php'),
         ], 'templates-config');
         $this->publishes([
             __DIR__.'/../../resources/views' => $this->publishedViewPath(),
@@ -183,7 +187,7 @@ final class TemplatesServiceProvider extends ServiceProvider
 
     private function registerRenderers(TemplateRendererRegistry $registry): void
     {
-        $configured = config('templates.renderers', []);
+        $configured = config('nvl-templates.renderers', []);
 
         if (! is_array($configured)) {
             throw new InvalidArgumentException('templates.renderers must be an array.');
@@ -202,7 +206,7 @@ final class TemplatesServiceProvider extends ServiceProvider
 
     private function registerDefinitions(TemplateDefinitionRegistry $registry): void
     {
-        $configured = config('templates.definitions', []);
+        $configured = config('nvl-templates.definitions', []);
 
         if (! is_array($configured)) {
             throw new InvalidArgumentException('templates.definitions must be an array.');
@@ -261,7 +265,7 @@ final class TemplatesServiceProvider extends ServiceProvider
 
     private function registerOwners(TemplateOwnerRegistry $registry): void
     {
-        $configured = config('templates.owners', []);
+        $configured = config('nvl-templates.owners', []);
 
         if (! is_array($configured)) {
             throw new InvalidArgumentException('templates.owners must be an array.');
@@ -293,7 +297,7 @@ final class TemplatesServiceProvider extends ServiceProvider
 
     private function registerMediaAssets(MediaTemplateAssetRegistry $registry): void
     {
-        $configured = config('templates.assets.media.aliases', []);
+        $configured = config('nvl-templates.assets.media.aliases', []);
 
         if (! is_array($configured)) {
             throw new InvalidArgumentException('templates.assets.media.aliases must be an array.');
@@ -354,7 +358,7 @@ final class TemplatesServiceProvider extends ServiceProvider
 
     private function viewNamespace(): string
     {
-        $namespace = config('templates.views.namespace', 'nvl-templates');
+        $namespace = config('nvl-templates.views.namespace', 'nvl-templates');
 
         if (! is_string($namespace)
             || preg_match('/^[a-z][a-z0-9-]*$/', $namespace) !== 1) {
@@ -369,7 +373,7 @@ final class TemplatesServiceProvider extends ServiceProvider
     private function publishedViewPath(): string
     {
         $path = config(
-            'templates.views.publish_path',
+            'nvl-templates.views.publish_path',
             resource_path('views/vendor/nvl-templates'),
         );
 

@@ -43,7 +43,7 @@ final class AdoptTemplatesCommand extends Command
         $path = str_starts_with($manifestPath, DIRECTORY_SEPARATOR)
             ? $manifestPath
             : base_path($manifestPath);
-        $maximumBytes = config('templates.adoption.maximum_manifest_bytes', 1_048_576);
+        $maximumBytes = config('nvl-templates.adoption.maximum_manifest_bytes', 1_048_576);
 
         if (! is_int($maximumBytes) || $maximumBytes < 1) {
             throw new InvalidArgumentException(

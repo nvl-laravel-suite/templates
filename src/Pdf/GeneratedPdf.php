@@ -49,7 +49,7 @@ final readonly class GeneratedPdf implements GeneratedPdfInterface
     public function save(string $path): string
     {
         $roots = config(
-            'templates.rendering.output.allowed_local_roots',
+            'nvl-templates.rendering.output.allowed_local_roots',
             [storage_path()],
         );
 

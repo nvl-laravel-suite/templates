@@ -44,7 +44,7 @@ final class PdfAssetFetcher extends AssetFetcher
         }
 
         $maximum = TemplatesConfiguration::positiveInteger(
-            'templates.compatibility.assets.maximum_bytes',
+            'nvl-templates.compatibility.assets.maximum_bytes',
             5_242_880,
         );
 

@@ -80,7 +80,7 @@ final class TemplateOwnerRegistry
             throw new InvalidArgumentException("Templates resolver [{$alias}] returned a different shared owner model.");
         }
 
-        if ($this->config->get('tenancy.enabled') === true) {
+        if ($this->config->get('nvl-tenancy.enabled') === true) {
             $this->boundary->assertRecord(
                 $owner,
                 $this->resources->forModel($owner)->key,

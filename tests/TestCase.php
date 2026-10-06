@@ -46,13 +46,13 @@ abstract class TestCase extends Orchestra
         $app['config']->set([
             'cache.default' => 'array',
             'filesystems.default' => 'public',
-            'media.disk' => 'public',
-            'media.routes.assets_enabled' => false,
-            'content.authorization.callback' => static fn (): bool => true,
-            'content.locales.available' => ['en', 'bg'],
-            'translatable.locales' => ['en', 'bg'],
-            'content.locales.required_on_publish' => ['en'],
-            'content.definitions' => [
+            'nvl-media.disk' => 'public',
+            'nvl-media.routes.assets_enabled' => false,
+            'nvl-content.authorization.callback' => static fn (): bool => true,
+            'nvl-content.locales.available' => ['en', 'bg'],
+            'nvl-translatable.locales' => ['en', 'bg'],
+            'nvl-content.locales.required_on_publish' => ['en'],
+            'nvl-content.definitions' => [
                 'template-copy' => [
                     'name' => 'Template copy',
                     'category' => 'templates',
@@ -88,12 +88,12 @@ abstract class TestCase extends Orchestra
                     ],
                 ],
             ],
-            'templates.renderers' => [
+            'nvl-templates.renderers' => [
                 'blade' => BladeTemplateRenderer::class,
                 'test' => TestTemplateRenderer::class,
                 'pdf' => MpdfTemplateRenderer::class,
             ],
-            'templates.definitions' => [
+            'nvl-templates.definitions' => [
                 'welcome' => [
                     'renderer' => 'test',
                     'view' => 'template-tests::core',
@@ -129,7 +129,7 @@ abstract class TestCase extends Orchestra
                     'allowed_content_definitions' => ['template-copy'],
                 ],
             ],
-            'templates.owners' => ['member' => TestTemplateOwnerResolver::class],
+            'nvl-templates.owners' => ['member' => TestTemplateOwnerResolver::class],
         ]);
     }
 

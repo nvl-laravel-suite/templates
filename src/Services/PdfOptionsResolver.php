@@ -28,7 +28,7 @@ final readonly class PdfOptionsResolver
      */
     public function resolve(TemplateRenderContext $context): ResolvedPdfOptions
     {
-        $configured = config('templates.pdf.defaults', []);
+        $configured = config('nvl-templates.pdf.defaults', []);
 
         if (! is_array($configured)) {
             throw new InvalidArgumentException('templates.pdf.defaults must be an array.');
@@ -97,7 +97,7 @@ final readonly class PdfOptionsResolver
 
         if ($showImageErrors
             && (! config('app.debug', false)
-                || config('templates.pdf.allow_debug_image_errors', false) !== true)) {
+                || config('nvl-templates.pdf.allow_debug_image_errors', false) !== true)) {
             throw new InvalidArgumentException(
                 'PDF image diagnostics require application debug mode and templates.pdf.allow_debug_image_errors.',
             );

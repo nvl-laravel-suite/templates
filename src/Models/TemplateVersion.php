@@ -45,7 +45,7 @@ final class TemplateVersion extends Model implements ContentOwner
     use HasContent;
     use HasUuids;
 
-    public const string CONTENT_OWNER_TYPE = 'template-version';
+    public const string CONTENT_OWNER_TYPE = 'nvl-template-version';
 
     public const string CONTENT_GROUP = 'document';
 

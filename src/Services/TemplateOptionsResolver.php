@@ -30,7 +30,7 @@ final readonly class TemplateOptionsResolver
         $options = $template->options ?? new TemplateOptions;
         $this->contentGuard->rendererOptions($options->rendererOptions);
         $renderer = $options->renderer
-            ?? TemplatesConfiguration::string('templates.default_renderer', 'blade');
+            ?? TemplatesConfiguration::string('nvl-templates.default_renderer', 'blade');
         $this->assertAlias($renderer, 'renderer');
         $view = $template->view !== ''
             ? $template->view
@@ -38,7 +38,7 @@ final readonly class TemplateOptionsResolver
         $this->assertView($view);
         $locale = $this->locales->resolve(
             $options->locale
-                ?? config('templates.default_locale')
+                ?? config('nvl-templates.default_locale')
                 ?? $this->catalog->default(),
         );
         $subject = $this->nullableString($options->subject, 'subject', 998, false);
@@ -83,7 +83,7 @@ final readonly class TemplateOptionsResolver
 
     private function defaultView(string $renderer): string
     {
-        $view = config("templates.views.defaults.{$renderer}");
+        $view = config("nvl-templates.views.defaults.{$renderer}");
 
         if (! is_string($view) || trim($view) === '') {
             throw new InvalidArgumentException(

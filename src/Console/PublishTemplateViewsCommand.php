@@ -37,7 +37,7 @@ final class PublishTemplateViewsCommand extends Command
 
         if ($path === null || $path === '') {
             $path = config(
-                'templates.views.publish_path',
+                'nvl-templates.views.publish_path',
                 resource_path('views/vendor/nvl-templates'),
             );
         }
@@ -52,7 +52,7 @@ final class PublishTemplateViewsCommand extends Command
             ? $path
             : base_path($path);
         $roots = config(
-            'templates.views.allowed_publish_roots',
+            'nvl-templates.views.allowed_publish_roots',
             [resource_path('views')],
         );
 

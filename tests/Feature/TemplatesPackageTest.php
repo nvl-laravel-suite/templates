@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\GenericUser;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -312,7 +313,7 @@ it('installs its composition schema with management routes disabled', function (
         static fn (mixed $path): string|false => is_string($path) ? realpath($path) : false,
         array_keys(ServiceProvider::pathsToPublish(
             TemplatesServiceProvider::class,
-            'templates-migrations',
+            'nvl-templates-migrations',
         )),
     );
 
@@ -325,8 +326,8 @@ it('installs its composition schema with management routes disabled', function (
     expect($diagnostics)->toContain('"pdf.version"');
 
     config()->set([
-        'templates.rendering.output.persist' => false,
-        'templates.rendering.output.disk' => 'missing-disk',
+        'nvl-templates.rendering.output.persist' => false,
+        'nvl-templates.rendering.output.disk' => 'missing-disk',
     ]);
     $this->artisan('nvl:templates:doctor', [
         '--scope' => 'database',
@@ -336,7 +337,7 @@ it('installs its composition schema with management routes disabled', function (
 });
 
 it('keeps logical diagnostic keys stable for a consumer table override', function (): void {
-    config()->set('templates.tables.templates', 'host_template_library');
+    config()->set('nvl-templates.tables.templates', 'host_template_library');
 
     $checks = app(TemplatesDoctor::class)->inspect('database');
 
@@ -389,7 +390,7 @@ it('fails closed for unowned canonical tables and reports missing named indexes'
 });
 
 it('honors configured pagination and loads complete management aggregates', function (): void {
-    config()->set('templates.limits.per_page', 1);
+    config()->set('nvl-templates.limits.per_page', 1);
     $actor = TemplateActorData::system();
     $welcome = app(CreateTemplateAction::class)->execute(
         new CreateTemplateData(
@@ -516,7 +517,7 @@ it('renders a directly constructed template through the same core pipeline', fun
 it('publishes the bundled Blade foundations to a guarded custom path', function (): void {
     $root = sys_get_temp_dir().'/nvl-templates-views-'.str()->uuid();
     File::ensureDirectoryExists($root);
-    config()->set('templates.views.allowed_publish_roots', [$root]);
+    config()->set('nvl-templates.views.allowed_publish_roots', [$root]);
 
     try {
         $this->artisan('nvl:templates:views:publish', [
@@ -815,8 +816,8 @@ it('authorizes every caller-selected stored render scope', function (): void {
 it('uses canonical render requests and processes queued output idempotently', function (): void {
     Queue::fake();
     config()->set([
-        'templates.rendering.output.persist' => false,
-        'templates.rendering.store_payload' => false,
+        'nvl-templates.rendering.output.persist' => false,
+        'nvl-templates.rendering.store_payload' => false,
     ]);
     $actor = TemplateActorData::system();
     $template = app(CreateTemplateAction::class)->execute(
@@ -893,7 +894,7 @@ it('uses canonical render requests and processes queued output idempotently', fu
 
 it('applies durable render job policies and records processing failures', function (): void {
     Queue::fake();
-    config()->set('templates.rendering.output.persist', false);
+    config()->set('nvl-templates.rendering.output.persist', false);
     $actor = TemplateActorData::system();
     $template = app(CreateTemplateAction::class)->execute(
         new CreateTemplateData(
@@ -918,18 +919,18 @@ it('applies durable render job policies and records processing failures', functi
         ),
         $actor,
     );
-    config()->set('templates.rendering.backoff', 'invalid');
+    config()->set('nvl-templates.rendering.backoff', 'invalid');
     $job = new RenderTemplateJob($render->id, $render->dispatch_generation);
 
     expect($job->uniqueId())->toBe($render->id.':'.$render->dispatch_generation)
         ->and($job->backoff())->toBe([10, 30, 90]);
 
-    config()->set('templates.rendering.backoff', [0, 'later']);
+    config()->set('nvl-templates.rendering.backoff', [0, 'later']);
     expect($job->backoff())->toBe([10, 30, 90]);
 
     config()->set([
-        'templates.rendering.backoff' => [7, 20],
-        'templates.rendering.lease_seconds' => 30,
+        'nvl-templates.rendering.backoff' => [7, 20],
+        'nvl-templates.rendering.lease_seconds' => 30,
     ]);
     expect($job->middleware())->toHaveCount(1);
 
@@ -1016,7 +1017,7 @@ it('resolves revision-aware class-template aliases through NVL Media', function 
     );
     $absolutePath = Storage::disk('public')->path($path);
     config()->set(
-        'templates.compatibility.assets.allowed_local_roots',
+        'nvl-templates.compatibility.assets.allowed_local_roots',
         [dirname($absolutePath, 3)],
     );
     $registry = app(MediaTemplateAssetRegistry::class);
@@ -1104,9 +1105,9 @@ it('fails closed across template Media alias registration and resolution', funct
     Storage::disk('public')->put(app(MediaPathResolver::class)->mediaPath($media), 'logo');
     config()->set([
         'filesystems.disks.public.url' => null,
-        'templates.pdf.remote_assets.enabled' => true,
-        'templates.pdf.remote_assets.allow_http' => true,
-        'templates.pdf.remote_assets.allowed_hosts' => ['localhost'],
+        'nvl-templates.pdf.remote_assets.enabled' => true,
+        'nvl-templates.pdf.remote_assets.allow_http' => true,
+        'nvl-templates.pdf.remote_assets.allowed_hosts' => ['localhost'],
     ]);
     url()->forceRootUrl('http://localhost');
     $registry->register(new MediaTemplateAssetData(
@@ -1256,11 +1257,11 @@ it('rejects malformed adoption manifests before mutating consumer data', functio
             ->toThrow(InvalidArgumentException::class);
     }
 
-    config()->set('templates.adoption.maximum_records', 0);
+    config()->set('nvl-templates.adoption.maximum_records', 0);
     expect(fn () => $manifests->normalize($valid))
         ->toThrow(InvalidArgumentException::class);
 
-    config()->set('templates.adoption.maximum_records', 1);
+    config()->set('nvl-templates.adoption.maximum_records', 1);
     expect(fn () => $manifests->normalize([
         ...$valid,
         'templates' => [
@@ -1268,7 +1269,7 @@ it('rejects malformed adoption manifests before mutating consumer data', functio
             ['legacy_key' => 'second'],
         ],
     ]))->toThrow(InvalidArgumentException::class);
-    config()->set('templates.adoption.maximum_records', 10_000);
+    config()->set('nvl-templates.adoption.maximum_records', 10_000);
 
     $template = [
         'legacy_key' => 'legacy-welcome',
@@ -1412,7 +1413,7 @@ it('renders a bounded source-controlled PDF and validates its payload schema', f
         ->and(str_starts_with($direct->content, '%PDF-'))->toBeTrue();
 
     $forbiddenTemporaryPath = sys_get_temp_dir().'/nvl-templates-forbidden-'.str()->uuid();
-    config()->set('templates.pdf.temp_path', $forbiddenTemporaryPath);
+    config()->set('nvl-templates.pdf.temp_path', $forbiddenTemporaryPath);
 
     expect(fn () => app(PdfTemporaryDirectoryResolver::class)->resolve())
         ->toThrow(InvalidArgumentException::class)
@@ -1445,8 +1446,8 @@ it('renders a bounded source-controlled PDF and validates its payload schema', f
     ))->toThrow(InvalidArgumentException::class);
 
     config()->set([
-        'templates.pdf.remote_assets.enabled' => true,
-        'templates.pdf.remote_assets.allowed_hosts' => ['assets.example.test'],
+        'nvl-templates.pdf.remote_assets.enabled' => true,
+        'nvl-templates.pdf.remote_assets.allowed_hosts' => ['assets.example.test'],
     ]);
     app(PdfHtmlGuard::class)->validate(
         '<div style="background-image: url( https://assets.example.test/logo.png )"></div>',
@@ -1473,7 +1474,7 @@ it('rejects non-JSON values and unsupported schema or route configuration', func
         ]))
         ->toThrow(InvalidArgumentException::class);
 
-    config()->set('templates.routes.render.middleware', []);
+    config()->set('nvl-templates.routes.render.middleware', []);
 
     expect(fn () => TemplatesRouteConfiguration::middleware('render'))
         ->toThrow(InvalidArgumentException::class);
@@ -1490,7 +1491,7 @@ it('rejects ancestor symlink escapes and inline SVG assets', function (): void {
         $this->markTestSkipped('The filesystem does not support symbolic links.');
     }
 
-    config()->set('templates.rendering.output.allowed_local_roots', [$allowedRoot]);
+    config()->set('nvl-templates.rendering.output.allowed_local_roots', [$allowedRoot]);
 
     try {
         expect(fn () => app(SafeFilesystemPathResolver::class)->file(
@@ -1520,7 +1521,7 @@ it('rejects ancestor symlink escapes and inline SVG assets', function (): void {
 
 it('snapshots queued assignment settings and recovers expired render leases', function (): void {
     Queue::fake();
-    config()->set('templates.rendering.output.persist', false);
+    config()->set('nvl-templates.rendering.output.persist', false);
     $actor = TemplateActorData::system();
     $owner = TestTemplateOwner::query()->create(['name' => 'Ada']);
     $template = app(CreateTemplateAction::class)->execute(
@@ -1791,7 +1792,7 @@ it('checks relative PDF resources against local roots at the file read boundary'
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     ));
     File::copy($allowed.'/logo.png', $outside.'/private.png');
-    config()->set('templates.compatibility.assets.allowed_local_roots', [$allowed]);
+    config()->set('nvl-templates.compatibility.assets.allowed_local_roots', [$allowed]);
     $workingDirectory = getcwd();
     chdir($root);
 
@@ -1832,7 +1833,7 @@ it('guards nested PDF image reads after the source HTML has passed validation', 
     File::put($allowed.'/image.svg', '<svg xmlns="http://www.w3.org/2000/svg" '
         .'xmlns:xlink="http://www.w3.org/1999/xlink" width="10" height="10">'
         .'<image width="10" height="10" xlink:href="'.$outside.'/private.png"/></svg>');
-    config()->set('templates.compatibility.assets.allowed_local_roots', [$allowed]);
+    config()->set('nvl-templates.compatibility.assets.allowed_local_roots', [$allowed]);
 
     try {
         expect(fn () => app(PdfService::class)->renderHtml(
@@ -1852,9 +1853,9 @@ it('enforces PDF remote asset policy at the actual nested fetch boundary', funct
         .'xmlns:xlink="http://www.w3.org/1999/xlink" width="10" height="10">'
         .'<image width="10" height="10" xlink:href="https://forbidden.example.test/private.png"/></svg>');
     config()->set([
-        'templates.compatibility.assets.allowed_local_roots' => [$root],
-        'templates.pdf.remote_assets.enabled' => true,
-        'templates.pdf.remote_assets.allowed_hosts' => ['allowed.example.test'],
+        'nvl-templates.compatibility.assets.allowed_local_roots' => [$root],
+        'nvl-templates.pdf.remote_assets.enabled' => true,
+        'nvl-templates.pdf.remote_assets.allowed_hosts' => ['allowed.example.test'],
     ]);
 
     try {
@@ -1870,8 +1871,8 @@ it('enforces PDF remote asset policy at the actual nested fetch boundary', funct
 
 it('fetches allowed PDF assets with bounded bodies and no redirects', function (): void {
     config()->set([
-        'templates.pdf.remote_assets.enabled' => true,
-        'templates.pdf.remote_assets.allowed_hosts' => ['allowed.example.test'],
+        'nvl-templates.pdf.remote_assets.enabled' => true,
+        'nvl-templates.pdf.remote_assets.allowed_hosts' => ['allowed.example.test'],
     ]);
     $png = base64_decode(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -1889,7 +1890,7 @@ it('fetches allowed PDF assets with bounded bodies and no redirects', function (
     );
     expect($rendered->getContent())->toContain('/Subtype /Image');
 
-    config()->set('templates.compatibility.assets.maximum_bytes', 4);
+    config()->set('nvl-templates.compatibility.assets.maximum_bytes', 4);
     $fetcher = app(PdfAssetFetcher::class);
     expect(fn () => $fetcher->fetchDataFromPath('https://allowed.example.test/oversized'))
         ->toThrow(TemplateResolutionException::class, 'byte limit')
@@ -1990,3 +1991,30 @@ it('keeps adoption preflight read-only for invalid scope and locale mappings', f
         ->and(Template::query()->count())->toBe(0)
         ->and(ContentBlock::query()->count())->toBe(0);
 })->with(['scope', 'locale']);
+
+it('renders native host mapped TemplateVersion snapshots for immediate and durable requests', function (): void {
+    $originalMap = Relation::morphMap();
+    $hostMap = array_filter($originalMap, static fn (string $model): bool => $model !== TemplateVersion::class);
+    Relation::morphMap(['host-template-version' => TemplateVersion::class] + $hostMap, false);
+    try {
+        Queue::fake();
+        config()->set('nvl-templates.rendering.output.persist', false);
+        $actor = TemplateActorData::system();
+        $template = app(CreateTemplateAction::class)->execute(new CreateTemplateData(
+            key: 'welcome', translations: ['en' => ['title' => 'Welcome']],
+        ), $actor);
+        [$version] = createComposedTemplateVersion($template, $actor, [], ['en' => ['text' => 'Native', 'subject' => 'Host identity']]);
+        $version = app(PublishTemplateVersionAction::class)->execute($version, $version->revision, $actor);
+        expect($version->content_snapshot?->ownerType)->toBe('host-template-version');
+        $result = app(RenderStoredTemplateAction::class)->execute($template, new RenderTemplateData('en', ['name' => 'Ada']), $actor);
+        $render = app(QueueTemplateRenderAction::class)->execute($template, new RenderTemplateData('en', ['name' => 'Ada'], idempotencyKey: 'native-owner'), $actor);
+        $durable = app(StoredTemplateRenderResolver::class)->resolveDurable($render);
+        expect($result->content)->toBe('Native:Ada')
+            ->and($result->subject)->toBe('Host identity')
+            ->and($durable->version->id)->toBe($version->id)
+            ->and($durable->version->content_snapshot?->ownerType)->toBe('host-template-version')
+            ->and(Relation::morphMap())->toBe(['host-template-version' => TemplateVersion::class] + $hostMap);
+    } finally {
+        Relation::morphMap($originalMap, false);
+    }
+});
