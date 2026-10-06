@@ -8,6 +8,8 @@ use Nvl\Support\Facades\Locales;
 
 /**
  * Typed preparation context for class-based templates.
+ *
+ * @api
  */
 final class TemplateContext
 {

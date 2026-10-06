@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Resolves an allowlisted assignment owner alias and string-compatible identifier.
+ *
+ * @api
  */
 interface TemplateOwnerResolver
 {

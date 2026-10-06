@@ -8,6 +8,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Represents the lifecycle state of a template definition.
+ *
+ * @api
  */
 #[TypeScript]
 enum TemplateStatus: string

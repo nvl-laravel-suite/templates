@@ -74,6 +74,8 @@ final class MediaTemplateAssetRegistry
      * Register an explicit source alias-to-Media map during controlled adoption.
      *
      * @param  array<array-key, mixed>  $aliases
+     *
+     * @internal
      */
     public function registerAdoptionAliases(
         array $aliases,

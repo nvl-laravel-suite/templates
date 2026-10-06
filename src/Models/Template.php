@@ -32,6 +32,8 @@ use Nvl\Translatable\Translatable as HasTranslations;
  * @property-read Collection<int, TemplateTranslation> $translations
  * @property-read Collection<int, TemplateVersion> $versions
  * @property-read Collection<int, TemplateAssignment> $assignments
+ *
+ * @api
  */
 final class Template extends Model implements TranslatableModel
 {

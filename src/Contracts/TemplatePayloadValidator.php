@@ -6,6 +6,8 @@ namespace Nvl\Templates\Contracts;
 
 /**
  * Validates source-controlled payload schemas and concrete render payloads.
+ *
+ * @api
  */
 interface TemplatePayloadValidator
 {

@@ -6,6 +6,8 @@ namespace Nvl\Templates\Support\PdfConfig\Data;
 
 /**
  * Text watermark configuration.
+ *
+ * @api
  */
 final readonly class WatermarkData
 {

@@ -6,6 +6,8 @@ namespace Nvl\Templates\Support\PdfConfig\Data;
 
 /**
  * Page margins in millimetres.
+ *
+ * @api
  */
 final readonly class MarginsData
 {

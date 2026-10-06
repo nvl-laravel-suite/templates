@@ -13,6 +13,8 @@ use Nvl\Templates\Models\TemplateRender;
 
 /**
  * Returns one authorized durable render with its private Media reference loaded.
+ *
+ * @api
  */
 final readonly class GetTemplateRenderAction
 {

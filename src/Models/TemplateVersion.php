@@ -39,6 +39,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  * @property string|null $published_by
  * @property Carbon|null $published_at
  * @property-read Template $template
+ *
+ * @api
  */
 final class TemplateVersion extends Model implements ContentOwner
 {

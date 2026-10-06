@@ -19,6 +19,8 @@ use Nvl\Translatable\Services\TranslationWriter;
 
 /**
  * Creates a translated stored template from its source-authoritative definition.
+ *
+ * @api
  */
 final readonly class CreateTemplateAction
 {

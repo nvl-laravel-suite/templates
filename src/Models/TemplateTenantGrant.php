@@ -22,6 +22,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  * @property int $revision
  * @property Carbon|null $revoked_at
  * @property-read TemplateVersion $version
+ *
+ * @api
  */
 final class TemplateTenantGrant extends Model
 {

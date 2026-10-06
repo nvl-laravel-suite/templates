@@ -8,6 +8,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Enumerates capabilities protected by the template authorization boundary.
+ *
+ * @api
  */
 #[TypeScript]
 enum TemplateAbility: string

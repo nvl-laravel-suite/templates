@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 
 /**
  * Creates safe inline or attachment HTTP responses from verified render output.
+ *
+ * @api
  */
 final readonly class TemplateResponseFactory
 {

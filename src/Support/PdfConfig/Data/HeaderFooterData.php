@@ -6,6 +6,8 @@ namespace Nvl\Templates\Support\PdfConfig\Data;
 
 /**
  * Trusted code-defined header and footer HTML.
+ *
+ * @api
  */
 final readonly class HeaderFooterData
 {

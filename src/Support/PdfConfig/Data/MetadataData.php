@@ -6,6 +6,8 @@ namespace Nvl\Templates\Support\PdfConfig\Data;
 
 /**
  * PDF document metadata.
+ *
+ * @api
  */
 final readonly class MetadataData
 {

@@ -13,6 +13,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Typed per-template overrides for the bundled mPDF implementation.
+ *
+ * @api
  */
 #[TypeScript]
 final class PdfOptions extends Data

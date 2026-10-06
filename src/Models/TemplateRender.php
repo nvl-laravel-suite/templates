@@ -50,6 +50,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  * @property-read TemplateVersion $version
  * @property-read TemplateAssignment|null $assignment
  * @property-read Collection<int, Media> $media
+ *
+ * @api
  */
 final class TemplateRender extends Model implements HasMedia
 {

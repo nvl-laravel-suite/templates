@@ -6,6 +6,8 @@ namespace Nvl\Templates\Support\PdfConfig\Enums;
 
 /**
  * Page formats accepted by the compatibility template surface.
+ *
+ * @api
  */
 enum PaperSize: string
 {

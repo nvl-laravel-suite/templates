@@ -26,6 +26,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Creates or updates a unique owner/profile template assignment.
+ *
+ * @api
  */
 final readonly class AssignTemplateAction
 {

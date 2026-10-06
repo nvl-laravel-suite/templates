@@ -26,6 +26,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Persists and dispatches one idempotent asynchronous render request.
+ *
+ * @api
  */
 final readonly class QueueTemplateRenderAction
 {

@@ -19,6 +19,8 @@ use Nvl\Templates\Services\StoredTemplateRenderResolver;
  *
  * This deliberate action composition keeps stored and directly constructed
  * templates on one validation and renderer pipeline.
+ *
+ * @api
  */
 final readonly class RenderStoredTemplateAction
 {

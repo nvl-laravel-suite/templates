@@ -6,6 +6,8 @@ namespace Nvl\Templates\Html;
 
 /**
  * Immutable HTML/CSS payload passed to a PDF engine.
+ *
+ * @api
  */
 final readonly class HtmlPayload
 {

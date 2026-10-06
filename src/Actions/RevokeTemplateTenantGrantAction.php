@@ -12,6 +12,11 @@ use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
+/**
+ * Revoke a template tenant grant at its expected revision.
+ *
+ * @api
+ */
 final readonly class RevokeTemplateTenantGrantAction
 {
     public function __construct(private TenantContext $context) {}

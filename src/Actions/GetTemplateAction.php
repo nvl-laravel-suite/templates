@@ -12,6 +12,8 @@ use Nvl\Templates\Models\Template;
 
 /**
  * Loads a complete management aggregate after Action authorization.
+ *
+ * @api
  */
 final readonly class GetTemplateAction
 {

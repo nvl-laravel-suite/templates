@@ -10,6 +10,8 @@ use Nvl\Templates\Contracts\TemplateRenderer;
 
 /**
  * Resolves allowlisted renderer aliases through the Laravel container.
+ *
+ * @api
  */
 final class TemplateRendererRegistry
 {

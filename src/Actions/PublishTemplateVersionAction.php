@@ -25,6 +25,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Publishes a complete version and retires its previously published sibling.
+ *
+ * @api
  */
 final readonly class PublishTemplateVersionAction
 {

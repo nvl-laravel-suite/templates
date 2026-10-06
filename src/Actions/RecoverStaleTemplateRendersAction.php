@@ -17,6 +17,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Requeues durable renders stalled before or during processing.
+ *
+ * @internal
  */
 final readonly class RecoverStaleTemplateRendersAction
 {

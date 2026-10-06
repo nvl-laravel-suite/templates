@@ -8,6 +8,8 @@ use Nvl\Templates\Templates\BasePdfTemplate;
 
 /**
  * Prepares a class-based template and returns its renderer-neutral HTML/CSS.
+ *
+ * @api
  */
 final class TemplateRenderer
 {

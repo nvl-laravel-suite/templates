@@ -6,6 +6,8 @@ namespace Nvl\Templates\Contracts;
 
 /**
  * Resolves stable Media/application asset aliases for class-based templates.
+ *
+ * @api
  */
 interface TemplateAssetResolver
 {

@@ -12,6 +12,8 @@ use Nvl\Templates\Template;
 
 /**
  * Renders one code-defined Template through its configured implementation.
+ *
+ * @api
  */
 final readonly class RenderTemplateAction
 {

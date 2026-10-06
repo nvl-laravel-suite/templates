@@ -10,6 +10,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Immutable renderer output suitable for responses, mail bodies, or Media ingestion.
+ *
+ * @api
  */
 #[TypeScript]
 final class RenderedTemplateData extends Data

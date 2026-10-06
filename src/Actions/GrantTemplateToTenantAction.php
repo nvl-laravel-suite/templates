@@ -17,6 +17,11 @@ use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
+/**
+ * Grant a published platform template version to an active tenant.
+ *
+ * @api
+ */
 final readonly class GrantTemplateToTenantAction
 {
     public function __construct(private TenantContext $context, private TenantDirectory $directory) {}

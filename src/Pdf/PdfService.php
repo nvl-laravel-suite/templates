@@ -21,6 +21,8 @@ use RuntimeException;
 
 /**
  * Class-template adapter over the package's single verified rendering pipeline.
+ *
+ * @api
  */
 final readonly class PdfService implements PdfServiceInterface
 {

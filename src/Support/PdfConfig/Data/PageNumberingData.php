@@ -8,6 +8,8 @@ use InvalidArgumentException;
 
 /**
  * Page-numbering behavior expressed with mPDF placeholders.
+ *
+ * @api
  */
 final readonly class PageNumberingData
 {

@@ -14,6 +14,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Validated contract for creating an immutable publication candidate.
+ *
+ * @api
  */
 #[MapInputName(CamelCaseMapper::class)]
 #[MapOutputName(CamelCaseMapper::class)]

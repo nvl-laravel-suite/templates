@@ -17,6 +17,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Complete structural template replacement with optimistic concurrency.
+ *
+ * @api
  */
 #[MapInputName(CamelCaseMapper::class)]
 #[MapOutputName(CamelCaseMapper::class)]

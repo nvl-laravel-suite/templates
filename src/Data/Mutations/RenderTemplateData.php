@@ -14,6 +14,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Validated synchronous or queued render request.
+ *
+ * @api
  */
 #[MapInputName(CamelCaseMapper::class)]
 #[MapOutputName(CamelCaseMapper::class)]

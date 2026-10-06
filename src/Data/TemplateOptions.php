@@ -11,6 +11,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Per-template renderer, locale, naming, and driver-specific overrides.
+ *
+ * @api
  */
 #[TypeScript]
 final class TemplateOptions extends Data

@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Data\Mutations;
 
-/** Scalar-only request for copying one granted platform Template graph. */
+/**
+ * Scalar-only request for copying one granted platform Template graph.
+ *
+ * @api
+ */
 final readonly class ImportPlatformTemplateData
 {
     /** @param array<string,string> $mediaGrantIds */

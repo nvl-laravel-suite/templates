@@ -20,6 +20,8 @@ use Nvl\Templates\Support\PdfConfig\Enums\PaperSize;
 
 /**
  * Mutable fluent adapter retained for class-based templates and converted to immutable render DTOs.
+ *
+ * @api
  */
 final class EngineConfig
 {

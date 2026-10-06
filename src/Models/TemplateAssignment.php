@@ -22,6 +22,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  * @property string $profile
  * @property array<string, mixed>|null $settings
  * @property int $revision
+ *
+ * @api
  */
 final class TemplateAssignment extends Model
 {

@@ -10,6 +10,8 @@ use Nvl\Templates\Templates\Contracts\TemplateInterface;
 
 /**
  * Renders HTML or class-based templates into verified PDF output.
+ *
+ * @api
  */
 interface PdfServiceInterface
 {

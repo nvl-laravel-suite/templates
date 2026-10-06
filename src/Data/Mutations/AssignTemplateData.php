@@ -14,6 +14,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Validated template-to-owner assignment contract.
+ *
+ * @api
  */
 #[MapInputName(CamelCaseMapper::class)]
 #[MapOutputName(CamelCaseMapper::class)]

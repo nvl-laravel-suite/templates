@@ -11,6 +11,8 @@ use Nvl\Templates\Template;
 
 /**
  * Provides renderers and Blade views with one fully validated immutable context.
+ *
+ * @api
  */
 final readonly class TemplateRenderContext
 {

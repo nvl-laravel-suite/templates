@@ -9,6 +9,8 @@ use Nvl\Templates\Enums\TemplateAbility;
 
 /**
  * Authorizes every template operation independently of an application's user model.
+ *
+ * @api
  */
 interface TemplateAuthorization
 {

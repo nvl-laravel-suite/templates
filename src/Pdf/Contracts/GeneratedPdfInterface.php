@@ -8,6 +8,8 @@ use Illuminate\Http\Response;
 
 /**
  * Safe operations available on generated PDF bytes.
+ *
+ * @api
  */
 interface GeneratedPdfInterface
 {

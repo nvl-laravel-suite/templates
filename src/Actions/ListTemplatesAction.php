@@ -17,6 +17,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Lists templates through Action authorization and a fixed query allowlist.
+ *
+ * @api
  */
 final readonly class ListTemplatesAction
 {

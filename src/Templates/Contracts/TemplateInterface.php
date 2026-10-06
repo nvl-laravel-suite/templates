@@ -9,6 +9,8 @@ use Nvl\Templates\Support\PdfConfig\EngineConfig;
 
 /**
  * Reusable class-template contract retained for application template migration.
+ *
+ * @api
  */
 interface TemplateInterface
 {

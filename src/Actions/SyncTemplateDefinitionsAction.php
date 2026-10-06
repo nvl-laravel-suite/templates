@@ -15,6 +15,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Atomically synchronizes source-controlled definitions and archives removed keys.
+ *
+ * @api
  */
 final readonly class SyncTemplateDefinitionsAction
 {

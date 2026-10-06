@@ -18,6 +18,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Creates the next immutable numbered draft under a template lock.
+ *
+ * @api
  */
 final readonly class CreateTemplateVersionAction
 {

@@ -20,6 +20,8 @@ use Nvl\Translatable\Services\TranslationWriter;
 
 /**
  * Updates editable state and labels without mutating source-authoritative structure.
+ *
+ * @api
  */
 final readonly class UpdateTemplateAction
 {

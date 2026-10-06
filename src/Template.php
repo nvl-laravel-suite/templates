@@ -13,6 +13,8 @@ use Nvl\Templates\Data\TemplateOptions;
  *
  * Consumer applications may instantiate this class directly or extend it for
  * domain-specific templates with typed constructor arguments.
+ *
+ * @api
  */
 class Template
 {

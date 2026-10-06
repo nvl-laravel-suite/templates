@@ -13,6 +13,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Source-controlled identity and editor-facing capabilities for one template class.
+ *
+ * @api
  */
 #[MapOutputName(CamelCaseMapper::class)]
 #[TypeScript]

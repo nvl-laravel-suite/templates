@@ -34,6 +34,8 @@ use Nvl\Templates\Services\TemplateAdoptionSchema;
  * @phpstan-import-type NormalizedManifest from TemplateAdoptionManifest
  *
  * @phpstan-type Operation array{key: string, operation: string}
+ *
+ * @internal
  */
 final readonly class AdoptTemplatesAction
 {

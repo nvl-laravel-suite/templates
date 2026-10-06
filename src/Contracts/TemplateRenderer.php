@@ -9,6 +9,8 @@ use Nvl\Templates\Rendering\TemplateRenderContext;
 
 /**
  * Renders a resolved template through an explicitly registered driver.
+ *
+ * @api
  */
 interface TemplateRenderer
 {

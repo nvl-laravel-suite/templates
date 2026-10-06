@@ -10,6 +10,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Optional PDF margin overrides expressed in millimetres.
+ *
+ * @api
  */
 #[TypeScript]
 final class PdfMargins extends Data

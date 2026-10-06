@@ -11,6 +11,8 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Transport-neutral actor identity used by authorization and audit events.
+ *
+ * @api
  */
 #[TypeScript]
 final class TemplateActorData extends Data

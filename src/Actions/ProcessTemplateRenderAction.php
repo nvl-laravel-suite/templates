@@ -22,6 +22,8 @@ use Throwable;
  *
  * Delegation to RenderTemplateAction is deliberate action composition so queued
  * and direct rendering share validation, renderer selection, and output rules.
+ *
+ * @internal
  */
 final readonly class ProcessTemplateRenderAction
 {

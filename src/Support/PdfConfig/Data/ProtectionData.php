@@ -6,6 +6,8 @@ namespace Nvl\Templates\Support\PdfConfig\Data;
 
 /**
  * Optional PDF permissions and passwords.
+ *
+ * @api
  */
 final readonly class ProtectionData
 {

@@ -18,6 +18,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Lists authorized durable render history through a fixed query allowlist.
+ *
+ * @api
  */
 final readonly class ListTemplateRendersAction
 {

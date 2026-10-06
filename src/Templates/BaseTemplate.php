@@ -19,6 +19,8 @@ use Nvl\Templates\Templates\Contracts\TemplateInterface;
 
 /**
  * Class-based Blade template adapter backed by bounded data, Content, and assets.
+ *
+ * @api
  */
 abstract class BaseTemplate implements TemplateInterface
 {
@@ -58,8 +60,18 @@ abstract class BaseTemplate implements TemplateInterface
         );
     }
 
+    /**
+     * Configure renderer-specific template defaults.
+     *
+     * @api
+     */
     abstract protected function configure(): void;
 
+    /**
+     * Return the renderer view path for this template.
+     *
+     * @api
+     */
     abstract protected function getViewPath(): string;
 
     abstract public function getName(): string;
@@ -384,6 +396,8 @@ abstract class BaseTemplate implements TemplateInterface
 
     /**
      * @return list<string>
+     *
+     * @api
      */
     protected function getRequiredData(): array
     {

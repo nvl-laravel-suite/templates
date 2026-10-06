@@ -16,6 +16,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Deletes one assignment with exact optimistic concurrency.
+ *
+ * @api
  */
 final readonly class UnassignTemplateAction
 {

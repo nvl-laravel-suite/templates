@@ -28,6 +28,8 @@ use Throwable;
 
 /**
  * Fluent PDF template API implemented over the verified NVL renderer.
+ *
+ * @api
  */
 abstract class BasePdfTemplate extends BaseTemplate
 {

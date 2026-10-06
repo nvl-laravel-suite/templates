@@ -9,6 +9,8 @@ use Spatie\LaravelData\Data;
 
 /**
  * Describes one deterministic source-definition synchronization operation.
+ *
+ * @api
  */
 final class TemplateDefinitionSyncData extends Data
 {

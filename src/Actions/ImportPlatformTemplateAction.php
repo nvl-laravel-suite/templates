@@ -23,7 +23,11 @@ use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Throwable;
 
-/** Orchestrates copying one granted platform Template, Content graph, and Media set atomically. */
+/**
+ * Orchestrates copying one granted platform Template, Content graph, and Media set atomically.
+ *
+ * @api
+ */
 final readonly class ImportPlatformTemplateAction
 {
     public function __construct(

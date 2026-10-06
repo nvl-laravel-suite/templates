@@ -17,6 +17,8 @@ use Nvl\Templates\Support\PdfConfig\Enums\PaperSize;
 
 /**
  * Fluent PDF options compatible with class-based template consumers.
+ *
+ * @api
  */
 final class PdfOptions
 {

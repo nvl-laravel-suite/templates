@@ -441,9 +441,9 @@ revision can be pinned:
 `nvl-templates.compatibility.assets.allowed_local_roots`. `url` uses Media's
 public or signed-private delivery and still obeys the Templates remote-resource
 policy. Missing Media, stale revisions, and unavailable named variations throw
-`TemplateResolutionException`. `MediaTemplateAssetRegistry::registerAdoptionAliases()`
-is available for controlled in-process legacy alias maps; durable mappings
-belong in configuration.
+`TemplateResolutionException`. Configure durable legacy alias maps in
+`nvl-templates.assets.media.aliases`; `MediaTemplateAssetRegistry::registerAdoptionAliases()`
+is an internal adoption helper.
 
 Class renderers that need complete localized copy can resolve ordered Content
 scope fallback without request pagination:
@@ -698,7 +698,7 @@ Assignment settings are bounded and exposed as `$settings` to Blade.
 idempotency-protected render record and dispatches `RenderTemplateJob` after
 commit. Queueing performs the complete stored-template preflight before
 acceptance and snapshots the resolved version, profile, payload, and assignment
-settings. `ProcessTemplateRenderAction` claims a time-bounded lease and renders
+settings. The internal `ProcessTemplateRenderAction` claims a time-bounded lease and renders
 that immutable request through the same core `RenderTemplateAction`, so later
 assignment changes cannot alter accepted work.
 
@@ -966,6 +966,12 @@ stored publication/version workflows, Content/Media composition, payload
 schemas, optimistic concurrency, assignments, idempotent queues, HTML and PDF
 output, output checksums/responses, resource security, route defaults, and
 diagnostics.
+
+## Supported PHP usage
+
+The source `@api` declarations identify supported workflows, extension contracts, and value types. Public members marked `@internal` and untagged implementation types remain package-owned. Concrete Actions retain their existing constructors, qualifiers, and `execute()` signatures.
+
+A package model returned or accepted by a public workflow is an identity/result handle. Use its declared type and `getKey()`, `getKeyName()`, `getMorphClass()`, `getRouteKey()`, `getRouteKeyName()`, `is()`, `isNot()`, and `relationLoaded()`. Read only explicitly declared in-memory `@nvl-consumer-read` fields; ordinary model PHPDocs and fillable attributes do not grant consumer reads. Obtain display projections through public reads. Persistence, additional model queries, relation access/loading, and generic model serialization are outside this contract. Host-model queries remain available, while traversal or aggregates of package capability relations require the package public reader or authorized adapter.
 
 ## License
 

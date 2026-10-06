@@ -20,6 +20,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Replaces draft content while published and retired versions stay immutable.
+ *
+ * @api
  */
 final readonly class UpdateTemplateVersionAction
 {
