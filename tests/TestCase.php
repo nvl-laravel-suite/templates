@@ -11,6 +11,7 @@ use Nvl\Content\Providers\ContentServiceProvider;
 use Nvl\Data\Providers\DataServiceProvider;
 use Nvl\Filterable\Providers\FilterableServiceProvider;
 use Nvl\Media\Providers\MediaServiceProvider;
+use Nvl\Support\Providers\LocaleServiceProvider;
 use Nvl\Templates\Providers\TemplatesServiceProvider;
 use Nvl\Templates\Rendering\BladeTemplateRenderer;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
@@ -32,6 +33,7 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
+            LocaleServiceProvider::class,
             DataServiceProvider::class,
             FilterableServiceProvider::class,
             TranslatableServiceProvider::class,

@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Nvl\Content\Content;
 use Nvl\Content\Data\ContentCompositionSnapshotBlockData;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\PublishTemplateVersionContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Data\TemplateDefinitionData;
@@ -28,13 +30,14 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class PublishTemplateVersionAction
+final readonly class PublishTemplateVersionAction implements PublishTemplateVersionContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateDefinitionRegistry $definitions,
         private Content $content,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     /**
@@ -113,7 +116,7 @@ final readonly class PublishTemplateVersionAction
                     'published_by' => $actor->id,
                     'published_at' => now(),
                 ])->save();
-                TemplateChanged::dispatch($version->template_id, 'version_published', $actor);
+                $this->domainEvents->dispatch(new TemplateChanged($version->template_id, 'version_published', $actor), $version->getConnection());
 
                 return $version->refresh();
             });

@@ -7,6 +7,7 @@ namespace Nvl\Templates\Services;
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 use Nvl\Templates\Contracts\TemplateRenderer;
+use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 
 /**
  * Resolves allowlisted renderer aliases through the Laravel container.
@@ -60,6 +61,9 @@ final class TemplateRendererRegistry
     {
         $class = $this->renderers[$alias]
             ?? throw new InvalidArgumentException("Template renderer [{$alias}] is not registered.");
+        if ($class === MpdfTemplateRenderer::class) {
+            (new TemplatePdfDependencyGuard)->assertAvailable();
+        }
         $renderer = $this->container->make($class);
 
         if (! $renderer instanceof TemplateRenderer) {

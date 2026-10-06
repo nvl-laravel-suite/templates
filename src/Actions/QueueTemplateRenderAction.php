@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
+use Nvl\Templates\Contracts\QueueTemplateRenderContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\RenderTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -29,7 +30,7 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class QueueTemplateRenderAction
+final readonly class QueueTemplateRenderAction implements QueueTemplateRenderContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,

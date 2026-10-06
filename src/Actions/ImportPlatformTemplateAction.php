@@ -11,6 +11,7 @@ use Nvl\Media\Contracts\MediaCatalogImport;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
+use Nvl\Templates\Contracts\ImportPlatformTemplateContract;
 use Nvl\Templates\Data\Mutations\ImportPlatformTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateVersionStatus;
@@ -28,7 +29,7 @@ use Throwable;
  *
  * @api
  */
-final readonly class ImportPlatformTemplateAction
+final readonly class ImportPlatformTemplateAction implements ImportPlatformTemplateContract
 {
     public function __construct(
         private TemplateContentCopyAccess $access,

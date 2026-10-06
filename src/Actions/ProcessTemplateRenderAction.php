@@ -6,6 +6,7 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Data\RenderedTemplateData;
 use Nvl\Templates\Enums\TemplateRenderStatus;
@@ -32,6 +33,7 @@ final readonly class ProcessTemplateRenderAction
         private RenderTemplateAction $renderTemplate,
         private TemplateOutputGuard $outputGuard,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     /**
@@ -167,11 +169,11 @@ final readonly class ProcessTemplateRenderAction
                         ? $render->settings
                         : null,
                 ])->save();
-                TemplateRendered::dispatch(
+                $this->domainEvents->dispatch(new TemplateRendered(
                     $render->id,
                     $render->template_id,
                     $render->template_version_id,
-                );
+                ), $render->getConnection());
 
                 return $render->refresh();
             });

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Nvl\Templates\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Templates\Database\Factories\TemplateTenantGrantFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
@@ -27,6 +29,9 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final class TemplateTenantGrant extends Model
 {
+    /** @use HasFactory<TemplateTenantGrantFactory> */
+    use HasFactory;
+
     use HasUuids;
 
     protected $fillable = ['template_version_id', 'recipient_tenant_id', 'source_revision', 'revision', 'revoked_at'];
@@ -52,5 +57,15 @@ final class TemplateTenantGrant extends Model
     public function version(): BelongsTo
     {
         return $this->belongsTo(TemplateVersion::class, 'template_version_id');
+    }
+
+    /**
+     * Return the package's runtime fixture factory.
+     *
+     * @internal
+     */
+    protected static function newFactory(): TemplateTenantGrantFactory
+    {
+        return TemplateTenantGrantFactory::new();
     }
 }

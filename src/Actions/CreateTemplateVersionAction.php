@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\CreateTemplateVersionContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\CreateTemplateVersionData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -21,12 +23,13 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class CreateTemplateVersionAction
+final readonly class CreateTemplateVersionAction implements CreateTemplateVersionContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateContentGuard $guard,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     public function execute(
@@ -55,7 +58,7 @@ final readonly class CreateTemplateVersionAction
                     'version' => $nextVersion,
                     'metadata' => $data->metadata,
                 ]);
-                TemplateChanged::dispatch($template->id, 'version_created', $actor);
+                $this->domainEvents->dispatch(new TemplateChanged($template->id, 'version_created', $actor), $template->getConnection());
 
                 return $version;
             });

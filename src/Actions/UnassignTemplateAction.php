@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
+use Nvl\Templates\Contracts\UnassignTemplateContract;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Events\TemplateChanged;
@@ -19,11 +21,12 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class UnassignTemplateAction
+final readonly class UnassignTemplateAction implements UnassignTemplateContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     public function execute(
@@ -68,7 +71,7 @@ final readonly class UnassignTemplateAction
                 $deleted = (bool) $assignment->delete();
 
                 if ($deleted) {
-                    TemplateChanged::dispatch($templateId, 'unassigned', $actor);
+                    $this->domainEvents->dispatch(new TemplateChanged($templateId, 'unassigned', $actor), $assignment->getConnection());
                 }
 
                 return $deleted;

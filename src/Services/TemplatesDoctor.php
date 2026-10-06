@@ -14,6 +14,8 @@ use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Models\Template;
+use Nvl\Templates\Rendering\MpdfTemplateRenderer;
+use Nvl\Templates\Rendering\UnavailablePdfTemplateRenderer;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Nvl\Templates\Support\TemplatesSchemaContract;
 
@@ -51,6 +53,8 @@ final class TemplatesDoctor
         $canonicalJson = new CanonicalJson;
         $required = [];
         $registeredRenderers = array_keys($renderers->all());
+        $pdfSelected = $this->builtInPdfSelected($definitions, $renderers);
+        $pdfAvailable = (new TemplatePdfDependencyGuard)->available();
 
         if ($scope === 'all' || $scope === 'core') {
             $required = [
@@ -87,13 +91,20 @@ final class TemplatesDoctor
                 false,
             ),
             'queue' => PackageOptions::queueName('templates'),
-            'pdf.version' => Mpdf::VERSION,
+            'pdf.version' => $pdfAvailable ? Mpdf::VERSION : null,
+            'dependencies.pdf' => [
+                'severity' => $pdfSelected ? 'error' : 'info',
+                'passed' => ! $pdfSelected || $pdfAvailable,
+                'message' => $pdfSelected
+                    ? ($pdfAvailable ? 'The selected built-in PDF renderer dependencies are available.' : 'Install mpdf/mpdf:^8.3.0 and its extensions before selecting the built-in PDF renderer.')
+                    : 'The built-in PDF capability is inactive; mPDF is optional.',
+            ],
             'pdf.remote_assets' => (bool) config(
                 'nvl-templates.pdf.remote_assets.enabled',
                 false,
             ),
         ];
-        $healthy = ! in_array(false, $required, true);
+        $healthy = ! in_array(false, $required, true) && (! $pdfSelected || $pdfAvailable);
         $checks['healthy'] = $healthy;
 
         return $checks;
@@ -110,18 +121,36 @@ final class TemplatesDoctor
         Factory $views,
     ): array {
         $defaultRenderer = config('nvl-templates.default_renderer', 'blade');
+        $pdfSelected = $this->builtInPdfSelected($definitions, $this->renderers);
 
         return [
             'renderer.default' => is_string($defaultRenderer)
                 && in_array($defaultRenderer, $registeredRenderers, true),
             'renderer.blade' => in_array('blade', $registeredRenderers, true),
-            'renderer.pdf' => in_array('pdf', $registeredRenderers, true),
+            'renderer.pdf' => ! $pdfSelected || in_array('pdf', $registeredRenderers, true),
             'view.default.blade' => $this->configuredDefaultViewExists($views, 'blade'),
-            'view.default.pdf' => $this->configuredDefaultViewExists($views, 'pdf'),
+            'view.default.pdf' => ! $pdfSelected || $this->configuredDefaultViewExists($views, 'pdf'),
             'views.definitions' => $this->definitionViewsExist($definitions, $views),
-            'pdf.temp_path' => $temporaryDirectories->isSafe(),
+            'pdf.temp_path' => ! $pdfSelected || $temporaryDirectories->isSafe(),
             'limits' => $this->limitsAreValid(),
         ];
+    }
+
+    /** Identify actual selections of the built-in PDF implementation without resolving renderers. */
+    private function builtInPdfSelected(TemplateDefinitionRegistry $definitions, TemplateRendererRegistry $renderers): bool
+    {
+        $selected = [config('nvl-templates.default_renderer', 'blade')];
+        foreach ($definitions->all() as $definition) {
+            $selected[] = $definition->renderer;
+        }
+        $classes = $renderers->all();
+        foreach ($selected as $alias) {
+            if (is_string($alias) && in_array($classes[$alias] ?? null, [MpdfTemplateRenderer::class, UnavailablePdfTemplateRenderer::class], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

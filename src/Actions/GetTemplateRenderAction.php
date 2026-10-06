@@ -6,6 +6,7 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\GetTemplateRenderContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
@@ -16,7 +17,7 @@ use Nvl\Templates\Models\TemplateRender;
  *
  * @api
  */
-final readonly class GetTemplateRenderAction
+final readonly class GetTemplateRenderAction implements GetTemplateRenderContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,

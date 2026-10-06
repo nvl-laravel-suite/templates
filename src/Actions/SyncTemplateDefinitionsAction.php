@@ -6,6 +6,7 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Nvl\Templates\Contracts\SyncTemplateDefinitionsContract;
 use Nvl\Templates\Data\TemplateDefinitionSyncData;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Models\Template;
@@ -18,7 +19,7 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class SyncTemplateDefinitionsAction
+final readonly class SyncTemplateDefinitionsAction implements SyncTemplateDefinitionsContract
 {
     public function __construct(private TemplateDefinitionRegistry $definitions) {}
 

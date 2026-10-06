@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\Enums\TenantContextMode;
 use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
+use Nvl\Templates\Contracts\RevokeTemplateTenantGrantContract;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -17,7 +18,7 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class RevokeTemplateTenantGrantAction
+final readonly class RevokeTemplateTenantGrantAction implements RevokeTemplateTenantGrantContract
 {
     public function __construct(private TenantContext $context) {}
 

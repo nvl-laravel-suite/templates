@@ -6,9 +6,11 @@ namespace Nvl\Templates\Models;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Templates\Database\Factories\TemplateFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -37,6 +39,9 @@ use Nvl\Translatable\Translatable as HasTranslations;
  */
 final class Template extends Model implements TranslatableModel
 {
+    /** @use HasFactory<TemplateFactory> */
+    use HasFactory;
+
     use HasTranslations;
     use HasUuids;
 
@@ -118,5 +123,15 @@ final class Template extends Model implements TranslatableModel
                 $template->revision = (is_numeric($revision) ? (int) $revision : 0) + 1;
             }
         });
+    }
+
+    /**
+     * Return the package's runtime fixture factory.
+     *
+     * @internal
+     */
+    protected static function newFactory(): TemplateFactory
+    {
+        return TemplateFactory::new();
     }
 }

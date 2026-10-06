@@ -10,28 +10,67 @@ use Nvl\Content\Contracts\ContentOwnerRegistrar;
 use Nvl\Content\Services\ContentCatalogCopyRegistry;
 use Nvl\Data\Services\TypeScriptSourceRegistry;
 use Nvl\Support\Doctor\PackageDoctorContributor;
+use Nvl\Support\Globals\GlobalNames;
 use Nvl\Support\OwnerRegistry;
 use Nvl\Support\Providers\SupportServiceProvider;
 use Nvl\Support\Providers\TenantServiceProvider;
 use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
 use Nvl\Support\Traits\MergesPackageConfiguration;
 use Nvl\Support\Traits\RegistersNamespacedResources;
+use Nvl\Templates\Actions\AssignTemplateAction;
+use Nvl\Templates\Actions\CreateTemplateAction;
+use Nvl\Templates\Actions\CreateTemplateVersionAction;
+use Nvl\Templates\Actions\GetTemplateAction;
+use Nvl\Templates\Actions\GetTemplateRenderAction;
+use Nvl\Templates\Actions\GrantTemplateToTenantAction;
+use Nvl\Templates\Actions\ImportPlatformTemplateAction;
+use Nvl\Templates\Actions\ListTemplateRendersAction;
+use Nvl\Templates\Actions\ListTemplatesAction;
+use Nvl\Templates\Actions\PublishTemplateVersionAction;
+use Nvl\Templates\Actions\QueueTemplateRenderAction;
+use Nvl\Templates\Actions\RenderStoredTemplateAction;
+use Nvl\Templates\Actions\RenderTemplateAction;
+use Nvl\Templates\Actions\RevokeTemplateTenantGrantAction;
+use Nvl\Templates\Actions\SyncTemplateDefinitionsAction;
+use Nvl\Templates\Actions\UnassignTemplateAction;
+use Nvl\Templates\Actions\UpdateTemplateAction;
+use Nvl\Templates\Actions\UpdateTemplateVersionAction;
 use Nvl\Templates\Console\AdoptTemplatesCommand;
 use Nvl\Templates\Console\PublishTemplateViewsCommand;
 use Nvl\Templates\Console\RecoverTemplateRendersCommand;
 use Nvl\Templates\Console\SyncTemplateDefinitionsCommand;
 use Nvl\Templates\Console\TemplatesDoctorCommand;
+use Nvl\Templates\Contracts\AssignTemplateContract;
+use Nvl\Templates\Contracts\CreateTemplateContract;
+use Nvl\Templates\Contracts\CreateTemplateVersionContract;
+use Nvl\Templates\Contracts\GetTemplateContract;
+use Nvl\Templates\Contracts\GetTemplateRenderContract;
+use Nvl\Templates\Contracts\GrantTemplateToTenantContract;
+use Nvl\Templates\Contracts\ImportPlatformTemplateContract;
+use Nvl\Templates\Contracts\ListTemplateRendersContract;
+use Nvl\Templates\Contracts\ListTemplatesContract;
+use Nvl\Templates\Contracts\PublishTemplateVersionContract;
+use Nvl\Templates\Contracts\QueueTemplateRenderContract;
+use Nvl\Templates\Contracts\RenderStoredTemplateContract;
+use Nvl\Templates\Contracts\RenderTemplateContract;
+use Nvl\Templates\Contracts\RevokeTemplateTenantGrantContract;
+use Nvl\Templates\Contracts\SyncTemplateDefinitionsContract;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Contracts\TemplateOwnerResolver;
 use Nvl\Templates\Contracts\TemplatePayloadValidator;
 use Nvl\Templates\Contracts\TemplateRenderer;
+use Nvl\Templates\Contracts\UnassignTemplateContract;
+use Nvl\Templates\Contracts\UpdateTemplateContract;
+use Nvl\Templates\Contracts\UpdateTemplateVersionContract;
 use Nvl\Templates\Data\MediaTemplateAssetData;
 use Nvl\Templates\Data\TemplateDefinitionData;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Pdf\Contracts\PdfServiceInterface;
 use Nvl\Templates\Pdf\PdfService;
+use Nvl\Templates\Rendering\MpdfTemplateRenderer;
+use Nvl\Templates\Rendering\UnavailablePdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 use Nvl\Templates\Services\ConfiguredTemplatePayloadValidator;
 use Nvl\Templates\Services\MediaTemplateAssetRegistry;
@@ -40,6 +79,7 @@ use Nvl\Templates\Services\NullTemplateAssetResolver;
 use Nvl\Templates\Services\TemplateContentCopyAccess;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Services\TemplateOwnerRegistry;
+use Nvl\Templates\Services\TemplatePdfDependencyGuard;
 use Nvl\Templates\Services\TemplateRendererRegistry;
 use Nvl\Templates\Services\TemplatesDoctor;
 use Nvl\Templates\Tenancy\TemplatesResourceRegistrar;
@@ -59,6 +99,25 @@ final class TemplatesServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bindIf(AssignTemplateContract::class, AssignTemplateAction::class);
+        $this->app->bindIf(CreateTemplateContract::class, CreateTemplateAction::class);
+        $this->app->bindIf(CreateTemplateVersionContract::class, CreateTemplateVersionAction::class);
+        $this->app->bindIf(GetTemplateContract::class, GetTemplateAction::class);
+        $this->app->bindIf(GetTemplateRenderContract::class, GetTemplateRenderAction::class);
+        $this->app->bindIf(GrantTemplateToTenantContract::class, GrantTemplateToTenantAction::class);
+        $this->app->bindIf(ImportPlatformTemplateContract::class, ImportPlatformTemplateAction::class);
+        $this->app->bindIf(ListTemplateRendersContract::class, ListTemplateRendersAction::class);
+        $this->app->bindIf(ListTemplatesContract::class, ListTemplatesAction::class);
+        $this->app->bindIf(PublishTemplateVersionContract::class, PublishTemplateVersionAction::class);
+        $this->app->bindIf(QueueTemplateRenderContract::class, QueueTemplateRenderAction::class);
+        $this->app->bindIf(RenderStoredTemplateContract::class, RenderStoredTemplateAction::class);
+        $this->app->bindIf(RenderTemplateContract::class, RenderTemplateAction::class);
+        $this->app->bindIf(RevokeTemplateTenantGrantContract::class, RevokeTemplateTenantGrantAction::class);
+        $this->app->bindIf(SyncTemplateDefinitionsContract::class, SyncTemplateDefinitionsAction::class);
+        $this->app->bindIf(UnassignTemplateContract::class, UnassignTemplateAction::class);
+        $this->app->bindIf(UpdateTemplateContract::class, UpdateTemplateAction::class);
+        $this->app->bindIf(UpdateTemplateVersionContract::class, UpdateTemplateVersionAction::class);
+
         $this->app->register(SupportServiceProvider::class);
         PackageDoctorContributor::register($this->app, 'nvl/templates', fn (): array => PackageDoctorContributor::reportChecks($this->app->make(TemplatesDoctor::class)->inspect(), 'nvl:templates:doctor'));
 
@@ -118,6 +177,10 @@ final class TemplatesServiceProvider extends ServiceProvider
         ContentOwnerRegistrar $contentOwners,
         ContentCatalogCopyRegistry $catalogCopies,
     ): void {
+        $this->app->make(GlobalNames::class)->translations('templates', __DIR__.'/../../lang', $this->app->make('translation.loader'));
+        $this->publishes([
+            __DIR__.'/../../lang' => lang_path('vendor/nvl-templates'),
+        ], 'nvl-templates-translations');
         $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, ['template-version']);
         $assets = $this->app->make(MediaTemplateAssetRegistry::class);
         $typeScriptSources->register(__DIR__.'/..', 'nvl/templates');
@@ -198,6 +261,10 @@ final class TemplatesServiceProvider extends ServiceProvider
                 || ! is_string($renderer)
                 || ! is_a($renderer, TemplateRenderer::class, true)) {
                 throw new InvalidArgumentException('Every configured template renderer is invalid.');
+            }
+
+            if ($renderer === MpdfTemplateRenderer::class && ! (new TemplatePdfDependencyGuard)->available()) {
+                $renderer = UnavailablePdfTemplateRenderer::class;
             }
 
             $registry->register($alias, $renderer);

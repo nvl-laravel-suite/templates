@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Nvl\Templates\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Templates\Database\Factories\TemplateAssignmentFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
@@ -27,6 +29,9 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final class TemplateAssignment extends Model
 {
+    /** @use HasFactory<TemplateAssignmentFactory> */
+    use HasFactory;
+
     use HasUuids;
 
     /** @var list<string> */
@@ -85,5 +90,15 @@ final class TemplateAssignment extends Model
                 $assignment->revision = (is_numeric($revision) ? (int) $revision : 0) + 1;
             }
         });
+    }
+
+    /**
+     * Return the package's runtime fixture factory.
+     *
+     * @internal
+     */
+    protected static function newFactory(): TemplateAssignmentFactory
+    {
+        return TemplateAssignmentFactory::new();
     }
 }

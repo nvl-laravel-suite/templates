@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
+use Nvl\Templates\Contracts\RenderTemplateContract;
 use Nvl\Templates\Data\RenderedTemplateData;
 use Nvl\Templates\Services\TemplateContextFactory;
 use Nvl\Templates\Services\TemplateOutputGuard;
@@ -15,7 +16,7 @@ use Nvl\Templates\Template;
  *
  * @api
  */
-final readonly class RenderTemplateAction
+final readonly class RenderTemplateAction implements RenderTemplateContract
 {
     public function __construct(
         private TemplateContextFactory $contexts,

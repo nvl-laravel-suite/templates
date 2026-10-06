@@ -8,6 +8,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Nvl\Filterable\Data\FilterSet;
 use Nvl\Filterable\Services\EloquentFilterApplier;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\ListTemplatesContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
@@ -20,7 +21,7 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class ListTemplatesAction
+final readonly class ListTemplatesAction implements ListTemplatesContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,

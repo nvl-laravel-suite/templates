@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\CreateTemplateContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\CreateTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -22,7 +24,7 @@ use Nvl\Translatable\Services\TranslationWriter;
  *
  * @api
  */
-final readonly class CreateTemplateAction
+final readonly class CreateTemplateAction implements CreateTemplateContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,
@@ -30,6 +32,7 @@ final readonly class CreateTemplateAction
         private TemplateContentGuard $guard,
         private TranslationWriter $translations,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     /**
@@ -53,7 +56,7 @@ final readonly class CreateTemplateAction
                 ]);
                 $this->translations->replace($template, $data->translations);
                 $template->load('translations');
-                TemplateChanged::dispatch($template->id, 'created', $actor);
+                $this->domainEvents->dispatch(new TemplateChanged($template->id, 'created', $actor), $template->getConnection());
 
                 return $template;
             });

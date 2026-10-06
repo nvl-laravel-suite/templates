@@ -7,7 +7,9 @@ namespace Nvl\Templates\Actions;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\AssignTemplateContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\AssignTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -29,7 +31,7 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class AssignTemplateAction
+final readonly class AssignTemplateAction implements AssignTemplateContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,
@@ -38,6 +40,7 @@ final readonly class AssignTemplateAction
         private TemplateContentGuard $guard,
         private TemplateVersionResolver $versions,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     /**
@@ -115,7 +118,7 @@ final readonly class AssignTemplateAction
                         'profile' => $data->profile,
                         'settings' => $data->settings,
                     ])->save();
-                    TemplateChanged::dispatch($template->id, 'assigned', $actor);
+                    $this->domainEvents->dispatch(new TemplateChanged($template->id, 'assigned', $actor), $template->getConnection());
 
                     return $assignment->refresh();
                 });

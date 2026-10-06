@@ -6,8 +6,10 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
+use Nvl\Templates\Contracts\UpdateTemplateVersionContract;
 use Nvl\Templates\Data\Mutations\UpdateTemplateVersionData;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
@@ -23,12 +25,13 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class UpdateTemplateVersionAction
+final readonly class UpdateTemplateVersionAction implements UpdateTemplateVersionContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateContentGuard $guard,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     public function execute(
@@ -65,7 +68,7 @@ final readonly class UpdateTemplateVersionAction
                     'content_snapshot' => null,
                     'content_hash' => null,
                 ])->save();
-                TemplateChanged::dispatch($version->template_id, 'version_updated', $actor);
+                $this->domainEvents->dispatch(new TemplateChanged($version->template_id, 'version_updated', $actor), $version->getConnection());
 
                 return $version->refresh();
             });

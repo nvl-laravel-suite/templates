@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\GetTemplateContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
@@ -15,7 +16,7 @@ use Nvl\Templates\Models\Template;
  *
  * @api
  */
-final readonly class GetTemplateAction
+final readonly class GetTemplateAction implements GetTemplateContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,

@@ -6,6 +6,7 @@ namespace Nvl\Templates\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -14,6 +15,7 @@ use Nvl\Content\Contracts\ContentOwner;
 use Nvl\Content\Data\ContentCompositionSnapshotData;
 use Nvl\Content\Traits\HasContent;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Templates\Database\Factories\TemplateVersionFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -45,6 +47,9 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 final class TemplateVersion extends Model implements ContentOwner
 {
     use HasContent;
+
+    /** @use HasFactory<TemplateVersionFactory> */
+    use HasFactory;
     use HasUuids;
 
     public const string CONTENT_OWNER_TYPE = 'nvl-template-version';
@@ -130,5 +135,15 @@ final class TemplateVersion extends Model implements ContentOwner
                 $version->revision = (is_numeric($revision) ? (int) $revision : 0) + 1;
             }
         });
+    }
+
+    /**
+     * Return the package's runtime fixture factory.
+     *
+     * @internal
+     */
+    protected static function newFactory(): TemplateVersionFactory
+    {
+        return TemplateVersionFactory::new();
     }
 }

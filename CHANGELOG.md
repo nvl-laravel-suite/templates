@@ -1,11 +1,19 @@
 # Changelog
 
+## Unreleased — consumer runtime integration
+
+- Added focused consumer contract/testing guidance and shipped-factory usage limits.
+- Versioned committed event payloads and documented canonical aliases, source connections, failure metadata and optional safe rendering.
+- Added explicit first-use/installer and deployment guidance; new acceptance checks remain pending.
+
+
 All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
 ### Changed
 
+- Renderer, PDF, asset, owner, payload, and authorization extension contracts remain the existing APIs. Optional PDF installation and worker behavior are unchanged. Document contract substitution and truthful host fixtures in Testing your app.
 - Classify the supported consumer PHP surface with explicit source annotations and restrict package model handles to declared identity and in-memory read fields; preserve existing workflow behavior and concrete signatures.
 - Isolate owned cache and lock keys under `nvl:templates:`; preserve generic host entries and explicit store choices.
 

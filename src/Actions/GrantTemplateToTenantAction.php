@@ -11,6 +11,7 @@ use Nvl\Support\Tenancy\Enums\TenantContextMode;
 use Nvl\Support\Tenancy\Enums\TenantStatus;
 use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
 use Nvl\Support\Tenancy\ValueObjects\TenantId;
+use Nvl\Templates\Contracts\GrantTemplateToTenantContract;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Models\TemplateTenantGrant;
@@ -22,7 +23,7 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final readonly class GrantTemplateToTenantAction
+final readonly class GrantTemplateToTenantAction implements GrantTemplateToTenantContract
 {
     public function __construct(private TenantContext $context, private TenantDirectory $directory) {}
 

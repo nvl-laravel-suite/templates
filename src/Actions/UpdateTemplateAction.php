@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Events\DomainEventDispatcher;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
+use Nvl\Templates\Contracts\UpdateTemplateContract;
 use Nvl\Templates\Data\Mutations\UpdateTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
@@ -23,13 +25,14 @@ use Nvl\Translatable\Services\TranslationWriter;
  *
  * @api
  */
-final readonly class UpdateTemplateAction
+final readonly class UpdateTemplateAction implements UpdateTemplateContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateContentGuard $guard,
         private TranslationWriter $translations,
         private TenantBoundary $boundary,
+        private DomainEventDispatcher $domainEvents,
     ) {}
 
     /**
@@ -69,7 +72,7 @@ final readonly class UpdateTemplateAction
                     'metadata' => $data->metadata,
                 ])->save();
                 $this->translations->sync($template, $data->translations, $translationMode);
-                TemplateChanged::dispatch($template->id, 'updated', $actor);
+                $this->domainEvents->dispatch(new TemplateChanged($template->id, 'updated', $actor), $template->getConnection());
 
                 return $template->refresh()->load('translations');
             });

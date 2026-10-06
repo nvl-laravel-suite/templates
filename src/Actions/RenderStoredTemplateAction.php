@@ -6,6 +6,7 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Str;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Templates\Contracts\RenderStoredTemplateContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\RenderTemplateData;
 use Nvl\Templates\Data\RenderedTemplateData;
@@ -22,7 +23,7 @@ use Nvl\Templates\Services\StoredTemplateRenderResolver;
  *
  * @api
  */
-final readonly class RenderStoredTemplateAction
+final readonly class RenderStoredTemplateAction implements RenderStoredTemplateContract
 {
     public function __construct(
         private TemplateAuthorization $authorization,

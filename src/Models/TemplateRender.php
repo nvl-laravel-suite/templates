@@ -6,6 +6,7 @@ namespace Nvl\Templates\Models;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -13,6 +14,7 @@ use Nvl\Media\Contracts\HasMedia;
 use Nvl\Media\Models\Media;
 use Nvl\Media\Traits\InteractsWithMedia;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Templates\Database\Factories\TemplateRenderFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -55,6 +57,9 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final class TemplateRender extends Model implements HasMedia
 {
+    /** @use HasFactory<TemplateRenderFactory> */
+    use HasFactory;
+
     use HasUuids;
     use InteractsWithMedia;
 
@@ -166,5 +171,15 @@ final class TemplateRender extends Model implements HasMedia
     public function assignment(): BelongsTo
     {
         return $this->belongsTo(TemplateAssignment::class, 'template_assignment_id');
+    }
+
+    /**
+     * Return the package's runtime fixture factory.
+     *
+     * @internal
+     */
+    protected static function newFactory(): TemplateRenderFactory
+    {
+        return TemplateRenderFactory::new();
     }
 }

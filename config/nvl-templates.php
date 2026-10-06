@@ -7,6 +7,7 @@ use Nvl\Templates\Rendering\BladeTemplateRenderer;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 
+/** Complete runtime defaults; publication sections are declared in ../resources/config/sections.json. */
 return [
     'connection' => null,
 
