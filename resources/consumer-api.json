@@ -1,0 +1,1273 @@
+{
+    "schema_version": 1,
+    "package": "nvl/templates",
+    "psr4": {
+        "Nvl\\Templates\\": "src"
+    },
+    "symbols": {
+        "Nvl\\Templates\\Actions\\AssignTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/AssignTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\CreateTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/CreateTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\CreateTemplateVersionAction": {
+            "kind": "class",
+            "file": "src/Actions/CreateTemplateVersionAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\GetTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/GetTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\GetTemplateRenderAction": {
+            "kind": "class",
+            "file": "src/Actions/GetTemplateRenderAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\GrantTemplateToTenantAction": {
+            "kind": "class",
+            "file": "src/Actions/GrantTemplateToTenantAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\ImportPlatformTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/ImportPlatformTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\ListTemplateRendersAction": {
+            "kind": "class",
+            "file": "src/Actions/ListTemplateRendersAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\ListTemplatesAction": {
+            "kind": "class",
+            "file": "src/Actions/ListTemplatesAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\PublishTemplateVersionAction": {
+            "kind": "class",
+            "file": "src/Actions/PublishTemplateVersionAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\QueueTemplateRenderAction": {
+            "kind": "class",
+            "file": "src/Actions/QueueTemplateRenderAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\RenderStoredTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/RenderStoredTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\RenderTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/RenderTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\RevokeTemplateTenantGrantAction": {
+            "kind": "class",
+            "file": "src/Actions/RevokeTemplateTenantGrantAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\SyncTemplateDefinitionsAction": {
+            "kind": "class",
+            "file": "src/Actions/SyncTemplateDefinitionsAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\UnassignTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/UnassignTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\UpdateTemplateAction": {
+            "kind": "class",
+            "file": "src/Actions/UpdateTemplateAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Actions\\UpdateTemplateVersionAction": {
+            "kind": "class",
+            "file": "src/Actions/UpdateTemplateVersionAction.php",
+            "methods": [
+                "__construct",
+                "execute"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Contracts\\TemplateAssetResolver": {
+            "kind": "interface",
+            "file": "src/Contracts/TemplateAssetResolver.php",
+            "methods": [
+                "resolve",
+                "scope"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Contracts\\TemplateAuthorization": {
+            "kind": "interface",
+            "file": "src/Contracts/TemplateAuthorization.php",
+            "methods": [
+                "authorize"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Contracts\\TemplateOwnerResolver": {
+            "kind": "interface",
+            "file": "src/Contracts/TemplateOwnerResolver.php",
+            "methods": [
+                "alias",
+                "resolve"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Contracts\\TemplatePayloadValidator": {
+            "kind": "interface",
+            "file": "src/Contracts/TemplatePayloadValidator.php",
+            "methods": [
+                "validate",
+                "validateSchema"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Contracts\\TemplateRenderer": {
+            "kind": "interface",
+            "file": "src/Contracts/TemplateRenderer.php",
+            "methods": [
+                "render"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\Mutations\\AssignTemplateData": {
+            "kind": "class",
+            "file": "src/Data/Mutations/AssignTemplateData.php",
+            "methods": [
+                "__construct",
+                "rules",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "expectedRevision",
+                "ownerId",
+                "ownerType",
+                "profile",
+                "settings",
+                "versionId"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\Mutations\\CreateTemplateData": {
+            "kind": "class",
+            "file": "src/Data/Mutations/CreateTemplateData.php",
+            "methods": [
+                "__construct",
+                "rules",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "key",
+                "metadata",
+                "status",
+                "translations"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\Mutations\\CreateTemplateVersionData": {
+            "kind": "class",
+            "file": "src/Data/Mutations/CreateTemplateVersionData.php",
+            "methods": [
+                "__construct",
+                "rules",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "metadata"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\Mutations\\ImportPlatformTemplateData": {
+            "kind": "class",
+            "file": "src/Data/Mutations/ImportPlatformTemplateData.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "expectedGrantRevision",
+                "expectedSourceRevision",
+                "grantId",
+                "idempotencyKey",
+                "mediaGrantIds",
+                "targetKey"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\Mutations\\RenderTemplateData": {
+            "kind": "class",
+            "file": "src/Data/Mutations/RenderTemplateData.php",
+            "methods": [
+                "__construct",
+                "rules",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "download",
+                "idempotencyKey",
+                "locale",
+                "ownerId",
+                "ownerType",
+                "payload",
+                "profile",
+                "versionId"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\Mutations\\UpdateTemplateData": {
+            "kind": "class",
+            "file": "src/Data/Mutations/UpdateTemplateData.php",
+            "methods": [
+                "__construct",
+                "rules",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "expectedRevision",
+                "metadata",
+                "status",
+                "translations"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\Mutations\\UpdateTemplateVersionData": {
+            "kind": "class",
+            "file": "src/Data/Mutations/UpdateTemplateVersionData.php",
+            "methods": [
+                "__construct",
+                "rules",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "expectedRevision",
+                "metadata"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\PdfMargins": {
+            "kind": "class",
+            "file": "src/Data/PdfMargins.php",
+            "methods": [
+                "__construct",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "bottom",
+                "footer",
+                "header",
+                "left",
+                "right",
+                "top"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\PdfOptions": {
+            "kind": "class",
+            "file": "src/Data/PdfOptions.php",
+            "methods": [
+                "__construct",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "author",
+                "compress",
+                "creator",
+                "defaultFont",
+                "defaultFontSize",
+                "dpi",
+                "footerData",
+                "footerHtml",
+                "footerView",
+                "headerData",
+                "headerHtml",
+                "headerView",
+                "imageDpi",
+                "imageQuality",
+                "keywords",
+                "margins",
+                "orientation",
+                "ownerPassword",
+                "pageSize",
+                "pdfa",
+                "pdfaAuto",
+                "protectionPermissions",
+                "showImageErrors",
+                "subject",
+                "temporaryDirectory",
+                "title",
+                "userPassword",
+                "watermark",
+                "watermarkOpacity"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\RenderedTemplateData": {
+            "kind": "class",
+            "file": "src/Data/RenderedTemplateData.php",
+            "methods": [
+                "__construct",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "byteSize",
+                "checksum",
+                "content",
+                "mimeType",
+                "renderer",
+                "subject",
+                "suggestedFilename"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\TemplateActorData": {
+            "kind": "class",
+            "file": "src/Data/TemplateActorData.php",
+            "methods": [
+                "__construct",
+                "contentActor",
+                "scopedRules",
+                "system",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "id",
+                "system",
+                "type"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\TemplateDefinitionSyncData": {
+            "kind": "class",
+            "file": "src/Data/TemplateDefinitionSyncData.php",
+            "methods": [
+                "__construct",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "key",
+                "operation"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\TemplateMetadataData": {
+            "kind": "class",
+            "file": "src/Data/TemplateMetadataData.php",
+            "methods": [
+                "__construct",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "description",
+                "group",
+                "metadata",
+                "supportedVariants",
+                "title"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Data\\TemplateOptions": {
+            "kind": "class",
+            "file": "src/Data/TemplateOptions.php",
+            "methods": [
+                "__construct",
+                "scopedRules",
+                "toArray",
+                "toModel",
+                "toModelFiltered",
+                "toModelPatch",
+                "translatedAttributes",
+                "translatedMessages"
+            ],
+            "properties": [
+                "filename",
+                "locale",
+                "pdf",
+                "renderer",
+                "rendererOptions",
+                "subject"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Enums\\PdfOrientation": {
+            "kind": "enum",
+            "file": "src/Enums/PdfOrientation.php",
+            "methods": [
+                "cases",
+                "from",
+                "mpdfValue",
+                "tryFrom"
+            ],
+            "properties": [
+                "name",
+                "value"
+            ],
+            "constants": [
+                "Landscape",
+                "Portrait"
+            ]
+        },
+        "Nvl\\Templates\\Enums\\PdfPageSize": {
+            "kind": "enum",
+            "file": "src/Enums/PdfPageSize.php",
+            "methods": [
+                "cases",
+                "from",
+                "tryFrom"
+            ],
+            "properties": [
+                "name",
+                "value"
+            ],
+            "constants": [
+                "A3",
+                "A4",
+                "A5",
+                "Legal",
+                "Letter"
+            ]
+        },
+        "Nvl\\Templates\\Enums\\TemplateAbility": {
+            "kind": "enum",
+            "file": "src/Enums/TemplateAbility.php",
+            "methods": [
+                "cases",
+                "from",
+                "tryFrom"
+            ],
+            "properties": [
+                "name",
+                "value"
+            ],
+            "constants": [
+                "Assign",
+                "Create",
+                "Delete",
+                "List",
+                "Publish",
+                "Render",
+                "Update",
+                "View"
+            ]
+        },
+        "Nvl\\Templates\\Enums\\TemplateStatus": {
+            "kind": "enum",
+            "file": "src/Enums/TemplateStatus.php",
+            "methods": [
+                "cases",
+                "from",
+                "tryFrom"
+            ],
+            "properties": [
+                "name",
+                "value"
+            ],
+            "constants": [
+                "Active",
+                "Archived",
+                "Inactive"
+            ]
+        },
+        "Nvl\\Templates\\Html\\HtmlPayload": {
+            "kind": "class",
+            "file": "src/Html/HtmlPayload.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "css",
+                "diagnostics",
+                "html"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Html\\TemplateContext": {
+            "kind": "class",
+            "file": "src/Html/TemplateContext.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "data",
+                "fallbackLanguage",
+                "frameKey",
+                "language",
+                "options",
+                "stickers",
+                "variant"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Html\\TemplateRenderer": {
+            "kind": "class",
+            "file": "src/Html/TemplateRenderer.php",
+            "methods": [
+                "render"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Models\\Template": {
+            "kind": "class",
+            "file": "src/Models/Template.php",
+            "methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Models\\TemplateAssignment": {
+            "kind": "class",
+            "file": "src/Models/TemplateAssignment.php",
+            "methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Models\\TemplateRender": {
+            "kind": "class",
+            "file": "src/Models/TemplateRender.php",
+            "methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Models\\TemplateTenantGrant": {
+            "kind": "class",
+            "file": "src/Models/TemplateTenantGrant.php",
+            "methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Models\\TemplateVersion": {
+            "kind": "class",
+            "file": "src/Models/TemplateVersion.php",
+            "methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Pdf\\Contracts\\GeneratedPdfInterface": {
+            "kind": "interface",
+            "file": "src/Pdf/Contracts/GeneratedPdfInterface.php",
+            "methods": [
+                "display",
+                "download",
+                "getContent",
+                "save"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Pdf\\Contracts\\PdfServiceInterface": {
+            "kind": "interface",
+            "file": "src/Pdf/Contracts/PdfServiceInterface.php",
+            "methods": [
+                "renderHtml",
+                "renderTemplate",
+                "saveHtml",
+                "saveToStorage",
+                "saveWithTemplate"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Pdf\\Options\\PdfOptions": {
+            "kind": "class",
+            "file": "src/Pdf/Options/PdfOptions.php",
+            "methods": [
+                "__construct",
+                "a4Portrait",
+                "debugImages",
+                "dpi",
+                "headerFooter",
+                "imageQuality",
+                "margins",
+                "metadata",
+                "orientation",
+                "pageNumbering",
+                "paper",
+                "protection",
+                "toData",
+                "toMpdfConfig",
+                "watermark"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Pdf\\PdfService": {
+            "kind": "class",
+            "file": "src/Pdf/PdfService.php",
+            "methods": [
+                "__construct",
+                "renderHtml",
+                "renderTemplate",
+                "saveHtml",
+                "saveToStorage",
+                "saveWithTemplate"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Rendering\\TemplateRenderContext": {
+            "kind": "class",
+            "file": "src/Rendering/TemplateRenderContext.php",
+            "methods": [
+                "__construct",
+                "blocks",
+                "composition",
+                "data",
+                "regions",
+                "settings",
+                "viewData"
+            ],
+            "properties": [
+                "filename",
+                "locale",
+                "pdf",
+                "renderer",
+                "rendererOptions",
+                "subject",
+                "template",
+                "view"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateRendererRegistry": {
+            "kind": "class",
+            "file": "src/Services/TemplateRendererRegistry.php",
+            "methods": [
+                "__construct",
+                "all",
+                "get",
+                "has",
+                "register"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateResponseFactory": {
+            "kind": "class",
+            "file": "src/Services/TemplateResponseFactory.php",
+            "methods": [
+                "__construct",
+                "download",
+                "inline"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Data\\HeaderFooterData": {
+            "kind": "class",
+            "file": "src/Support/PdfConfig/Data/HeaderFooterData.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "footerHtml",
+                "headerHtml",
+                "showOnFirstPage",
+                "showOnOtherPages"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Data\\MarginsData": {
+            "kind": "class",
+            "file": "src/Support/PdfConfig/Data/MarginsData.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "bottom",
+                "footer",
+                "header",
+                "left",
+                "right",
+                "top"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Data\\MetadataData": {
+            "kind": "class",
+            "file": "src/Support/PdfConfig/Data/MetadataData.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "author",
+                "creator",
+                "keywords",
+                "subject",
+                "title"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Data\\PageNumberingData": {
+            "kind": "class",
+            "file": "src/Support/PdfConfig/Data/PageNumberingData.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "enabled",
+                "position",
+                "template"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Data\\ProtectionData": {
+            "kind": "class",
+            "file": "src/Support/PdfConfig/Data/ProtectionData.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "enabled",
+                "ownerPassword",
+                "permissions",
+                "userPassword"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Data\\WatermarkData": {
+            "kind": "class",
+            "file": "src/Support/PdfConfig/Data/WatermarkData.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "alpha",
+                "show",
+                "text"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\EngineConfig": {
+            "kind": "class",
+            "file": "src/Support/PdfConfig/EngineConfig.php",
+            "methods": [
+                "__construct",
+                "enableCompression",
+                "setDefaultFont",
+                "setDpi",
+                "setHeaderFooter",
+                "setImageQuality",
+                "setMargins",
+                "setMetadata",
+                "setOrientation",
+                "setPageNumbering",
+                "setPageSize",
+                "setProtection",
+                "setTempDir",
+                "setWatermark",
+                "toArray",
+                "toPdfOptions"
+            ],
+            "properties": [
+                "defaultFont",
+                "dpi",
+                "enableCompression",
+                "format",
+                "headerFooter",
+                "imageDpi",
+                "imageQuality",
+                "margins",
+                "metadata",
+                "orientation",
+                "pageNumbering",
+                "protection",
+                "showImageErrors",
+                "tempDir",
+                "watermark"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Enums\\PageOrientation": {
+            "kind": "enum",
+            "file": "src/Support/PdfConfig/Enums/PageOrientation.php",
+            "methods": [
+                "cases",
+                "from",
+                "tryFrom"
+            ],
+            "properties": [
+                "name",
+                "value"
+            ],
+            "constants": [
+                "LANDSCAPE",
+                "PORTRAIT"
+            ]
+        },
+        "Nvl\\Templates\\Support\\PdfConfig\\Enums\\PaperSize": {
+            "kind": "enum",
+            "file": "src/Support/PdfConfig/Enums/PaperSize.php",
+            "methods": [
+                "cases",
+                "from",
+                "tryFrom"
+            ],
+            "properties": [
+                "name",
+                "value"
+            ],
+            "constants": [
+                "A3",
+                "A4",
+                "A5",
+                "LEGAL",
+                "LETTER"
+            ]
+        },
+        "Nvl\\Templates\\Template": {
+            "kind": "class",
+            "file": "src/Template.php",
+            "methods": [
+                "__construct"
+            ],
+            "properties": [
+                "composition",
+                "data",
+                "key",
+                "options",
+                "schema",
+                "settings",
+                "view"
+            ],
+            "constants": []
+        },
+        "Nvl\\Templates\\Templates\\BasePdfTemplate": {
+            "kind": "class",
+            "file": "src/Templates/BasePdfTemplate.php",
+            "methods": [
+                "__construct",
+                "addAsset",
+                "addAssetByKey",
+                "addAssetsByScope",
+                "addFramesByScope",
+                "addInlineAsset",
+                "addStickerByKey",
+                "addStickerSrc",
+                "addStickersByScope",
+                "addUrlAsset",
+                "configure",
+                "dataClass",
+                "defaultFrame",
+                "download",
+                "generate",
+                "generateQrCode",
+                "getAllContent",
+                "getAsset",
+                "getAssetDataUri",
+                "getAssetFileUrl",
+                "getConfig",
+                "getContent",
+                "getContentFromNamespace",
+                "getDefaultFilename",
+                "getModule",
+                "getName",
+                "getRequiredData",
+                "getStorageDisk",
+                "getStoragePath",
+                "getViewPath",
+                "hasAsset",
+                "hasContent",
+                "isMultivariate",
+                "metadata",
+                "multivariate",
+                "preview",
+                "registerAsset",
+                "registerUrlAsset",
+                "render",
+                "requires",
+                "save",
+                "saveToStorage",
+                "setAssets",
+                "setData",
+                "setDataObject",
+                "setFooterHtml",
+                "setHeaderHtml",
+                "setLanguage",
+                "setMargins",
+                "setMetadata",
+                "setOption",
+                "setOptions",
+                "setOrientation",
+                "setPageNumbering",
+                "setPageSize",
+                "setProtection",
+                "setVariable",
+                "setWatermark",
+                "supportsQrCode",
+                "useFrame",
+                "useStickers",
+                "validate",
+                "variant",
+                "withComposition",
+                "withContent",
+                "withDataSchema",
+                "withFallbackLanguage"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Templates\\BaseTemplate": {
+            "kind": "class",
+            "file": "src/Templates/BaseTemplate.php",
+            "methods": [
+                "__construct",
+                "configure",
+                "getAllContent",
+                "getAsset",
+                "getAssetDataUri",
+                "getAssetFileUrl",
+                "getConfig",
+                "getContent",
+                "getContentFromNamespace",
+                "getDefaultFilename",
+                "getModule",
+                "getName",
+                "getRequiredData",
+                "getStorageDisk",
+                "getStoragePath",
+                "getViewPath",
+                "hasAsset",
+                "hasContent",
+                "metadata",
+                "registerAsset",
+                "registerUrlAsset",
+                "render",
+                "requires",
+                "setAssets",
+                "setData",
+                "setLanguage",
+                "setOptions",
+                "setVariable",
+                "validate",
+                "withComposition",
+                "withContent"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Templates\\Contracts\\TemplateInterface": {
+            "kind": "interface",
+            "file": "src/Templates/Contracts/TemplateInterface.php",
+            "methods": [
+                "getConfig",
+                "getDefaultFilename",
+                "getModule",
+                "getName",
+                "getStorageDisk",
+                "getStoragePath",
+                "metadata",
+                "registerAsset",
+                "registerUrlAsset",
+                "render",
+                "requires",
+                "setAssets",
+                "setData",
+                "setLanguage",
+                "setOptions",
+                "setVariable",
+                "validate"
+            ],
+            "properties": [],
+            "constants": []
+        }
+    },
+    "models": {
+        "Nvl\\Templates\\Models\\Template": {
+            "read": [],
+            "identity_methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "capability_relations": []
+        },
+        "Nvl\\Templates\\Models\\TemplateAssignment": {
+            "read": [],
+            "identity_methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "capability_relations": []
+        },
+        "Nvl\\Templates\\Models\\TemplateRender": {
+            "read": [],
+            "identity_methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "capability_relations": []
+        },
+        "Nvl\\Templates\\Models\\TemplateTenantGrant": {
+            "read": [],
+            "identity_methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "capability_relations": []
+        },
+        "Nvl\\Templates\\Models\\TemplateVersion": {
+            "read": [],
+            "identity_methods": [
+                "getKey",
+                "getKeyName",
+                "getMorphClass",
+                "getRouteKey",
+                "getRouteKeyName",
+                "is",
+                "isNot",
+                "relationLoaded"
+            ],
+            "capability_relations": []
+        }
+    },
+    "capability_relations": {},
+    "tables": {
+        "assignments": "nvl_templates_assignments",
+        "i18n": "nvl_templates_i18n",
+        "renders": "nvl_templates_renders",
+        "templates": "nvl_templates_templates",
+        "tenant_grant_locks": "nvl_templates_tenant_grant_locks",
+        "tenant_grants": "nvl_templates_tenant_grants",
+        "versions": "nvl_templates_versions"
+    }
+}
