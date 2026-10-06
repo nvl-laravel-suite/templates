@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Nvl\Content\Actions\ExportContentSnapshotForCopyAction;
 use Nvl\Content\Actions\ImportContentSnapshotAction;
 use Nvl\Media\Contracts\MediaCatalogImport;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Tenancy\Contracts\TenantContext;
+use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
 use Nvl\Templates\Data\Mutations\ImportPlatformTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateVersionStatus;
@@ -18,9 +21,6 @@ use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\TemplateContentCopyAccess;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Contracts\TenantContext;
-use Nvl\Tenancy\Exceptions\TenantBoundaryViolation;
-use Nvl\Tenancy\Services\TenantBoundary;
 use Throwable;
 
 /** Orchestrates copying one granted platform Template, Content graph, and Media set atomically. */

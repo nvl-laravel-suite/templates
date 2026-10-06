@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Nvl\Content\Data\RenderedContentCompositionData;
+use Nvl\Support\Facades\Locales;
 use Nvl\Templates\Data\TemplateMetadataData;
 use Nvl\Templates\Services\TemplateAssetGuard;
 use Nvl\Templates\Services\TemplateContentGuard;
@@ -44,8 +45,7 @@ abstract class BaseTemplate implements TemplateInterface
         private readonly TemplateContentGuard $contentGuard,
         private readonly TemplateAssetGuard $assetGuard,
     ) {
-        $locale = config('app.locale', 'en');
-        $this->language = is_string($locale) ? $locale : 'en';
+        $this->language = Locales::default();
         $this->config = new EngineConfig;
         $this->configure();
         $this->loadRequirements();
@@ -473,7 +473,7 @@ abstract class BaseTemplate implements TemplateInterface
             throw new InvalidArgumentException("Template locale [{$language}] is invalid.");
         }
 
-        return mb_strtolower(str_replace('_', '-', $language));
+        return mb_strtolower(Locales::normalize($language));
     }
 
     private function assertCompositionLocale(): void

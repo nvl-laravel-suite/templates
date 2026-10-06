@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Auth\Access\AuthorizationException;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Models\TemplateRender;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Returns one authorized durable render with its private Media reference loaded.

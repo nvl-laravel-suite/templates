@@ -6,10 +6,10 @@ namespace Nvl\Templates\Services;
 
 use Nvl\Media\Enums\MediaLifecycleStatus;
 use Nvl\Media\Models\Media;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Data\MediaTemplateAssetData;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Resolves opt-in template aliases through revision-aware NVL Media delivery.

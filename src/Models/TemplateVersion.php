@@ -13,6 +13,7 @@ use Nvl\Content\Casts\ContentCompositionSnapshotCast;
 use Nvl\Content\Contracts\ContentOwner;
 use Nvl\Content\Data\ContentCompositionSnapshotData;
 use Nvl\Content\Traits\HasContent;
+use Nvl\Support\Config\PackageStorage;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -75,12 +76,12 @@ final class TemplateVersion extends Model implements ContentOwner
 
     public function getTable(): string
     {
-        return TemplatesConfiguration::table(TemplatesTables::Versions);
+        return TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Versions));
     }
 
     public function getConnectionName(): ?string
     {
-        return TemplatesConfiguration::connection() ?? parent::getConnectionName();
+        return PackageStorage::connectionName($this->connection ?? PackageStorage::connection('templates') ?? parent::getConnectionName());
     }
 
     /**

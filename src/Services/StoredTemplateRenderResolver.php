@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use Nvl\Content\Content;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplatePayloadValidator;
 use Nvl\Templates\Data\Mutations\RenderTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -18,7 +19,6 @@ use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Rendering\ResolvedStoredTemplateRender;
 use Nvl\Templates\Template as RenderableTemplate;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Resolves every stored-template invariant into one immutable render plan.

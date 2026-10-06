@@ -5,11 +5,18 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\Schema;
+use Nvl\Support\Config\PackageStorage;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Nvl\Templates\Support\TemplatesSchemaContract;
 
 return new class extends Migration
 {
+    /** Use the effective package connection for Laravel's migration transaction. */
+    public function getConnection(): ?string
+    {
+        return PackageStorage::connection('templates');
+    }
+
     /**
      * Refuse unowned or structurally incomplete canonical Templates tables.
      */

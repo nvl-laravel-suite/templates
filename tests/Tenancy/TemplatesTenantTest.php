@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
+use Nvl\Support\Tenancy\Enums\TenantContextMode;
+use Nvl\Support\Tenancy\Enums\TenantResourceKind;
+use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
+use Nvl\Support\Tenancy\ValueObjects\TenantContextSnapshot;
+use Nvl\Support\Tenancy\ValueObjects\TenantId;
+use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
 use Nvl\Templates\Jobs\RenderTemplateJob;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateVersion;
-use Nvl\Tenancy\Enums\TenantContextMode;
-use Nvl\Tenancy\Enums\TenantResourceKind;
-use Nvl\Tenancy\Services\TenantResourceRegistry;
-use Nvl\Tenancy\ValueObjects\TenantContextSnapshot;
-use Nvl\Tenancy\ValueObjects\TenantId;
-use Nvl\Tenancy\ValueObjects\TenantJobEnvelope;
 
 it('registers the complete template ownership graph', function (): void {
     $resources = app(TenantResourceRegistry::class);

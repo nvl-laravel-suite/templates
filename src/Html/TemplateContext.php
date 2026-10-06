@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Html;
 
+use Nvl\Support\Facades\Locales;
+
 /**
  * Typed preparation context for class-based templates.
  */
@@ -23,11 +25,9 @@ final class TemplateContext
         public array $stickers = [],
         public ?string $frameKey = null,
     ) {
-        $locale = config('app.locale', 'en');
-        $fallback = config('app.fallback_locale', 'en');
         $this->language = $this->language !== ''
             ? $this->language
-            : (is_string($locale) ? $locale : 'en');
-        $this->fallbackLanguage ??= is_string($fallback) ? $fallback : 'en';
+            : Locales::default();
+        $this->fallbackLanguage ??= Locales::fallbacks()[0] ?? Locales::default();
     }
 }

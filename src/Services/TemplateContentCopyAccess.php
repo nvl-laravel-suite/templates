@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use Nvl\Content\Contracts\ContentCatalogCopyAccess;
+use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
+use Nvl\Support\Tenancy\ValueObjects\TenantId;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Models\TemplateVersion;
-use Nvl\Tenancy\Exceptions\TenantBoundaryViolation;
-use Nvl\Tenancy\ValueObjects\TenantId;
 
 final readonly class TemplateContentCopyAccess implements ContentCatalogCopyAccess
 {

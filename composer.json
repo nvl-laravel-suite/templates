@@ -3,7 +3,14 @@
     "description": "Composable Blade and PDF template abstractions and renderers for Laravel",
     "type": "library",
     "license": "MIT",
-    "keywords": ["laravel", "templates", "rendering", "documents", "localization", "media"],
+    "keywords": [
+        "laravel",
+        "templates",
+        "rendering",
+        "documents",
+        "localization",
+        "media"
+    ],
     "require": {
         "php": "^8.3",
         "ext-fileinfo": "*",
@@ -16,7 +23,6 @@
         "nvl/core": "^2.0",
         "nvl/filterable": "^2.0",
         "nvl/media": "^2.0",
-        "nvl/tenancy": "^2.0",
         "nvl/translatable": "^2.0",
         "spatie/laravel-data": "^4.23",
         "spatie/typescript-transformer": "^3.3",
@@ -25,6 +31,7 @@
     "require-dev": {
         "larastan/larastan": "^3.10",
         "laravel/pint": "^1.27",
+        "nvl/tenancy": "^2.0",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0"
@@ -43,7 +50,11 @@
         "analyse": "phpstan analyse --memory-limit=2G",
         "format": "pint --parallel --format agent",
         "format:test": "pint --parallel --test --format agent",
-        "quality": ["@format:test", "@analyse", "@test"],
+        "quality": [
+            "@format:test",
+            "@analyse",
+            "@test"
+        ],
         "test": "pest --compact"
     },
     "extra": {
@@ -75,5 +86,8 @@
         ]
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "suggest": {
+        "nvl/tenancy": "Enables enforcing tenant ownership, scoped execution, adoption, and captured tenant queue contexts."
+    }
 }

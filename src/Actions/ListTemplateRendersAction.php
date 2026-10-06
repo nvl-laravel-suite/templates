@@ -8,13 +8,13 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Nvl\Filterable\Data\FilterSet;
 use Nvl\Filterable\Services\EloquentFilterApplier;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Services\TemplateRenderFilterSchema;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Lists authorized durable render history through a fixed query allowlist.

@@ -5,17 +5,24 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Nvl\Support\Config\PackageStorage;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 return new class extends Migration
 {
+    /** Use the effective package connection for Laravel's migration transaction. */
+    public function getConnection(): ?string
+    {
+        return PackageStorage::connection('templates');
+    }
+
     public function up(): void
     {
         $schema = Schema::connection(TemplatesConfiguration::connection());
-        $tableName = TemplatesConfiguration::table(TemplatesTables::TenantGrants);
+        $tableName = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::TenantGrants));
         if ($schema->hasTable($tableName)) {
-            return;
+            throw new LogicException('Existing package table is not owned by this migration. Run nvl:doctor --strict and use nvl:schema:upgrade for a verified legacy installation.');
         }
         $schema->create($tableName, static function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -28,7 +35,7 @@ return new class extends Migration
             $table->unique(['template_version_id', 'recipient_tenant_id'], 'template_grants_version_recipient_unique');
             $table->index(['recipient_tenant_id', 'revoked_at'], 'template_grants_recipient_active_idx');
         });
-        $lockTable = TemplatesConfiguration::table(TemplatesTables::TenantGrantLocks);
+        $lockTable = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::TenantGrantLocks));
         if (! $schema->hasTable($lockTable)) {
             $schema->create($lockTable, static function (Blueprint $table): void {
                 $table->uuid('recipient_tenant_id');

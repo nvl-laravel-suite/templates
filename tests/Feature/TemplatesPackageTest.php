@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -37,6 +38,7 @@ use Nvl\Media\Enums\MediaVisibility;
 use Nvl\Media\Models\Media;
 use Nvl\Media\Models\MediaAssociation;
 use Nvl\Media\Services\MediaPathResolver;
+use Nvl\Support\Tenancy\Contracts\TenantInstallationState;
 use Nvl\Templates\Actions\AdoptTemplatesAction;
 use Nvl\Templates\Actions\AssignTemplateAction;
 use Nvl\Templates\Actions\CreateTemplateAction;
@@ -100,6 +102,7 @@ use Nvl\Templates\Services\TemplateAdoptionManifest;
 use Nvl\Templates\Services\TemplateAdoptionSchema;
 use Nvl\Templates\Services\TemplateContentGuard;
 use Nvl\Templates\Services\TemplateResponseFactory;
+use Nvl\Templates\Services\TemplatesDoctor;
 use Nvl\Templates\Support\PdfConfig\Data\HeaderFooterData;
 use Nvl\Templates\Support\PdfConfig\Data\PageNumberingData;
 use Nvl\Templates\Support\PdfConfig\EngineConfig;
@@ -108,7 +111,6 @@ use Nvl\Templates\Support\TemplatesRouteConfiguration;
 use Nvl\Templates\Template as RenderableTemplate;
 use Nvl\Templates\Tests\Fixtures\TestClassPdfTemplate;
 use Nvl\Templates\Tests\Fixtures\TestTemplateOwner;
-use Nvl\Tenancy\Services\TenantInstallationState;
 
 /**
  * @param  array<string, mixed>  $values
@@ -317,9 +319,10 @@ it('installs its composition schema with management routes disabled', function (
     expect($publishedMigrationPath)->toBeString()
         ->and($publishableMigrationPaths)->toContain($publishedMigrationPath);
 
-    $this->artisan('nvl:templates:doctor', ['--strict' => true, '--format' => 'json'])
-        ->assertSuccessful()
-        ->expectsOutputToContain('"pdf.version"');
+    $status = Artisan::call('nvl:templates:doctor', ['--strict' => true, '--format' => 'json']);
+    $diagnostics = Artisan::output();
+    $this->assertSame(0, $status, $diagnostics);
+    expect($diagnostics)->toContain('"pdf.version"');
 
     config()->set([
         'templates.rendering.output.persist' => false,
@@ -332,12 +335,28 @@ it('installs its composition schema with management routes disabled', function (
     ])->assertSuccessful()->expectsOutputToContain('"output.disk": true');
 });
 
+it('keeps logical diagnostic keys stable for a consumer table override', function (): void {
+    config()->set('templates.tables.templates', 'host_template_library');
+
+    $checks = app(TemplatesDoctor::class)->inspect('database');
+
+    expect(TemplatesTables::get(TemplatesTables::Templates))->toBe('host_template_library')
+        ->and($checks)->toHaveKeys([
+            'table.templates',
+            'columns.templates.canonical',
+            'indexes.templates.canonical',
+            'constraints.templates.canonical',
+        ])
+        ->not->toHaveKey('table.host_template_library')
+        ->and($checks['table.templates'])->toBeFalse();
+});
+
 it('fails closed for unowned canonical tables and reports missing named indexes', function (): void {
-    $creator = '2026_07_27_100001_create_templates_table';
+    $creator = '2026_07_27_100001_nvl_templates_create_templates_table';
     $record = DB::table('migrations')->where('migration', $creator)->first();
     expect($record)->not->toBeNull();
     DB::table('migrations')->where('migration', $creator)->delete();
-    $preflight = require __DIR__.'/../../database/migrations/2026_07_27_100000_assert_template_schema_compatibility.php';
+    $preflight = require __DIR__.'/../../database/migrations/2026_07_27_100000_nvl_templates_assert_template_schema_compatibility.php';
     $exception = null;
 
     try {

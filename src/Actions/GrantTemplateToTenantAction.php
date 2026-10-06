@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Tenancy\Contracts\TenantContext;
+use Nvl\Support\Tenancy\Contracts\TenantDirectory;
+use Nvl\Support\Tenancy\Enums\TenantContextMode;
+use Nvl\Support\Tenancy\Enums\TenantStatus;
+use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
+use Nvl\Support\Tenancy\ValueObjects\TenantId;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Contracts\TenantContext;
-use Nvl\Tenancy\Contracts\TenantDirectory;
-use Nvl\Tenancy\Enums\TenantContextMode;
-use Nvl\Tenancy\Enums\TenantStatus;
-use Nvl\Tenancy\Exceptions\TenantBoundaryViolation;
-use Nvl\Tenancy\ValueObjects\TenantId;
 
 final readonly class GrantTemplateToTenantAction
 {
@@ -29,7 +29,7 @@ final readonly class GrantTemplateToTenantAction
 
         return DB::connection(TemplatesConfiguration::connection())->transaction(function () use ($versionId, $recipient, $sourceRevision): TemplateTenantGrant {
             $connection = DB::connection(TemplatesConfiguration::connection());
-            $lockTable = TemplatesConfiguration::table(TemplatesTables::TenantGrantLocks);
+            $lockTable = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::TenantGrantLocks));
             $connection->table($lockTable)->insertOrIgnore([
                 'recipient_tenant_id' => $recipient->value,
                 'template_version_id' => $versionId,

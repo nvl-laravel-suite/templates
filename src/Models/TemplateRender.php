@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Nvl\Media\Contracts\HasMedia;
 use Nvl\Media\Models\Media;
 use Nvl\Media\Traits\InteractsWithMedia;
+use Nvl\Support\Config\PackageStorage;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -104,7 +105,7 @@ final class TemplateRender extends Model implements HasMedia
      */
     public function getTable(): string
     {
-        return TemplatesConfiguration::table(TemplatesTables::Renders);
+        return TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Renders));
     }
 
     /**
@@ -112,7 +113,7 @@ final class TemplateRender extends Model implements HasMedia
      */
     public function getConnectionName(): ?string
     {
-        return TemplatesConfiguration::connection() ?? parent::getConnectionName();
+        return PackageStorage::connectionName($this->connection ?? PackageStorage::connection('templates') ?? parent::getConnectionName());
     }
 
     /**

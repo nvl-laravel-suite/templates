@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Nvl\Support\Facades\Locales;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Pdf\Contracts\GeneratedPdfInterface;
 use Nvl\Templates\Pdf\Contracts\PdfServiceInterface;
@@ -54,8 +55,7 @@ abstract class BasePdfTemplate extends BaseTemplate
         protected readonly TemplateAssetResolver $assetResolver,
     ) {
         parent::__construct($views, $contentGuard, $assetGuard);
-        $fallback = config('app.fallback_locale', 'en');
-        $this->fallbackLanguage = is_string($fallback) ? $fallback : 'en';
+        $this->fallbackLanguage = Locales::fallbacks()[0] ?? Locales::default();
         $schema = $this->defaultDataSchema() ?? $this->dataClassFqcn();
 
         if ($schema !== null) {

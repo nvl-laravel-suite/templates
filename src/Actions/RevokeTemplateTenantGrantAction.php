@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Tenancy\Contracts\TenantContext;
+use Nvl\Support\Tenancy\Enums\TenantContextMode;
+use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Contracts\TenantContext;
-use Nvl\Tenancy\Enums\TenantContextMode;
-use Nvl\Tenancy\Exceptions\TenantBoundaryViolation;
 
 final readonly class RevokeTemplateTenantGrantAction
 {

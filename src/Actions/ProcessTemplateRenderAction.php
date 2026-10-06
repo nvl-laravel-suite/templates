@@ -6,6 +6,7 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Data\RenderedTemplateData;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Events\TemplateRendered;
@@ -14,7 +15,6 @@ use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Services\StoredTemplateRenderResolver;
 use Nvl\Templates\Services\TemplateOutputGuard;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Services\TenantBoundary;
 use Throwable;
 
 /**

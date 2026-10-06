@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
@@ -12,7 +13,6 @@ use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Deletes one assignment with exact optimistic concurrency.

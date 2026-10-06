@@ -4,21 +4,25 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Jobs;
 
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Nvl\Support\Config\PackageOptions;
+use Nvl\Support\Tenancy\Contracts\TenantQueuedJob;
+use Nvl\Support\Tenancy\Enums\TenantContextMode;
+use Nvl\Support\Tenancy\ValueObjects\TenantContextSnapshot;
+use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
 use Nvl\Templates\Actions\ProcessTemplateRenderAction;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Models\TemplateRender;
+use Nvl\Templates\Support\TemplateRenderOverlapLock;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Contracts\TenantQueuedJob;
-use Nvl\Tenancy\Enums\TenantContextMode;
-use Nvl\Tenancy\ValueObjects\TenantContextSnapshot;
-use Nvl\Tenancy\ValueObjects\TenantJobEnvelope;
 use Throwable;
 
 /**
@@ -49,6 +53,8 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
             new TenantContextSnapshot(TenantContextMode::Disabled),
         );
         $this->processingToken = (string) Str::uuid();
+        $this->onConnection(PackageOptions::queueConnection('templates'));
+        $this->onQueue(PackageOptions::queueName('templates'));
         $this->tries = TemplatesConfiguration::positiveInteger(
             'templates.rendering.tries',
             3,
@@ -75,6 +81,12 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
         return $this->envelope->context->mode === TenantContextMode::Disabled
             ? $identity
             : hash('sha256', serialize($this->envelope->context)).':'.$identity;
+    }
+
+    /** Return the inherited store used by Laravel's unique-job dispatch lock. */
+    public function uniqueVia(): Repository
+    {
+        return Cache::store(PackageOptions::lockStore('templates'));
     }
 
     /** Return the producer context captured before native queue dispatch. */
@@ -116,7 +128,7 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
         );
 
         return [
-            (new WithoutOverlapping("nvl-templates-render:{$this->renderId}"))
+            (new TemplateRenderOverlapLock("nvl-templates-render:{$this->renderId}"))
                 ->releaseAfter($releaseAfter)
                 ->expireAfter($leaseSeconds),
         ];

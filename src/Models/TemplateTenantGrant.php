@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Nvl\Support\Config\PackageStorage;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
@@ -32,12 +33,12 @@ final class TemplateTenantGrant extends Model
 
     public function getTable(): string
     {
-        return TemplatesConfiguration::table(TemplatesTables::TenantGrants);
+        return TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::TenantGrants));
     }
 
     public function getConnectionName(): ?string
     {
-        return TemplatesConfiguration::connection() ?? parent::getConnectionName();
+        return PackageStorage::connectionName($this->connection ?? PackageStorage::connection('templates') ?? parent::getConnectionName());
     }
 
     protected function casts(): array

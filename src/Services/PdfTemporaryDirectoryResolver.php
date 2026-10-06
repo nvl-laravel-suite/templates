@@ -6,10 +6,10 @@ namespace Nvl\Templates\Services;
 
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Nvl\Support\Tenancy\Contracts\TenantContext;
+use Nvl\Support\Tenancy\Enums\TenantContextMode;
+use Nvl\Support\Tenancy\Exceptions\TenantContextMissing;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Contracts\TenantContext;
-use Nvl\Tenancy\Enums\TenantContextMode;
-use Nvl\Tenancy\Exceptions\TenantContextMissing;
 
 /**
  * Validates and creates the mPDF workspace without escaping allowed roots.

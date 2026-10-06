@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
-use Illuminate\Contracts\Translation\Translator;
 use InvalidArgumentException;
+use Nvl\Support\Contracts\LocaleCatalog;
 use Nvl\Templates\Data\TemplateOptions;
 use Nvl\Templates\Rendering\TemplateRenderContext;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -17,7 +17,7 @@ use Nvl\Templates\Template;
 final readonly class TemplateOptionsResolver
 {
     public function __construct(
-        private Translator $translator,
+        private LocaleCatalog $catalog,
         private TemplateContentGuard $contentGuard,
         private TemplateLocaleResolver $locales,
     ) {}
@@ -39,7 +39,7 @@ final readonly class TemplateOptionsResolver
         $locale = $this->locales->resolve(
             $options->locale
                 ?? config('templates.default_locale')
-                ?? $this->translator->getLocale(),
+                ?? $this->catalog->default(),
         );
         $subject = $this->nullableString($options->subject, 'subject', 998, false);
         $filename = $this->filename($options->filename);

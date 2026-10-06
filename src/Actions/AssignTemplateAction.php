@@ -7,6 +7,7 @@ namespace Nvl\Templates\Actions;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\AssignTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -22,7 +23,6 @@ use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Services\TemplateOwnerRegistry;
 use Nvl\Templates\Services\TemplateVersionResolver;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Creates or updates a unique owner/profile template assignment.

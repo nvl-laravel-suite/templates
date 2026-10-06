@@ -6,6 +6,7 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\UpdateTemplateVersionData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -16,7 +17,6 @@ use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\TemplateContentGuard;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Replaces draft content while published and retired versions stay immutable.

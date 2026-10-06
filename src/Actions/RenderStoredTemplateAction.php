@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Str;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\RenderTemplateData;
 use Nvl\Templates\Data\RenderedTemplateData;
@@ -12,7 +13,6 @@ use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Models\Template as StoredTemplate;
 use Nvl\Templates\Services\StoredTemplateRenderResolver;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Adapts the database implementation into the core Template rendering action.

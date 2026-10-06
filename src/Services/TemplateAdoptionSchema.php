@@ -149,11 +149,11 @@ final class TemplateAdoptionSchema
         $inventory = [];
 
         foreach ([
-            TemplatesTables::Templates,
-            TemplatesTables::I18n,
-            TemplatesTables::Versions,
-            TemplatesTables::Assignments,
-            TemplatesTables::Renders,
+            TemplatesTables::get(TemplatesTables::Templates),
+            TemplatesTables::get(TemplatesTables::I18n),
+            TemplatesTables::get(TemplatesTables::Versions),
+            TemplatesTables::get(TemplatesTables::Assignments),
+            TemplatesTables::get(TemplatesTables::Renders),
         ] as $alias) {
             $inventory["templates.{$alias}"] = [
                 'connection' => $templateConnection,

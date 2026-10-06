@@ -5,15 +5,23 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Nvl\Support\Config\PackageStorage;
+use Nvl\Support\Schema\SchemaConstraints;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 return new class extends Migration
 {
+    /** Use the effective package connection for Laravel's migration transaction. */
+    public function getConnection(): ?string
+    {
+        return PackageStorage::connection('templates');
+    }
+
     public function up(): void
     {
         $schema = Schema::connection(TemplatesConfiguration::connection());
-        $tables = array_map(TemplatesConfiguration::table(...), [TemplatesTables::Templates, TemplatesTables::I18n, TemplatesTables::Versions, TemplatesTables::Assignments, TemplatesTables::Renders]);
+        $tables = array_map(TemplatesConfiguration::table(...), [TemplatesTables::get(TemplatesTables::Templates), TemplatesTables::get(TemplatesTables::I18n), TemplatesTables::get(TemplatesTables::Versions), TemplatesTables::get(TemplatesTables::Assignments), TemplatesTables::get(TemplatesTables::Renders)]);
         foreach ($tables as $tableName) {
             if (! $schema->hasColumn($tableName, 'tenant_id')) {
                 $schema->table($tableName, static fn (Blueprint $table) => $table->uuid('tenant_id')->nullable());
@@ -24,16 +32,16 @@ return new class extends Migration
                 $schema->table($tableName, static fn (Blueprint $table) => $table->string('ownership_key', 191)->default('platform'));
             }
         }
-        $schema->table($tables[0], static function (Blueprint $table): void {
-            $table->dropUnique(['key']);
+        $schema->table($tables[0], static function (Blueprint $table) use ($schema): void {
+            SchemaConstraints::drop($schema, $table, 'unique', ['key']);
             $table->unique(['ownership_key', 'key'], 'templates_owner_key_unique');
         });
         $schema->table($tables[3], static function (Blueprint $table): void {
             $table->dropUnique('template_assignments_owner_profile_unique');
             $table->unique(['tenant_id', 'owner_type', 'owner_id', 'profile'], 'template_assignments_tenant_owner_unique');
         });
-        $schema->table($tables[4], static function (Blueprint $table): void {
-            $table->dropUnique(['idempotency_key']);
+        $schema->table($tables[4], static function (Blueprint $table) use ($schema): void {
+            SchemaConstraints::drop($schema, $table, 'unique', ['idempotency_key']);
             $table->unique(['tenant_id', 'idempotency_key'], 'template_renders_tenant_idempotency_unique');
         });
         $schema->table($tables[2], static function (Blueprint $table): void {

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Models\Template;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Loads a complete management aggregate after Action authorization.

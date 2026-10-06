@@ -970,3 +970,50 @@ diagnostics.
 ## License
 
 NVL Templates is open-sourced under the MIT License.
+
+## Shared owner identity
+
+Declare a model once in `config/nvl-core.php`:
+
+```php
+'owners' => ['article' => Article::class],
+```
+
+Enable this package capability separately in `config/templates.php`:
+
+```php
+'owners' => [
+    'articles.detail' => ['owner' => 'article', 'resolver' => ArticleTemplateResolver::class],
+],
+```
+
+Keep resolver visibility and identifier checks, assignment scopes, and template mutation authorization. Routing aliases may differ from shared owner aliases. Core registration does not add the model to this package's allowlist.
+
+Existing package class/resolver/handler registrations remain accepted for one major cycle. Run `php artisan nvl:doctor --strict --format=json` to inspect compatibility diagnostics. See [UPGRADING.md](UPGRADING.md) before changing a persisted morph type.
+
+## Shared consumer diagnostics
+
+Run `php artisan nvl:doctor --strict --format=json` to combine the read-only checks from loaded NVL package providers. Errors fail the gate, and strict mode also fails warnings. This package's existing Doctor command remains available and uses the same package-owned inspection service.
+
+
+## Shared infrastructure options
+
+Configure `templates.queue.connection` and `templates.queue.name`, or inherit the corresponding `nvl-core.queue` values and Laravel's selected connection/queue. Historical `rendering.connection` and `rendering.queue` inputs remain supported for one major cycle; canonical values take precedence. Render retries, backoff, timeout, and lease bounds remain under `rendering`.
+
+Template unique dispatch and overlap locks select `templates.locks.store`, then Core's store, then `cache.default`. Management/render middleware can inherit `nvl-core.routes.middleware` by setting the relevant package middleware value to null. `templates.authorization.guard` inherits Core's guard; bare `auth` entries use an explicitly selected guard, while explicit `auth:guard` entries keep their selection. Host authorization contracts still decide access.
+
+## Next major: isolated schema identities
+
+Use `templates.tables.<logical-key>` for every table and `templates.connection` for its database connection. Null connection inherits `nvl-core.connection`, then Laravel's default. Tables are resolved at runtime by the package table definition helper.
+
+| Logical key | New default | Previous name |
+| --- | --- | --- |
+| `templates` | `nvl_templates_templates` | `templates` |
+| `i18n` | `nvl_templates_i18n` | `templates_i18n` |
+| `versions` | `nvl_templates_versions` | `template_versions` |
+| `assignments` | `nvl_templates_assignments` | `template_assignments` |
+| `renders` | `nvl_templates_renders` | `template_renders` |
+| `tenant_grants` | `nvl_templates_tenant_grants` | `template_tenant_grants` |
+| `tenant_grant_locks` | `nvl_templates_tenant_grant_locks` | `template_tenant_grant_locks` |
+
+Migration filenames contain `nvl_templates_`. Existing installations must complete the upgrade in `UPGRADING.md` before running new migrations. A pending creator rejects an existing target before any migration in the batch runs; legacy storage with old history needs an ownership decision.

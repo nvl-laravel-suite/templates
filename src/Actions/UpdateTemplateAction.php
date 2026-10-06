@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Facades\DB;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\UpdateTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -14,7 +15,6 @@ use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Services\TemplateContentGuard;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Services\TenantBoundary;
 use Nvl\Translatable\Enums\TranslationSyncMode;
 use Nvl\Translatable\Services\TranslationWriter;
 

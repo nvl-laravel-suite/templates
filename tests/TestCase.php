@@ -50,6 +50,7 @@ abstract class TestCase extends Orchestra
             'media.routes.assets_enabled' => false,
             'content.authorization.callback' => static fn (): bool => true,
             'content.locales.available' => ['en', 'bg'],
+            'translatable.locales' => ['en', 'bg'],
             'content.locales.required_on_publish' => ['en'],
             'content.definitions' => [
                 'template-copy' => [

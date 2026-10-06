@@ -23,19 +23,19 @@ final class TemplatesSchemaContract
     public static function tables(): array
     {
         return [
-            TemplatesTables::Templates => [
-                'creator' => '2026_07_27_100001_create_templates_table',
+            TemplatesTables::get(TemplatesTables::Templates) => [
+                'creator' => '2026_07_27_100001_nvl_templates_create_templates_table',
                 'columns' => ['id', 'key', 'renderer', 'status', 'schema', 'metadata', 'revision', 'created_at', 'updated_at'],
                 'indexes' => [
-                    'templates_key_unique' => ['columns' => ['key'], 'unique' => true],
-                    'templates_renderer_index' => ['columns' => ['renderer'], 'unique' => false],
-                    'templates_status_index' => ['columns' => ['status'], 'unique' => false],
+                    TemplatesTables::get(TemplatesTables::Templates).'_key_unique' => ['columns' => ['key'], 'unique' => true],
+                    TemplatesTables::get(TemplatesTables::Templates).'_renderer_index' => ['columns' => ['renderer'], 'unique' => false],
+                    TemplatesTables::get(TemplatesTables::Templates).'_status_index' => ['columns' => ['status'], 'unique' => false],
                     'templates_status_updated_idx' => ['columns' => ['status', 'updated_at'], 'unique' => false],
                 ],
                 'foreign_keys' => [],
             ],
-            TemplatesTables::I18n => [
-                'creator' => '2026_07_27_100002_create_templates_i18n_table',
+            TemplatesTables::get(TemplatesTables::I18n) => [
+                'creator' => '2026_07_27_100002_nvl_templates_create_templates_i18n_table',
                 'columns' => ['id', 'template_id', 'locale', 'title', 'description', 'created_at', 'updated_at'],
                 'indexes' => [
                     'templates_i18n_owner_locale_unique' => ['columns' => ['template_id', 'locale'], 'unique' => true],
@@ -43,13 +43,13 @@ final class TemplatesSchemaContract
                 ],
                 'foreign_keys' => [[
                     'columns' => ['template_id'],
-                    'target' => TemplatesTables::Templates,
+                    'target' => TemplatesTables::get(TemplatesTables::Templates),
                     'foreign_columns' => ['id'],
                     'on_delete' => 'cascade',
                 ]],
             ],
-            TemplatesTables::Versions => [
-                'creator' => '2026_07_27_100003_create_template_versions_table',
+            TemplatesTables::get(TemplatesTables::Versions) => [
+                'creator' => '2026_07_27_100003_nvl_templates_create_template_versions_table',
                 'columns' => ['id', 'template_id', 'version', 'status', 'metadata', 'content_snapshot', 'content_hash', 'revision', 'published_by_type', 'published_by', 'published_at', 'created_at', 'updated_at'],
                 'indexes' => [
                     'template_versions_number_unique' => ['columns' => ['template_id', 'version'], 'unique' => true],
@@ -58,13 +58,13 @@ final class TemplatesSchemaContract
                 ],
                 'foreign_keys' => [[
                     'columns' => ['template_id'],
-                    'target' => TemplatesTables::Templates,
+                    'target' => TemplatesTables::get(TemplatesTables::Templates),
                     'foreign_columns' => ['id'],
                     'on_delete' => 'cascade',
                 ]],
             ],
-            TemplatesTables::Assignments => [
-                'creator' => '2026_07_27_100006_create_template_assignments_table',
+            TemplatesTables::get(TemplatesTables::Assignments) => [
+                'creator' => '2026_07_27_100006_nvl_templates_create_template_assignments_table',
                 'columns' => ['id', 'template_id', 'template_version_id', 'owner_type', 'owner_id', 'profile', 'settings', 'revision', 'created_at', 'updated_at'],
                 'indexes' => [
                     'template_assignments_owner_profile_unique' => ['columns' => ['owner_type', 'owner_id', 'profile'], 'unique' => true],
@@ -73,23 +73,23 @@ final class TemplatesSchemaContract
                 'foreign_keys' => [
                     [
                         'columns' => ['template_id'],
-                        'target' => TemplatesTables::Templates,
+                        'target' => TemplatesTables::get(TemplatesTables::Templates),
                         'foreign_columns' => ['id'],
                         'on_delete' => 'cascade',
                     ],
                     [
                         'columns' => ['template_version_id'],
-                        'target' => TemplatesTables::Versions,
+                        'target' => TemplatesTables::get(TemplatesTables::Versions),
                         'foreign_columns' => ['id'],
                         'on_delete' => 'set null',
                     ],
                 ],
             ],
-            TemplatesTables::Renders => [
-                'creator' => '2026_07_27_100007_create_template_renders_table',
+            TemplatesTables::get(TemplatesTables::Renders) => [
+                'creator' => '2026_07_27_100007_nvl_templates_create_template_renders_table',
                 'columns' => ['id', 'template_id', 'template_version_id', 'template_assignment_id', 'locale', 'profile', 'settings', 'status', 'idempotency_key', 'payload_digest', 'payload', 'requested_by_type', 'requested_by', 'output_name', 'output_mime_type', 'failure', 'attempts', 'dispatch_generation', 'processing_token', 'lease_expires_at', 'started_at', 'completed_at', 'failed_at', 'created_at', 'updated_at'],
                 'indexes' => [
-                    'template_renders_idempotency_key_unique' => ['columns' => ['idempotency_key'], 'unique' => true],
+                    TemplatesTables::get(TemplatesTables::Renders).'_idempotency_key_unique' => ['columns' => ['idempotency_key'], 'unique' => true],
                     'template_renders_status_created_idx' => ['columns' => ['status', 'created_at'], 'unique' => false],
                     'template_renders_status_lease_idx' => ['columns' => ['status', 'lease_expires_at'], 'unique' => false],
                     'template_renders_status_updated_idx' => ['columns' => ['status', 'updated_at'], 'unique' => false],
@@ -98,19 +98,19 @@ final class TemplatesSchemaContract
                 'foreign_keys' => [
                     [
                         'columns' => ['template_id'],
-                        'target' => TemplatesTables::Templates,
+                        'target' => TemplatesTables::get(TemplatesTables::Templates),
                         'foreign_columns' => ['id'],
                         'on_delete' => 'cascade',
                     ],
                     [
                         'columns' => ['template_version_id'],
-                        'target' => TemplatesTables::Versions,
+                        'target' => TemplatesTables::get(TemplatesTables::Versions),
                         'foreign_columns' => ['id'],
                         'on_delete' => 'cascade',
                     ],
                     [
                         'columns' => ['template_assignment_id'],
-                        'target' => TemplatesTables::Assignments,
+                        'target' => TemplatesTables::get(TemplatesTables::Assignments),
                         'foreign_columns' => ['id'],
                         'on_delete' => 'set null',
                     ],

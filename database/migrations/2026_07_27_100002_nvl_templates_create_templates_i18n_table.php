@@ -5,18 +5,25 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Nvl\Support\Config\PackageStorage;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 return new class extends Migration
 {
+    /** Use the effective package connection for Laravel's migration transaction. */
+    public function getConnection(): ?string
+    {
+        return PackageStorage::connection('templates');
+    }
+
     /**
      * Create localized template metadata.
      */
     public function up(): void
     {
         $schema = Schema::connection(TemplatesConfiguration::connection());
-        $tableName = TemplatesConfiguration::table(TemplatesTables::I18n);
+        $tableName = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::I18n));
 
         if ($schema->hasTable($tableName)) {
             throw new LogicException(
@@ -34,7 +41,7 @@ return new class extends Migration
 
             $table->foreign('template_id')
                 ->references('id')
-                ->on(TemplatesConfiguration::table(TemplatesTables::Templates))
+                ->on(TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Templates)))
                 ->cascadeOnDelete();
             $table->unique(['template_id', 'locale'], 'templates_i18n_owner_locale_unique');
             $table->index(['locale', 'title'], 'templates_i18n_locale_title_idx');
@@ -47,6 +54,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::connection(TemplatesConfiguration::connection())
-            ->dropIfExists(TemplatesConfiguration::table(TemplatesTables::I18n));
+            ->dropIfExists(TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::I18n)));
     }
 };

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Support;
 
 use InvalidArgumentException;
+use Nvl\Support\Config\PackageOptions;
 
 /**
  * Validates independently configurable management and render route groups.
@@ -57,13 +58,7 @@ final class TemplatesRouteConfiguration
      */
     public static function middleware(string $group): array
     {
-        $configured = config("templates.routes.{$group}.middleware", ['api', 'auth']);
-
-        if (! is_array($configured)) {
-            throw new InvalidArgumentException(
-                "templates.routes.{$group}.middleware must be an array.",
-            );
-        }
+        $configured = PackageOptions::routeMiddleware('templates', $group, ['api', 'auth']);
 
         if ($configured === []) {
             throw new InvalidArgumentException(
@@ -71,15 +66,7 @@ final class TemplatesRouteConfiguration
             );
         }
 
-        foreach ($configured as $middleware) {
-            if (! is_string($middleware) || trim($middleware) === '') {
-                throw new InvalidArgumentException(
-                    "templates.routes.{$group}.middleware contains an invalid entry.",
-                );
-            }
-        }
-
-        return array_values($configured);
+        return $configured;
     }
 
     private function __construct() {}

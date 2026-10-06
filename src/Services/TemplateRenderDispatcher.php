@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
+use Nvl\Support\Config\PackageOptions;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Tenancy\Contracts\TenantContext;
+use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
 use Nvl\Templates\Jobs\RenderTemplateJob;
 use Nvl\Templates\Models\TemplateRender;
-use Nvl\Tenancy\Contracts\TenantContext;
-use Nvl\Tenancy\Services\TenantBoundary;
-use Nvl\Tenancy\ValueObjects\TenantJobEnvelope;
 
 /**
  * Dispatches persisted renders onto the package-configured queue boundary.
@@ -27,20 +28,13 @@ final readonly class TemplateRenderDispatcher
     {
         $render = $this->boundary->query(TemplateRender::query(), 'templates.renders')
             ->findOrFail($renderId);
-        $connection = config('templates.rendering.connection');
-        $queue = config('templates.rendering.queue');
         $pending = RenderTemplateJob::dispatch(
             $render->id,
             $render->dispatch_generation,
             $envelope ?? TenantJobEnvelope::capture($this->context),
         );
 
-        if (is_string($connection) && $connection !== '') {
-            $pending->onConnection($connection);
-        }
-
-        if (is_string($queue) && $queue !== '') {
-            $pending->onQueue($queue);
-        }
+        $pending->onConnection(PackageOptions::queueConnection('templates'));
+        $pending->onQueue(PackageOptions::queueName('templates'));
     }
 }

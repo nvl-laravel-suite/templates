@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Nvl\Content\Content;
 use Nvl\Content\Data\ContentCompositionSnapshotBlockData;
+use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Data\TemplateDefinitionData;
@@ -21,7 +22,6 @@ use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
-use Nvl\Tenancy\Services\TenantBoundary;
 
 /**
  * Publishes a complete version and retires its previously published sibling.

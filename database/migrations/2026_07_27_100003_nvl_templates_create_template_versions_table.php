@@ -5,18 +5,25 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Nvl\Support\Config\PackageStorage;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 return new class extends Migration
 {
+    /** Use the effective package connection for Laravel's migration transaction. */
+    public function getConnection(): ?string
+    {
+        return PackageStorage::connection('templates');
+    }
+
     /**
      * Create versioned structural publication records.
      */
     public function up(): void
     {
         $schema = Schema::connection(TemplatesConfiguration::connection());
-        $tableName = TemplatesConfiguration::table(TemplatesTables::Versions);
+        $tableName = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Versions));
 
         if ($schema->hasTable($tableName)) {
             throw new LogicException(
@@ -40,7 +47,7 @@ return new class extends Migration
 
             $table->foreign('template_id')
                 ->references('id')
-                ->on(TemplatesConfiguration::table(TemplatesTables::Templates))
+                ->on(TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Templates)))
                 ->cascadeOnDelete();
             $table->unique(['template_id', 'version'], 'template_versions_number_unique');
             $table->index(['template_id', 'status', 'version'], 'template_versions_resolution_idx');
@@ -54,6 +61,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::connection(TemplatesConfiguration::connection())
-            ->dropIfExists(TemplatesConfiguration::table(TemplatesTables::Versions));
+            ->dropIfExists(TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Versions)));
     }
 };

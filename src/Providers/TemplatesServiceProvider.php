@@ -9,6 +9,10 @@ use InvalidArgumentException;
 use Nvl\Content\Contracts\ContentOwnerRegistrar;
 use Nvl\Content\Services\ContentCatalogCopyRegistry;
 use Nvl\Data\Services\TypeScriptSourceRegistry;
+use Nvl\Support\Doctor\PackageDoctorContributor;
+use Nvl\Support\Providers\SupportServiceProvider;
+use Nvl\Support\Providers\TenantServiceProvider;
+use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
 use Nvl\Support\Traits\MergesPackageConfiguration;
 use Nvl\Templates\Console\AdoptTemplatesCommand;
 use Nvl\Templates\Console\PublishTemplateViewsCommand;
@@ -35,10 +39,9 @@ use Nvl\Templates\Services\TemplateContentCopyAccess;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Services\TemplateOwnerRegistry;
 use Nvl\Templates\Services\TemplateRendererRegistry;
+use Nvl\Templates\Services\TemplatesDoctor;
 use Nvl\Templates\Tenancy\TemplatesResourceRegistrar;
-use Nvl\Tenancy\Providers\TenancyServiceProvider;
 use Nvl\Tenancy\Services\TenantAdoptionRegistry;
-use Nvl\Tenancy\Services\TenantResourceRegistry;
 use Nvl\Translatable\Services\TranslationResourceRegistry;
 
 /**
@@ -53,12 +56,17 @@ final class TemplatesServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->register(TenancyServiceProvider::class);
+        $this->app->register(SupportServiceProvider::class);
+        PackageDoctorContributor::register($this->app, 'nvl/templates', fn (): array => PackageDoctorContributor::reportChecks($this->app->make(TemplatesDoctor::class)->inspect(), 'nvl:templates:doctor'));
+
+        $this->app->register(TenantServiceProvider::class);
         $this->mergePackageConfiguration(__DIR__.'/../../config/templates.php', 'templates');
-        (new TemplatesResourceRegistrar)->register(
-            $this->app->make(TenantResourceRegistry::class),
-            $this->app->make(TenantAdoptionRegistry::class),
-        );
+        (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class));
+        $this->app->booted(function (): void {
+            if ($this->app->bound(TenantAdoptionRegistry::class)) {
+                (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class), $this->app->make(TenantAdoptionRegistry::class));
+            }
+        });
         $authorization = config(
             'templates.authorization.class',
             ConfiguredTemplateAuthorization::class,
@@ -260,6 +268,17 @@ final class TemplatesServiceProvider extends ServiceProvider
         }
 
         foreach ($configured as $alias => $resolver) {
+            $owner = null;
+
+            if (is_array($resolver)) {
+                $owner = $resolver['owner'] ?? null;
+                $resolver = $resolver['resolver'] ?? null;
+
+                if (! is_string($owner)) {
+                    throw new InvalidArgumentException('Every templates identity reference must declare an owner alias.');
+                }
+            }
+
             if (! is_string($alias)
                 || ! is_string($resolver)
                 || ! is_a($resolver, TemplateOwnerResolver::class, true)) {
@@ -268,7 +287,7 @@ final class TemplatesServiceProvider extends ServiceProvider
                 );
             }
 
-            $registry->register($alias, $resolver);
+            $registry->register($alias, $resolver, $owner);
         }
     }
 

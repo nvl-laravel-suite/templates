@@ -4,24 +4,26 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Definitions\Tables;
 
+use Nvl\Support\Config\PackageStorage;
+
 /**
  * Defines the configurable persistence table keys owned by Templates.
  */
 final class TemplatesTables
 {
-    public const string Templates = 'templates';
+    public const string Templates = 'nvl_templates_templates';
 
-    public const string I18n = 'templates_i18n';
+    public const string I18n = 'nvl_templates_i18n';
 
-    public const string Versions = 'template_versions';
+    public const string Versions = 'nvl_templates_versions';
 
-    public const string Assignments = 'template_assignments';
+    public const string Assignments = 'nvl_templates_assignments';
 
-    public const string Renders = 'template_renders';
+    public const string Renders = 'nvl_templates_renders';
 
-    public const string TenantGrants = 'template_tenant_grants';
+    public const string TenantGrants = 'nvl_templates_tenant_grants';
 
-    public const string TenantGrantLocks = 'template_tenant_grant_locks';
+    public const string TenantGrantLocks = 'nvl_templates_tenant_grant_locks';
 
     public const string TEMPLATES = self::Templates;
 
@@ -38,9 +40,7 @@ final class TemplatesTables
      */
     public static function get(string $key): string
     {
-        $value = config("templates.tables.{$key}", $key);
-
-        return is_string($value) && $value !== '' ? $value : $key;
+        return PackageStorage::resolveTable('templates', $key);
     }
 
     private function __construct() {}

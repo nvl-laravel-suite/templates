@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Tenancy;
 
+use Nvl\Support\Tenancy\Enums\TenantResourceKind;
+use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
+use Nvl\Support\Tenancy\ValueObjects\TenantResourceDefinition;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateTranslation;
 use Nvl\Templates\Models\TemplateVersion;
-use Nvl\Tenancy\Enums\TenantResourceKind;
 use Nvl\Tenancy\Services\TenantAdoptionRegistry;
-use Nvl\Tenancy\Services\TenantResourceRegistry;
-use Nvl\Tenancy\ValueObjects\TenantResourceDefinition;
 
 final readonly class TemplatesResourceRegistrar
 {
-    public function register(TenantResourceRegistry $resources, TenantAdoptionRegistry $adapters): void
+    public function register(TenantResourceRegistry $resources, ?TenantAdoptionRegistry $adapters = null): void
     {
         foreach ([
             new TenantResourceDefinition('templates.templates', 'templates', Template::class, allowsPlatformCatalog: true),
@@ -27,6 +27,6 @@ final readonly class TemplatesResourceRegistrar
         ] as $resource) {
             $resources->register($resource);
         }
-        $adapters->register('templates', TemplatesAdoptionAdapter::class);
+        $adapters?->register('templates', TemplatesAdoptionAdapter::class);
     }
 }

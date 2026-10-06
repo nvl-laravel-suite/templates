@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Nvl\Templates\Tenancy;
 
 use Illuminate\Database\Migrations\Migrator;
+use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Nvl\Tenancy\Contracts\TenantAdoptionAdapter;
-use Nvl\Tenancy\Exceptions\TenantBoundaryViolation;
 use Nvl\Tenancy\Services\TenantAdoptionBoundary;
 use Nvl\Tenancy\ValueObjects\TenantAdoptionPlan;
 use Nvl\Tenancy\ValueObjects\TenantBackfillResult;
@@ -37,11 +37,11 @@ final readonly class TemplatesAdoptionAdapter implements TenantAdoptionAdapter
         $connection->transaction(function () use ($assignments, $connection): void {
             foreach ($assignments as $assignment) {
                 $ownership = $this->adoption->ownership($assignment, 'templates.templates');
-                $template = TemplatesConfiguration::table(TemplatesTables::Templates);
+                $template = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Templates));
                 $connection->table($template)->where('id', $assignment->recordId)->update($ownership);
-                foreach ([TemplatesTables::I18n, TemplatesTables::Versions, TemplatesTables::Assignments, TemplatesTables::Renders] as $table) {
+                foreach ([TemplatesTables::get(TemplatesTables::I18n), TemplatesTables::get(TemplatesTables::Versions), TemplatesTables::get(TemplatesTables::Assignments), TemplatesTables::get(TemplatesTables::Renders)] as $table) {
                     $updates = ['tenant_id' => $ownership['tenant_id']];
-                    if ($table === TemplatesTables::I18n) {
+                    if ($table === TemplatesTables::get(TemplatesTables::I18n)) {
                         if (! isset($ownership['ownership_key'])) {
                             throw new TenantBoundaryViolation('Template adoption requires mixed ownership attributes.');
                         }
@@ -60,7 +60,7 @@ final readonly class TemplatesAdoptionAdapter implements TenantAdoptionAdapter
     {
         $connection = $this->adoption->connection($plan, 'templates.templates');
         $errors = [];
-        $root = TemplatesConfiguration::table(TemplatesTables::Templates);
+        $root = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Templates));
         foreach ($connection->table($root)->select(['id', 'tenant_id', 'ownership_key'])->cursor() as $row) {
             $expected = is_string($row->tenant_id) ? 'tenant:'.$row->tenant_id : 'platform';
             if ($row->ownership_key !== $expected) {
