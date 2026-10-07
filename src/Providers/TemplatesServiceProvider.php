@@ -181,7 +181,7 @@ final class TemplatesServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../../lang' => lang_path('vendor/nvl-templates'),
         ], 'nvl-templates-translations');
-        $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, ['template-version']);
+        $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, ['template-version'], package: 'templates');
         $assets = $this->app->make(MediaTemplateAssetRegistry::class);
         $typeScriptSources->register(__DIR__.'/..', 'nvl/templates');
         $this->registerRenderers($renderers);
