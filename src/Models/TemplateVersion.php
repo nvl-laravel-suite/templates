@@ -50,6 +50,7 @@ final class TemplateVersion extends Model implements ContentOwner
 
     /** @use HasFactory<TemplateVersionFactory> */
     use HasFactory;
+
     use HasUuids;
 
     public const string CONTENT_OWNER_TYPE = 'nvl-template-version';
