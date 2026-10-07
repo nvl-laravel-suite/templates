@@ -40,7 +40,7 @@ See the [installation and publishing guide](https://github.com/nvl-laravel-suite
 | Service provider | `Nvl\Templates\Providers\TemplatesServiceProvider` |
 | Configuration | `config/nvl-templates.php` |
 
-`nvl/templates` is a composable Laravel 13 package for rendering
+`nvl/templates` is a composable Laravel 12–13 package for rendering
 source-controlled Blade templates as HTML, PDF, or application-defined output.
 It supports PHP 8.4 and newer.
 
