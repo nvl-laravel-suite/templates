@@ -56,6 +56,8 @@
                 "limits.settings_bytes",
                 "pdf.allow_debug_image_errors",
                 "pdf.allowed_temp_roots",
+                "pdf.assets.maximum_count",
+                "pdf.assets.maximum_total_bytes",
                 "pdf.data_images.maximum_bytes",
                 "pdf.defaults.author",
                 "pdf.defaults.compress",
