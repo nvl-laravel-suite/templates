@@ -161,6 +161,10 @@ return [
         'temp_path' => storage_path('framework/cache/nvl-templates/mpdf'),
         'allowed_temp_roots' => [storage_path()],
         'maximum_html_bytes' => 1_048_576,
+        'assets' => [
+            'maximum_count' => 64,
+            'maximum_total_bytes' => 20_971_520,
+        ],
         'remote_assets' => [
             'enabled' => false,
             'allow_http' => false,

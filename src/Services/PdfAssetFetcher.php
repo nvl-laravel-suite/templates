@@ -18,6 +18,10 @@ if (class_exists(AssetFetcher::class)) {
      */
     final class PdfAssetFetcher extends AssetFetcher
     {
+        private int $assetCount = 0;
+
+        private int $totalBytes = 0;
+
         /**
          * Create the renderer's guarded asset reader and bounded HTTP transport.
          */
@@ -25,6 +29,13 @@ if (class_exists(AssetFetcher::class)) {
             private readonly TemplateAssetGuard $assets,
             private readonly Factory $http,
         ) {}
+
+        /** Reset aggregate resource accounting before one PDF render. */
+        public function beginRender(): void
+        {
+            $this->assetCount = 0;
+            $this->totalBytes = 0;
+        }
 
         /**
          * Fetch bounded bytes from one canonical allowed local file or remote URL.
@@ -34,6 +45,15 @@ if (class_exists(AssetFetcher::class)) {
          */
         public function fetchDataFromPath(mixed $path, mixed $originalSrc = null): string
         {
+            $maximumCount = min(256, TemplatesConfiguration::positiveInteger(
+                'nvl-templates.pdf.assets.maximum_count',
+                64,
+            ));
+
+            if (++$this->assetCount > $maximumCount) {
+                throw new TemplateResolutionException('PDF render exceeds its asset count limit.');
+            }
+
             $source = trim(is_string($originalSrc) && $originalSrc !== '' ? $originalSrc : $path);
 
             if ($source === '' || str_contains($source, "\0") || str_contains($source, '\\')) {
@@ -58,7 +78,7 @@ if (class_exists(AssetFetcher::class)) {
             if ($scheme !== null) {
                 $this->assets->remote($source);
 
-                return $this->remote($source, $maximum);
+                return $this->account($this->remote($source, $maximum));
             }
 
             $localPath = $this->assets->localPath(rawurldecode($source));
@@ -72,6 +92,22 @@ if (class_exists(AssetFetcher::class)) {
 
             if (! is_string($bytes) || strlen($bytes) > $maximum) {
                 throw new TemplateResolutionException('PDF local asset could not be read within its byte limit.');
+            }
+
+            return $this->account($bytes);
+        }
+
+        /** Reject aggregate bytes even when every individual asset is within its limit. */
+        private function account(string $bytes): string
+        {
+            $maximum = min(67_108_864, TemplatesConfiguration::positiveInteger(
+                'nvl-templates.pdf.assets.maximum_total_bytes',
+                20_971_520,
+            ));
+            $this->totalBytes += strlen($bytes);
+
+            if ($this->totalBytes > $maximum) {
+                throw new TemplateResolutionException('PDF render exceeds its aggregate asset byte limit.');
             }
 
             return $bytes;

@@ -33,6 +33,7 @@ final readonly class MpdfTemplateRenderer implements TemplateRenderer
      */
     public function render(TemplateRenderContext $context): RenderedTemplateData
     {
+        $this->assets->beginRender();
         $html = $this->views
             ->make($context->view, $context->viewData())
             ->render();

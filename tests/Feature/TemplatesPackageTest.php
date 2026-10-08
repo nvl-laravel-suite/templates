@@ -1903,6 +1903,30 @@ it('fetches allowed PDF assets with bounded bodies and no redirects', function (
     Http::assertSentCount(3);
 });
 
+it('bounds aggregate PDF asset reads and resets the budget for each render', function (): void {
+    config()->set([
+        'nvl-templates.pdf.remote_assets.enabled' => true,
+        'nvl-templates.pdf.remote_assets.allowed_hosts' => ['allowed.example.test'],
+        'nvl-templates.pdf.assets.maximum_count' => 1,
+        'nvl-templates.pdf.assets.maximum_total_bytes' => 4,
+    ]);
+    Http::fake(static fn () => Http::response('123'));
+    $fetcher = app(PdfAssetFetcher::class);
+
+    expect($fetcher->fetchDataFromPath('https://allowed.example.test/first'))->toBe('123')
+        ->and(fn () => $fetcher->fetchDataFromPath('https://allowed.example.test/second'))
+        ->toThrow(TemplateResolutionException::class, 'asset count');
+    Http::assertSentCount(1);
+
+    config()->set('nvl-templates.pdf.assets.maximum_count', 2);
+    $fetcher = app(PdfAssetFetcher::class);
+    $fetcher->fetchDataFromPath('https://allowed.example.test/first');
+    expect(fn () => $fetcher->fetchDataFromPath('https://allowed.example.test/second'))
+        ->toThrow(TemplateResolutionException::class, 'aggregate');
+    $fetcher->beginRender();
+    expect($fetcher->fetchDataFromPath('https://allowed.example.test/first'))->toBe('123');
+});
+
 it('preserves unique staging indexes while removing canonical name collisions', function (): void {
     try {
         Schema::create('adoption_unique_sources', function (Blueprint $table): void {
