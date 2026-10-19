@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Nvl\Templates\Ownership;
 
 use Illuminate\Database\Eloquent\Model;
+use Nvl\Support\Ownership\Compatibility\LegacyOwnershipSupport;
 use Nvl\Support\Ownership\Contracts\OwnershipContext;
 use Nvl\Support\Ownership\Enums\OwnershipContextMode;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope;
 use Nvl\Support\Ownership\ValueObjects\OwnershipSnapshot;
-use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
 
 /**
  * Resolves canonical metadata without retaining request admission.
@@ -28,13 +28,13 @@ final class TemplatesOwnership
     /** Determine whether native or legacy ownership enforcement applies. */
     public static function active(): bool
     {
-        return self::declared() || config('nvl-tenancy.enabled') === true;
+        return self::declared() || app(LegacyOwnershipSupport::class)->enabled();
     }
 
     /** Resolve the exact canonical model to its declared ownership resource. */
     public static function resource(Model $model): string
     {
-        return self::declared() ? app(OwnershipResourceRegistry::class)->forModel($model)->key : app(TenantResourceRegistry::class)->forModel($model)->key;
+        return self::declared() ? app(OwnershipResourceRegistry::class)->forModel($model)->key : app(LegacyOwnershipSupport::class)->resource($model);
     }
 
     /** Capture scalar admission; untouched graphs preserve disabled installation behavior. */

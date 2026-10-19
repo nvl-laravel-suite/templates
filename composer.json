@@ -12,7 +12,6 @@
         "media"
     ],
     "require": {
-        "php": "^8.4",
         "ext-fileinfo": "*",
         "ext-filter": "*",
         "ext-json": "*",
@@ -23,6 +22,7 @@
         "nvl/filterable": "^5.0",
         "nvl/media": "^5.1",
         "nvl/translatable": "^5.1",
+        "php": "^8.4",
         "spatie/laravel-data": "^4.23",
         "symfony/http-foundation": "^7.0 || ^8.0"
     },
@@ -36,7 +36,8 @@
         "orchestra/testbench": "^10.0 || ^11.0",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0",
-        "spatie/typescript-transformer": "^3.3"
+        "spatie/typescript-transformer": "^3.3",
+        "symfony/process": "^7.0 || ^8.0"
     },
     "autoload": {
         "psr-4": {
@@ -99,14 +100,14 @@
     "prefer-stable": true,
     "suggest": {
         "mpdf/mpdf": "Built-in PDF renderer: composer require mpdf/mpdf:^8.3.0 --with-all-dependencies (requires GD and mbstring).",
-        "nvl/tenancy": "Enables enforcing tenant ownership, scoped execution, adoption, and captured tenant queue contexts.",
-        "spatie/typescript-transformer": "Consume the declared TypeScript attributes and metadata (^3.3); Core retains the runtime transformation engine.",
-        "nvl/ownership": "Optional native ownership, reviewed adoption and captured queue admission without Auth or Tenancy."
+        "nvl/ownership": "Adds optional model-declared ownership, isolation, adoption and captured worker contexts.",
+        "nvl/tenancy": "Temporary legacy tenancy bridge for existing tenant installations; native ownership does not require it.",
+        "spatie/typescript-transformer": "Consume the declared TypeScript attributes and metadata (^3.3); Core retains the runtime transformation engine."
     },
     "conflict": {
         "mpdf/mpdf": "<8.3.0 || >=9.0",
-        "nvl/tenancy": "<5.0 || >=6.0",
-        "nvl/ownership": "<5.0 || >=6.0"
+        "nvl/ownership": "<5.0 || >=6.0",
+        "nvl/tenancy": "<5.0 || >=6.0"
     },
     "homepage": "https://github.com/nvl-laravel-suite/templates",
     "authors": [
