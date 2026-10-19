@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
 use Nvl\Templates\Contracts\QueueTemplateRenderContract;
@@ -19,11 +18,12 @@ use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Exceptions\TemplatesException;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateRender;
+use Nvl\Templates\Ownership\TemplatesOwnership;
 use Nvl\Templates\Rendering\ResolvedStoredTemplateRender;
 use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\StoredTemplateRenderResolver;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateRenderDispatcher;
-use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Persists and dispatches one idempotent asynchronous render request.
@@ -32,23 +32,25 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class QueueTemplateRenderAction implements QueueTemplateRenderContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private StoredTemplateRenderResolver $resolver,
         private CanonicalJson $canonicalJson,
         private TemplateRenderDispatcher $dispatcher,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private TenantContext $context,
     ) {}
 
+    /** Persist and dispatch an idempotent producer-scoped render request. */
     public function execute(
         Template|string $template,
         RenderTemplateData $data,
         TemplateActorData $actor,
     ): TemplateRender {
         $model = $template instanceof Template
-            ? $this->boundary->query(Template::query(), 'templates.templates')->findOrFail($template->id)
-            : $this->boundary->query(Template::query(), 'templates.templates')
+            ? $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')->findOrFail($template->id)
+            : $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
                 ->when(
                     Str::isUuid($template),
                     static fn ($query) => $query
@@ -82,9 +84,10 @@ final readonly class QueueTemplateRenderAction implements QueueTemplateRenderCon
             'actor_id' => $actor->id,
         ]);
         $envelope = TenantJobEnvelope::capture($this->context);
+        $ownershipEnvelope = TemplatesOwnership::envelope();
 
         try {
-            return DB::connection(TemplatesConfiguration::connection())
+            return TemplateModelRegistry::newInstance()->getConnection()
                 ->transaction(function () use (
                     $actor,
                     $data,
@@ -92,6 +95,7 @@ final readonly class QueueTemplateRenderAction implements QueueTemplateRenderCon
                     $resolved,
                     $requestDigest,
                     $envelope,
+                    $ownershipEnvelope,
                 ): TemplateRender {
                     if ($data->idempotencyKey !== null) {
                         $existing = $this->boundary->query(TemplateRender::query(), 'templates.renders')
@@ -128,9 +132,9 @@ final readonly class QueueTemplateRenderAction implements QueueTemplateRenderCon
                         'requested_by' => $actor->id,
                     ]);
 
-                    DB::connection(TemplatesConfiguration::connection())
-                        ->afterCommit(function () use ($envelope, $render): void {
-                            $this->dispatcher->dispatch($render->id, $envelope);
+                    TemplateModelRegistry::newInstance()->getConnection()
+                        ->afterCommit(function () use ($envelope, $ownershipEnvelope, $render): void {
+                            $this->dispatcher->dispatch($render->id, $envelope, $ownershipEnvelope);
                         });
 
                     return $render;

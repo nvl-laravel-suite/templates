@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Nvl\Content\Actions\CreateContentBlockAction;
 use Nvl\Content\Actions\PublishContentBlockAction;
 use Nvl\Content\Actions\UpdateContentBlockAction;
+use Nvl\Content\Contracts\ContentStorage;
 use Nvl\Content\Data\ContentActorData;
 use Nvl\Content\Data\Mutations\CreateContentBlockData;
 use Nvl\Content\Data\Mutations\UpdateContentBlockData;
@@ -21,6 +22,7 @@ use Nvl\Templates\Models\Template;
 use Nvl\Templates\Services\MediaTemplateAssetRegistry;
 use Nvl\Templates\Services\TemplateAdoptionManifest;
 use Nvl\Templates\Services\TemplateAdoptionSchema;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Orchestrates the source-system adoption workflow through canonical Actions.
@@ -39,6 +41,7 @@ use Nvl\Templates\Services\TemplateAdoptionSchema;
  */
 final readonly class AdoptTemplatesAction
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private CreateTemplateAction $createTemplate,
         private UpdateTemplateAction $updateTemplate,
@@ -48,6 +51,7 @@ final readonly class AdoptTemplatesAction
         private TemplateAdoptionManifest $manifests,
         private TemplateAdoptionSchema $schemas,
         private MediaTemplateAssetRegistry $assets,
+        private ContentStorage $storage,
     ) {}
 
     /**
@@ -115,7 +119,7 @@ final readonly class AdoptTemplatesAction
         $actor = TemplateActorData::system();
 
         foreach ($templates as $item) {
-            $template = Template::query()->with('translations')->where('key', $item['key'])->first();
+            $template = TemplateModelRegistry::query()->with('translations')->where('key', $item['key'])->first();
 
             if (! $template instanceof Template) {
                 $this->createTemplate->execute(new CreateTemplateData(
@@ -153,7 +157,7 @@ final readonly class AdoptTemplatesAction
         $actor = ContentActorData::system();
 
         foreach ($content as $item) {
-            $block = ContentBlock::query()
+            $block = $this->storage->blocks()
                 ->with(['definition', 'translations'])
                 ->where('scope', $item['scope'])
                 ->where('scope_key', $item['scopeKey'])
@@ -266,7 +270,7 @@ final readonly class AdoptTemplatesAction
     private function matchedTargets(string $resource, array $normalized): int
     {
         if ($resource === 'templates') {
-            return Template::query()
+            return TemplateModelRegistry::query()
                 ->whereIn('key', array_column($normalized['templates'], 'key'))
                 ->count();
         }
@@ -281,7 +285,7 @@ final readonly class AdoptTemplatesAction
         $matched = 0;
 
         foreach ($normalized['content'] as $item) {
-            $matched += ContentBlock::query()
+            $matched += $this->storage->blocks()
                 ->where('scope', $item['scope'])
                 ->where('scope_key', $item['scopeKey'])
                 ->where('key', $item['key'])

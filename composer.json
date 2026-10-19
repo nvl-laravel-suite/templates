@@ -18,11 +18,11 @@
         "ext-json": "*",
         "ext-mbstring": "*",
         "laravel/framework": "^12.0 || ^13.0",
-        "nvl/content": "^5.0",
-        "nvl/core": "^5.0",
+        "nvl/content": "^5.1",
+        "nvl/core": "^5.1",
         "nvl/filterable": "^5.0",
-        "nvl/media": "^5.0",
-        "nvl/translatable": "^5.0",
+        "nvl/media": "^5.1",
+        "nvl/translatable": "^5.1",
         "spatie/laravel-data": "^4.23",
         "symfony/http-foundation": "^7.0 || ^8.0"
     },
@@ -31,6 +31,7 @@
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "mpdf/mpdf": "^8.3.0",
+        "nvl/ownership": "^5.0",
         "nvl/tenancy": "^5.0",
         "orchestra/testbench": "^10.0 || ^11.0",
         "pestphp/pest": "^4.0",
@@ -99,11 +100,13 @@
     "suggest": {
         "mpdf/mpdf": "Built-in PDF renderer: composer require mpdf/mpdf:^8.3.0 --with-all-dependencies (requires GD and mbstring).",
         "nvl/tenancy": "Enables enforcing tenant ownership, scoped execution, adoption, and captured tenant queue contexts.",
-        "spatie/typescript-transformer": "Consume the declared TypeScript attributes and metadata (^3.3); Core retains the runtime transformation engine."
+        "spatie/typescript-transformer": "Consume the declared TypeScript attributes and metadata (^3.3); Core retains the runtime transformation engine.",
+        "nvl/ownership": "Optional native ownership, reviewed adoption and captured queue admission without Auth or Tenancy."
     },
     "conflict": {
         "mpdf/mpdf": "<8.3.0 || >=9.0",
-        "nvl/tenancy": "<5.0 || >=6.0"
+        "nvl/tenancy": "<5.0 || >=6.0",
+        "nvl/ownership": "<5.0 || >=6.0"
     },
     "homepage": "https://github.com/nvl-laravel-suite/templates",
     "authors": [

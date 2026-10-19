@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Contracts\UnassignTemplateContract;
 use Nvl\Templates\Data\TemplateActorData;
@@ -14,7 +13,7 @@ use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\TemplateAssignment;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Deletes one assignment with exact optimistic concurrency.
@@ -23,12 +22,14 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class UnassignTemplateAction implements UnassignTemplateContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
+    /** Remove an admitted host/profile assignment at its expected revision. */
     public function execute(
         TemplateAssignment|string $assignment,
         int $expectedRevision,
@@ -38,7 +39,7 @@ final readonly class UnassignTemplateAction implements UnassignTemplateContract
             ? $assignment->id
             : $assignment;
 
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use (
                 $actor,
                 $assignmentId,

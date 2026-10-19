@@ -7,6 +7,7 @@ namespace Nvl\Templates\Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateTranslation;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Builds TemplateTranslation fixture rows and their declared package parents.
@@ -38,7 +39,7 @@ final class TemplateTranslationFactory extends Factory
             }
 
             if ($model->getAttribute('template_id') !== null) {
-                $parent = Template::query()->findOrFail(FactoryGuard::identifier($model->getAttribute('template_id')));
+                $parent = TemplateModelRegistry::query()->findOrFail(FactoryGuard::identifier($model->getAttribute('template_id')));
                 FactoryGuard::parent($parent, $model);
                 FactoryGuard::inherit($model, $parent);
             }

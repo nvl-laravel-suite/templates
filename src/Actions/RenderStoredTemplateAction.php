@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Str;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\RenderStoredTemplateContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\RenderTemplateData;
@@ -14,6 +14,7 @@ use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Models\Template as StoredTemplate;
 use Nvl\Templates\Services\StoredTemplateRenderResolver;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Adapts the database implementation into the core Template rendering action.
@@ -25,11 +26,12 @@ use Nvl\Templates\Services\StoredTemplateRenderResolver;
  */
 final readonly class RenderStoredTemplateAction implements RenderStoredTemplateContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private StoredTemplateRenderResolver $resolver,
         private RenderTemplateAction $renderTemplate,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
     ) {}
 
     /**
@@ -41,8 +43,8 @@ final readonly class RenderStoredTemplateAction implements RenderStoredTemplateC
         TemplateActorData $actor,
     ): RenderedTemplateData {
         $model = $template instanceof StoredTemplate
-            ? $this->boundary->query(StoredTemplate::query(), 'templates.templates')->findOrFail($template->id)
-            : $this->boundary->query(StoredTemplate::query(), 'templates.templates')
+            ? $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')->findOrFail($template->id)
+            : $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
                 ->when(
                     Str::isUuid($template),
                     static fn ($query) => $query

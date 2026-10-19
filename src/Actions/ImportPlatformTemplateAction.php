@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use Nvl\Content\Actions\ExportContentSnapshotForCopyAction;
 use Nvl\Content\Actions\ImportContentSnapshotAction;
 use Nvl\Media\Contracts\MediaCatalogImport;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
 use Nvl\Templates\Contracts\ImportPlatformTemplateContract;
@@ -18,10 +17,12 @@ use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Ownership\TemplateOwnerCatalog;
+use Nvl\Templates\Ownership\TemplatesOwnership;
 use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\TemplateContentCopyAccess;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Throwable;
 
 /**
@@ -31,19 +32,25 @@ use Throwable;
  */
 final readonly class ImportPlatformTemplateAction implements ImportPlatformTemplateContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateContentCopyAccess $access,
         private ExportContentSnapshotForCopyAction $exportContent,
         private ImportContentSnapshotAction $importContent,
         private MediaCatalogImport $media,
         private TemplateDefinitionRegistry $definitions,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private TenantContext $context,
         private CanonicalJson $json,
+        private TemplateOwnerCatalog $ownerCatalog,
     ) {}
 
+    /** Copy a current grant into an independent graph under the selected ownership authority. */
     public function execute(ImportPlatformTemplateData $data, TemplateActorData $actor): TemplateVersion
     {
+        if (TemplatesOwnership::declared()) {
+            return $this->ownerCatalog->import($data, $actor);
+        }
         $tenant = $this->context->requireTenant();
         $grant = TemplateTenantGrant::query()->with(['version.template'])->findOrFail($data->grantId);
         $this->access->assertAllowed($grant->template_version_id, TemplateVersion::CONTENT_GROUP, $data->grantId, $tenant);
@@ -71,7 +78,7 @@ final readonly class ImportPlatformTemplateAction implements ImportPlatformTempl
                 $staged[$sourceId] = $this->media->stage($snapshot);
             }
 
-            return DB::connection(TemplatesConfiguration::connection())->transaction(function () use ($actor, $data, $definition, $grant, $source, $sourceIds, $snapshots, $staged, $tenant): TemplateVersion {
+            return TemplateModelRegistry::newInstance()->getConnection()->transaction(function () use ($actor, $data, $definition, $grant, $source, $sourceIds, $snapshots, $staged, $tenant): TemplateVersion {
                 $lockedGrant = TemplateTenantGrant::query()->with(['version.template'])->lockForUpdate()->findOrFail($grant->id);
                 $this->assertGrant($lockedGrant, $data, $source->sourceHash);
                 $existing = $this->boundary->query(TemplateVersion::query(), 'templates.versions')
@@ -83,10 +90,10 @@ final readonly class ImportPlatformTemplateAction implements ImportPlatformTempl
 
                     return $existing;
                 }
-                if ($this->boundary->query(Template::query(), 'templates.templates')->where('key', $data->targetKey)->exists()) {
+                if ($this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')->where('key', $data->targetKey)->exists()) {
                     throw new TenantBoundaryViolation('Template target key already exists for this tenant.');
                 }
-                $template = Template::query()->create([
+                $template = TemplateModelRegistry::create([
                     ...$this->boundary->attributes('templates.templates'),
                     'key' => $data->targetKey,
                     'renderer' => $definition->renderer,

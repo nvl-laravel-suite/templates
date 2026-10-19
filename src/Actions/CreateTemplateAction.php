@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\CreateTemplateContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\CreateTemplateData;
@@ -16,7 +15,7 @@ use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Services\TemplateContentGuard;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Translatable\Services\TranslationWriter;
 
 /**
@@ -26,12 +25,13 @@ use Nvl\Translatable\Services\TranslationWriter;
  */
 final readonly class CreateTemplateAction implements CreateTemplateContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateDefinitionRegistry $definitions,
         private TemplateContentGuard $guard,
         private TranslationWriter $translations,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
@@ -44,9 +44,9 @@ final readonly class CreateTemplateAction implements CreateTemplateContract
         $definition = $this->definitions->get($data->key);
         $this->guard->metadata($data->metadata);
 
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use ($actor, $data, $definition): Template {
-                $template = Template::query()->create([
+                $template = TemplateModelRegistry::create([
                     ...$this->boundary->attributes('templates.templates'),
                     'key' => $data->key,
                     'renderer' => $definition->renderer,

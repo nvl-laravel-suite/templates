@@ -15,14 +15,18 @@ use Nvl\Content\Contracts\ContentOwner;
 use Nvl\Content\Data\ContentCompositionSnapshotData;
 use Nvl\Content\Traits\HasContent;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Support\Ownership\Contracts\Ownable;
 use Nvl\Templates\Database\Factories\TemplateVersionFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateVersionStatus;
+use Nvl\Templates\Models\Concerns\OwnsTemplateChild;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Numbered publication snapshot of a template.
  *
+ * @property string|null $owner_scope_key
  * @property string $id
  * @property string|null $tenant_id
  * @property string $template_id
@@ -44,9 +48,9 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final class TemplateVersion extends Model implements ContentOwner
+final class TemplateVersion extends Model implements ContentOwner, Ownable
 {
-    use HasContent;
+    use HasContent, OwnsTemplateChild { HasContent::delete insteadof OwnsTemplateChild; }
 
     /** @use HasFactory<TemplateVersionFactory> */
     use HasFactory;
@@ -74,6 +78,7 @@ final class TemplateVersion extends Model implements ContentOwner
         'catalog_source_revision',
         'catalog_source_hash',
         'catalog_import_key',
+        'catalog_import_request_hash',
     ];
 
     /** @var array<string, mixed> */
@@ -82,11 +87,13 @@ final class TemplateVersion extends Model implements ContentOwner
         'revision' => 1,
     ];
 
+    /** Resolve the configured native table owned by this model. */
     public function getTable(): string
     {
         return TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Versions));
     }
 
+    /** Resolve the actual package source connection. */
     public function getConnectionName(): ?string
     {
         return PackageStorage::connectionName($this->connection ?? PackageStorage::connection('templates') ?? parent::getConnectionName());
@@ -112,7 +119,7 @@ final class TemplateVersion extends Model implements ContentOwner
      */
     public function template(): BelongsTo
     {
-        return $this->belongsTo(Template::class);
+        return $this->belongsTo(TemplateModelRegistry::modelClass(), 'template_id');
     }
 
     /**

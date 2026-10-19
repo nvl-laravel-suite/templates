@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use Nvl\Content\Content;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\TemplatePayloadValidator;
 use Nvl\Templates\Data\Mutations\RenderTemplateData;
 use Nvl\Templates\Data\TemplateActorData;
@@ -25,6 +25,7 @@ use Nvl\Templates\Template as RenderableTemplate;
  */
 final readonly class StoredTemplateRenderResolver
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateContentGuard $guard,
         private TemplateDefinitionRegistry $definitions,
@@ -33,7 +34,7 @@ final readonly class StoredTemplateRenderResolver
         private TemplateVersionResolver $versions,
         private Content $content,
         private StoredTemplateOptionsFactory $optionsFactory,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
     ) {}
 
     /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Auth\Access\AuthorizationException;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\GetTemplateRenderContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
@@ -19,9 +19,10 @@ use Nvl\Templates\Models\TemplateRender;
  */
 final readonly class GetTemplateRenderAction implements GetTemplateRenderContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
     ) {}
 
     /**

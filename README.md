@@ -1177,3 +1177,16 @@ The table lists enum discriminators, including any successful codes retained for
 ## License
 
 NVL Templates is open-sourced under the MIT License.
+
+
+### Optional ownership and configured Template models
+
+The default Template model remains unscoped. Applications using ordinary Templates need neither Ownership nor Tenancy. For isolation, install `nvl/ownership`, configure `nvl-templates.models.template` with a concrete subclass, and declare a native company FK or exclusive primary-owner pivot through `ownershipDefinition()`. Preserve UUIDs, required casts, query scopes and persistence hooks. All root Actions, factories, relations and bindings resolve that exact configured class.
+
+Owned stored Templates require owned Content and Media roots. Configure Content's host resources to include `templates.versions`, and map assignment resolver aliases to their canonical native host resource keys in `nvl-templates.ownership.owner_resources`. Versions, locales, assignments, render requests and Media outputs retain their canonical owner. Published snapshots and captured render inputs are immutable; terminal processing may erase payload/settings. Switching a host/profile to another Template replaces the assignment under one source transaction, continues its revision, and clears the old optional link on historical renders; their captured version/settings remain unchanged.
+
+Use the `templates`, `content` and `media` participants in a reviewed ownership adoption plan, with explicit per-record mappings. The Templates participant verifies and rebinds hash-valid legacy snapshots before activation. Historical tenant catalog grants remain retained and require deliberate reissuance to native recipients. Protocol markers and source generations prevent a disabled runtime, changed class or changed source from exposing adopted records. Drain old queues and restart workers during the reviewed cutover; no flag or down migration rolls it back.
+
+Central mutable catalogs require the configured root's explicit `allowsCentralCatalog(): bool` opt-in. Bind `TemplateCatalogAccess` to the application's grant/revocation policy (the default denies), then use `TemplateOwnerCatalog::grant()` in the admitted recipient frame and `revoke()` with the expected grant revision. Existing `ImportPlatformTemplateContract` accepts those grants in native mode: it locks/rechecks the exact grant/source tuple, code definition, snapshot checksum and idempotency request, and persists an independent copy. Content and Media must share the actual SQL source for atomic imports. Media references need a total grant map; Content application-reference fields require a dedicated importer. Revocation blocks new imports and leaves completed copies intact.
+
+Jobs and queued event facts capture scalar producer authority before uniqueness and after-commit dispatch. Workers re-admit that authority before restoration, processing, recovery, terminal failure or retry. PDF workspaces and durable idempotency keys include ownership. Host policies, owner lifecycle and object-store ACLs remain application responsibilities.

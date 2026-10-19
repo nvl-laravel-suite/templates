@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\AssignTemplateContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\AssignTemplateData;
@@ -19,12 +18,13 @@ use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
+use Nvl\Templates\Ownership\TemplatesOwnership;
 use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\TemplateContentGuard;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateOwnerRegistry;
 use Nvl\Templates\Services\TemplateVersionResolver;
-use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Creates or updates a unique owner/profile template assignment.
@@ -33,13 +33,14 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class AssignTemplateAction implements AssignTemplateContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateOwnerRegistry $owners,
         private TemplateDefinitionRegistry $definitions,
         private TemplateContentGuard $guard,
         private TemplateVersionResolver $versions,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
@@ -67,9 +68,9 @@ final readonly class AssignTemplateAction implements AssignTemplateContract
         $this->guard->settings($data->settings);
 
         try {
-            return DB::connection(TemplatesConfiguration::connection())
+            return TemplateModelRegistry::newInstance()->getConnection()
                 ->transaction(function () use ($actor, $data, $templateId): TemplateAssignment {
-                    $template = $this->boundary->query(Template::query(), 'templates.templates')->lockForUpdate()->findOrFail($templateId);
+                    $template = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')->lockForUpdate()->findOrFail($templateId);
                     $definition = $this->definitions->get($template->key);
                     $canonicalJson = new CanonicalJson;
 
@@ -108,7 +109,16 @@ final readonly class AssignTemplateAction implements AssignTemplateContract
                         throw StaleTemplateException::forResource('template assignment', 'new');
                     }
 
+                    $nextRevision = null;
+                    if (TemplatesOwnership::declared() && $assignment !== null && $assignment->template_id !== $template->id) {
+                        $nextRevision = $assignment->revision + 1;
+                        $assignment->delete();
+                        $assignment = null;
+                    }
                     $assignment ??= new TemplateAssignment;
+                    if ($nextRevision !== null) {
+                        $assignment->forceFill(['revision' => $nextRevision]);
+                    }
                     $assignment->fill([
                         'template_id' => $template->id,
                         ...(config('nvl-tenancy.enabled') === true ? ['tenant_id' => $template->tenant_id] : []),

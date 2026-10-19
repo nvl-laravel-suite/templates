@@ -122,7 +122,7 @@ final class TemplatesSchemaContract
     /**
      * @return array{columns: list<string>, indexes: list<string>, constraints: list<string>}
      */
-    public static function issues(Builder $schema, string $alias): array
+    public static function issues(Builder $schema, string $alias, bool $owned = false): array
     {
         $contract = self::tables()[$alias];
         $table = TemplatesConfiguration::table($alias);
@@ -140,6 +140,10 @@ final class TemplatesSchemaContract
 
         foreach ($contract['indexes'] as $name => $expected) {
             $actual = $actualIndexes[$name] ?? null;
+            if ($owned && in_array($expected['columns'], [['key'], ['owner_type', 'owner_id', 'profile'], ['idempotency_key']], true) && $expected['unique']) {
+                $expected['columns'] = ['owner_scope_key', ...$expected['columns']];
+                $actual = array_find($actualIndexes, static fn (array $index): bool => $index['unique'] && $index['columns'] === $expected['columns']);
+            }
 
             if ($actual === null
                 || $actual['columns'] !== $expected['columns']

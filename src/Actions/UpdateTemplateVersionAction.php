@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Contracts\UpdateTemplateVersionContract;
 use Nvl\Templates\Data\Mutations\UpdateTemplateVersionData;
@@ -18,7 +17,7 @@ use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\TemplateContentGuard;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Replaces draft content while published and retired versions stay immutable.
@@ -27,13 +26,15 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class UpdateTemplateVersionAction implements UpdateTemplateVersionContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateContentGuard $guard,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
+    /** Update draft metadata while rejecting stale or immutable publications. */
     public function execute(
         TemplateVersion|string $version,
         UpdateTemplateVersionData $data,
@@ -47,7 +48,7 @@ final readonly class UpdateTemplateVersionAction implements UpdateTemplateVersio
         );
         $this->guard->metadata($data->metadata);
 
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use ($actor, $data, $versionId): TemplateVersion {
                 $version = $this->boundary->query(TemplateVersion::query(), 'templates.versions')
                     ->lockForUpdate()

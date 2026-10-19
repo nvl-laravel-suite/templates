@@ -14,6 +14,10 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Nvl\Support\Config\PackageOptions;
+use Nvl\Support\Ownership\Contracts\OwnershipQueueContext;
+use Nvl\Support\Ownership\Contracts\OwnershipQueuedJob;
+use Nvl\Support\Ownership\Enums\OwnershipContextMode;
+use Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope;
 use Nvl\Support\Tenancy\Contracts\TenantQueuedJob;
 use Nvl\Support\Tenancy\Enums\TenantContextMode;
 use Nvl\Support\Tenancy\ValueObjects\TenantContextSnapshot;
@@ -21,6 +25,8 @@ use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
 use Nvl\Templates\Actions\ProcessTemplateRenderAction;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Models\TemplateRender;
+use Nvl\Templates\Ownership\TemplatesOwnership;
+use Nvl\Templates\Services\TemplateRenderFailure;
 use Nvl\Templates\Support\TemplateRenderOverlapLock;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Throwable;
@@ -29,7 +35,7 @@ use Throwable;
  * Idempotent queue boundary for persisted template renders.
  */
 #[FailOnTimeout]
-final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQueue, TenantQueuedJob
+final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntilProcessing, ShouldQueue, TenantQueuedJob
 {
     use Queueable;
 
@@ -48,10 +54,12 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
         public readonly string $renderId,
         public readonly int $dispatchGeneration = 0,
         ?TenantJobEnvelope $envelope = null,
+        ?OwnershipJobEnvelope $ownershipEnvelope = null,
     ) {
         $this->envelope = $envelope ?? new TenantJobEnvelope(
-            new TenantContextSnapshot(TenantContextMode::Disabled),
+            new TenantContextSnapshot(config('nvl-tenancy.enabled') === true ? TenantContextMode::Unresolved : TenantContextMode::Disabled),
         );
+        $this->ownershipEnvelope = $ownershipEnvelope ?? TemplatesOwnership::envelope();
         $this->processingToken = (string) Str::uuid();
         $this->onConnection(PackageOptions::queueConnection('templates'));
         $this->onQueue(PackageOptions::queueName('templates'));
@@ -69,6 +77,14 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
         );
     }
 
+    private readonly OwnershipJobEnvelope $ownershipEnvelope;
+
+    /** Return the scalar authority captured before queue serialization. */
+    public function ownershipJobEnvelope(): OwnershipJobEnvelope
+    {
+        return $this->ownershipEnvelope;
+    }
+
     private readonly TenantJobEnvelope $envelope;
 
     /**
@@ -77,6 +93,10 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
     public function uniqueId(): string
     {
         $identity = $this->renderId.':'.$this->dispatchGeneration;
+
+        if ($this->ownershipEnvelope->context()->mode !== OwnershipContextMode::Disabled) {
+            return app(OwnershipQueueContext::class)->run($this->ownershipEnvelope, fn (): string => $this->ownershipEnvelope->key($identity));
+        }
 
         return $this->envelope->context->mode === TenantContextMode::Disabled
             ? $identity
@@ -128,7 +148,7 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
         );
 
         return [
-            (new TemplateRenderOverlapLock("nvl-templates-render:{$this->renderId}"))
+            (new TemplateRenderOverlapLock('nvl-templates-render:'.$this->uniqueId()))
                 ->withPrefix('nvl:templates:render-overlap:')
                 ->releaseAfter($releaseAfter)
                 ->expireAfter($leaseSeconds),
@@ -152,6 +172,11 @@ final class RenderTemplateJob implements ShouldBeUniqueUntilProcessing, ShouldQu
      */
     public function failed(?Throwable $exception): void
     {
+        if (TemplatesOwnership::declared()) {
+            app(TemplateRenderFailure::class)->fail($this->renderId, $this->dispatchGeneration, $this->processingToken, $exception);
+
+            return;
+        }
         $message = mb_substr(
             $exception?->getMessage() ?? 'Template render job failed.',
             0,

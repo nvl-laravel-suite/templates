@@ -14,9 +14,12 @@ use Nvl\Media\Contracts\HasMedia;
 use Nvl\Media\Models\Media;
 use Nvl\Media\Traits\InteractsWithMedia;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Support\Ownership\Contracts\Ownable;
 use Nvl\Templates\Database\Factories\TemplateRenderFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateRenderStatus;
+use Nvl\Templates\Models\Concerns\OwnsTemplateChild;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
@@ -55,13 +58,14 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final class TemplateRender extends Model implements HasMedia
+final class TemplateRender extends Model implements HasMedia, Ownable
 {
     /** @use HasFactory<TemplateRenderFactory> */
     use HasFactory;
 
     use HasUuids;
     use InteractsWithMedia;
+    use OwnsTemplateChild;
 
     /** @var array<string, int|string> */
     protected $attributes = [
@@ -154,10 +158,12 @@ final class TemplateRender extends Model implements HasMedia
      */
     public function template(): BelongsTo
     {
-        return $this->belongsTo(Template::class);
+        return $this->belongsTo(TemplateModelRegistry::modelClass(), 'template_id');
     }
 
     /**
+     * Read one immutable central publication through the admitted recipient boundary.
+     *
      * @return BelongsTo<TemplateVersion, $this>
      */
     public function version(): BelongsTo

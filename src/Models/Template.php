@@ -10,9 +10,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Support\Ownership\Contracts\Ownable;
+use Nvl\Support\Ownership\Traits\HasOwnership;
 use Nvl\Templates\Database\Factories\TemplateFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateStatus;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Nvl\Translatable\Contracts\TranslatableModel;
 use Nvl\Translatable\Enums\TranslationMutationPolicy;
@@ -22,6 +25,7 @@ use Nvl\Translatable\Translatable as HasTranslations;
 /**
  * Structural, renderer-bound template aggregate.
  *
+ * @property string|null $owner_scope_key
  * @property string $id
  * @property string|null $tenant_id
  * @property string $ownership_key
@@ -37,12 +41,30 @@ use Nvl\Translatable\Translatable as HasTranslations;
  *
  * @api
  */
-final class Template extends Model implements TranslatableModel
+class Template extends Model implements Ownable, TranslatableModel
 {
     /** @use HasFactory<TemplateFactory> */
     use HasFactory;
 
+    use HasOwnership;
     use HasTranslations;
+
+    /** Central sources require an explicitly enabled configured subclass. */
+    public static function allowsCentralCatalog(): bool
+    {
+        return false;
+    }
+
+    /** @param mixed $value
+     * @param  string|null  $field
+     */
+    public function resolveRouteBinding($value, $field = null): ?Template
+    {
+        $model = TemplateModelRegistry::newInstance();
+
+        return $model->newQuery()->where($field ?? $model->getRouteKeyName(), $value)->first();
+    }
+
     use HasUuids;
 
     /** @var list<string> */
@@ -73,11 +95,13 @@ final class Template extends Model implements TranslatableModel
         );
     }
 
+    /** Resolve the configured native table owned by this model. */
     public function getTable(): string
     {
         return TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Templates));
     }
 
+    /** Resolve the actual package source connection. */
     public function getConnectionName(): ?string
     {
         return PackageStorage::connectionName($this->connection ?? PackageStorage::connection('templates') ?? parent::getConnectionName());
@@ -101,7 +125,7 @@ final class Template extends Model implements TranslatableModel
      */
     public function versions(): HasMany
     {
-        return $this->hasMany(TemplateVersion::class)->orderByDesc('version');
+        return $this->hasMany(TemplateVersion::class, 'template_id')->orderByDesc('version');
     }
 
     /**
@@ -109,7 +133,7 @@ final class Template extends Model implements TranslatableModel
      */
     public function assignments(): HasMany
     {
-        return $this->hasMany(TemplateAssignment::class);
+        return $this->hasMany(TemplateAssignment::class, 'template_id');
     }
 
     /**

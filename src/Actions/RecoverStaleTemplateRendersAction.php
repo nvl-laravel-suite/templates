@@ -6,12 +6,13 @@ namespace Nvl\Templates\Actions;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Models\TemplateRender;
+use Nvl\Templates\Ownership\TemplatesOwnership;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateRenderDispatcher;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
@@ -27,7 +28,7 @@ final readonly class RecoverStaleTemplateRendersAction
      */
     public function __construct(
         private TemplateRenderDispatcher $dispatcher,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private TenantContext $context,
     ) {}
 
@@ -38,9 +39,10 @@ final readonly class RecoverStaleTemplateRendersAction
      */
     public function execute(): Collection
     {
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function (): Collection {
                 $envelope = TenantJobEnvelope::capture($this->context);
+                $ownershipEnvelope = TemplatesOwnership::envelope();
                 $limit = TemplatesConfiguration::positiveInteger(
                     'nvl-templates.rendering.recovery_batch_size',
                     100,
@@ -81,10 +83,10 @@ final readonly class RecoverStaleTemplateRendersAction
                 }
 
                 $renderIds = $renders->modelKeys();
-                DB::connection(TemplatesConfiguration::connection())
-                    ->afterCommit(function () use ($envelope, $renderIds): void {
+                TemplateModelRegistry::newInstance()->getConnection()
+                    ->afterCommit(function () use ($envelope, $ownershipEnvelope, $renderIds): void {
                         foreach ($renderIds as $renderId) {
-                            $this->dispatcher->dispatch((string) $renderId, $envelope);
+                            $this->dispatcher->dispatch((string) $renderId, $envelope, $ownershipEnvelope);
                         }
                     });
 

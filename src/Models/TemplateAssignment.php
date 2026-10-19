@@ -9,8 +9,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Nvl\Support\Config\PackageStorage;
+use Nvl\Support\Ownership\Contracts\Ownable;
 use Nvl\Templates\Database\Factories\TemplateAssignmentFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
+use Nvl\Templates\Models\Concerns\OwnsTemplateChild;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
@@ -27,12 +30,13 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final class TemplateAssignment extends Model
+final class TemplateAssignment extends Model implements Ownable
 {
     /** @use HasFactory<TemplateAssignmentFactory> */
     use HasFactory;
 
     use HasUuids;
+    use OwnsTemplateChild;
 
     /** @var list<string> */
     protected $fillable = [
@@ -48,11 +52,13 @@ final class TemplateAssignment extends Model
     /** @var array<string, mixed> */
     protected $attributes = ['profile' => 'default', 'revision' => 1];
 
+    /** Resolve the configured native table owned by this model. */
     public function getTable(): string
     {
         return TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Assignments));
     }
 
+    /** Resolve the actual package source connection. */
     public function getConnectionName(): ?string
     {
         return PackageStorage::connectionName($this->connection ?? PackageStorage::connection('templates') ?? parent::getConnectionName());
@@ -71,10 +77,12 @@ final class TemplateAssignment extends Model
      */
     public function template(): BelongsTo
     {
-        return $this->belongsTo(Template::class);
+        return $this->belongsTo(TemplateModelRegistry::modelClass(), 'template_id');
     }
 
     /**
+     * Read one immutable central publication through the admitted recipient boundary.
+     *
      * @return BelongsTo<TemplateVersion, $this>
      */
     public function version(): BelongsTo

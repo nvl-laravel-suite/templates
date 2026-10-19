@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
-use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use Nvl\Support\OwnerRegistry;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
-use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
+use Nvl\Support\Ownership\Exceptions\OwnershipViolation;
 use Nvl\Templates\Contracts\TemplateOwnerResolver;
+use Nvl\Templates\Ownership\TemplatesOwnership;
 
 /**
  * Allowlist for assignment owner aliases exposed to routes and imports.
@@ -27,9 +27,7 @@ final class TemplateOwnerRegistry
     /** Create the package resolver registry with its identity and tenancy boundaries. */
     public function __construct(
         private readonly Container $container,
-        private readonly Repository $config,
-        private readonly TenantBoundary $boundary,
-        private readonly TenantResourceRegistry $resources,
+        private readonly OwnershipBoundary $boundary,
         private readonly OwnerRegistry $identities,
     ) {}
 
@@ -51,7 +49,7 @@ final class TemplateOwnerRegistry
         }
 
         if ($owner !== null) {
-            $this->ownerModels[$alias] = $this->identities->model($owner);
+            $this->ownerModels[$alias] = $this->identities->reference($owner, "nvl-templates.owners.{$alias}");
         }
 
         $this->resolvers[$alias] = $resolver;
@@ -80,11 +78,25 @@ final class TemplateOwnerRegistry
             throw new InvalidArgumentException("Templates resolver [{$alias}] returned a different shared owner model.");
         }
 
-        if ($this->config->get('nvl-tenancy.enabled') === true) {
+        if (TemplatesOwnership::active()) {
             $this->boundary->assertRecord(
                 $owner,
-                $this->resources->forModel($owner)->key,
+                TemplatesOwnership::resource($owner),
             );
+        }
+
+        if (TemplatesOwnership::declared()) {
+            if (config('nvl-templates.ownership.owner_resources.'.$alias) !== TemplatesOwnership::resource($owner)) {
+                throw new OwnershipViolation('Template assignment host has no canonical resource declaration.');
+            }
+            $key = $owner->getKey();
+            if ((! is_string($key) && ! is_int($key)) || (string) $key !== $identifier) {
+                throw new OwnershipViolation('Assignment hosts require exact canonical identifiers.');
+            }
+            $fresh = $owner->newQuery()->whereKey($key)->firstOrFail();
+            $this->boundary->assertRecord($fresh, TemplatesOwnership::resource($fresh));
+
+            return $fresh;
         }
 
         return $owner;

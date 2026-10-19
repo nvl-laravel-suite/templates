@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Data\RenderedTemplateData;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Events\TemplateRendered;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Services\StoredTemplateRenderResolver;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateOutputGuard;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Throwable;
@@ -28,11 +28,12 @@ use Throwable;
  */
 final readonly class ProcessTemplateRenderAction
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private StoredTemplateRenderResolver $resolver,
         private RenderTemplateAction $renderTemplate,
         private TemplateOutputGuard $outputGuard,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
@@ -74,7 +75,7 @@ final readonly class ProcessTemplateRenderAction
         string $processingToken,
         ?int $dispatchGeneration,
     ): TemplateRender {
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use (
                 $dispatchGeneration,
                 $renderId,
@@ -116,7 +117,7 @@ final readonly class ProcessTemplateRenderAction
         string $processingToken,
         RenderedTemplateData $result,
     ): TemplateRender {
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use (
                 $processingToken,
                 $renderId,
@@ -184,7 +185,7 @@ final readonly class ProcessTemplateRenderAction
         string $processingToken,
         Throwable $exception,
     ): void {
-        DB::connection(TemplatesConfiguration::connection())
+        TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use ($exception, $processingToken, $renderId): void {
                 $render = $this->boundary->query(TemplateRender::query(), 'templates.renders')
                     ->lockForUpdate()

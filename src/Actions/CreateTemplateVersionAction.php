@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\CreateTemplateVersionContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\Mutations\CreateTemplateVersionData;
@@ -16,7 +15,7 @@ use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\TemplateContentGuard;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Creates the next immutable numbered draft under a template lock.
@@ -25,13 +24,15 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class CreateTemplateVersionAction implements CreateTemplateVersionContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateContentGuard $guard,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
+    /** Allocate the next draft version under the canonical template lock. */
     public function execute(
         Template|string $template,
         CreateTemplateVersionData $data,
@@ -46,9 +47,9 @@ final readonly class CreateTemplateVersionAction implements CreateTemplateVersio
 
         $this->guard->metadata($data->metadata);
 
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use ($actor, $data, $templateId): TemplateVersion {
-                $template = $this->boundary->query(Template::query(), 'templates.templates')
+                $template = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
                     ->lockForUpdate()
                     ->findOrFail($templateId);
                 $currentVersion = $template->versions()->max('version');

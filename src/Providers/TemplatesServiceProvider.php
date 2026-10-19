@@ -9,9 +9,12 @@ use InvalidArgumentException;
 use Nvl\Content\Contracts\ContentOwnerRegistrar;
 use Nvl\Content\Services\ContentCatalogCopyRegistry;
 use Nvl\Data\Services\TypeScriptSourceRegistry;
+use Nvl\Ownership\Services\OwnershipAdoptionRegistry;
 use Nvl\Support\Doctor\PackageDoctorContributor;
 use Nvl\Support\Globals\GlobalNames;
 use Nvl\Support\OwnerRegistry;
+use Nvl\Support\Ownership\Contracts\OwnershipIntegratedProvider;
+use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Providers\SupportServiceProvider;
 use Nvl\Support\Providers\TenantServiceProvider;
 use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
@@ -57,6 +60,7 @@ use Nvl\Templates\Contracts\RevokeTemplateTenantGrantContract;
 use Nvl\Templates\Contracts\SyncTemplateDefinitionsContract;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Contracts\TemplateAuthorization;
+use Nvl\Templates\Contracts\TemplateCatalogAccess;
 use Nvl\Templates\Contracts\TemplateOwnerResolver;
 use Nvl\Templates\Contracts\TemplatePayloadValidator;
 use Nvl\Templates\Contracts\TemplateRenderer;
@@ -65,19 +69,22 @@ use Nvl\Templates\Contracts\UpdateTemplateContract;
 use Nvl\Templates\Contracts\UpdateTemplateVersionContract;
 use Nvl\Templates\Data\MediaTemplateAssetData;
 use Nvl\Templates\Data\TemplateDefinitionData;
-use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Ownership\TemplatesAdoptionAdapter as OwnershipTemplatesAdoptionAdapter;
+use Nvl\Templates\Ownership\TemplatesResourceRegistrar as OwnershipTemplatesResourceRegistrar;
 use Nvl\Templates\Pdf\Contracts\PdfServiceInterface;
 use Nvl\Templates\Pdf\PdfService;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Rendering\UnavailablePdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 use Nvl\Templates\Services\ConfiguredTemplatePayloadValidator;
+use Nvl\Templates\Services\DenyTemplateCatalogAccess;
 use Nvl\Templates\Services\MediaTemplateAssetRegistry;
 use Nvl\Templates\Services\MediaTemplateAssetResolver;
 use Nvl\Templates\Services\NullTemplateAssetResolver;
 use Nvl\Templates\Services\TemplateContentCopyAccess;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateOwnerRegistry;
 use Nvl\Templates\Services\TemplatePdfDependencyGuard;
 use Nvl\Templates\Services\TemplateRendererRegistry;
@@ -89,7 +96,7 @@ use Nvl\Translatable\Services\TranslationResourceRegistry;
 /**
  * Registers the composable rendering core and database-backed implementation.
  */
-final class TemplatesServiceProvider extends ServiceProvider
+final class TemplatesServiceProvider extends ServiceProvider implements OwnershipIntegratedProvider
 {
     use MergesPackageConfiguration;
     use RegistersNamespacedResources;
@@ -123,7 +130,8 @@ final class TemplatesServiceProvider extends ServiceProvider
 
         $this->app->register(TenantServiceProvider::class);
         $this->mergePackageConfiguration(__DIR__.'/../../config/nvl-templates.php', 'templates');
-        (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class));
+        $this->app->singleton(TemplateModelRegistry::class);
+        $this->app->booting(fn () => $this->app->make(TemplateModelRegistry::class)->prepare());
         $this->app->booted(function (): void {
             if ($this->app->bound(TenantAdoptionRegistry::class)) {
                 (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class), $this->app->make(TenantAdoptionRegistry::class));
@@ -141,6 +149,7 @@ final class TemplatesServiceProvider extends ServiceProvider
             );
         }
 
+        $this->app->bindIf(TemplateCatalogAccess::class, DenyTemplateCatalogAccess::class);
         $this->app->bindIf(TemplateAuthorization::class, $authorization);
         $this->app->bindIf(
             TemplatePayloadValidator::class,
@@ -177,6 +186,11 @@ final class TemplatesServiceProvider extends ServiceProvider
         ContentOwnerRegistrar $contentOwners,
         ContentCatalogCopyRegistry $catalogCopies,
     ): void {
+        (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class));
+        $this->app->make(OwnershipTemplatesResourceRegistrar::class)->register($this->app->make(OwnershipResourceRegistry::class));
+        if ($this->app->bound(OwnershipAdoptionRegistry::class)) {
+            $this->app->make(OwnershipAdoptionRegistry::class)->register('templates', OwnershipTemplatesAdoptionAdapter::class);
+        }
         $this->app->make(GlobalNames::class)->translations('templates', __DIR__.'/../../lang', $this->app->make('translation.loader'));
         $this->publishes([
             __DIR__.'/../../lang' => lang_path('vendor/nvl-templates'),
@@ -216,7 +230,7 @@ final class TemplatesServiceProvider extends ServiceProvider
 
         $translationResources->register(
             key: 'templates.templates',
-            modelClass: Template::class,
+            modelClass: $this->app->make(TemplateModelRegistry::class)->templateClass(),
             label: 'Templates',
             searchableColumns: ['key', 'renderer', 'status'],
             displayColumns: ['key', 'renderer', 'status', 'revision'],

@@ -8,7 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 use Nvl\Content\Support\ContentConfiguration;
-use Nvl\Media\Models\Media;
+use Nvl\Media\Services\MediaModelRegistry;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
@@ -143,7 +143,7 @@ final class TemplateAdoptionSchema
         $contentConnection = ContentConfiguration::connection() ?? $default;
         $templates = Schema::connection($templateConnection);
         $content = Schema::connection($contentConnection);
-        $mediaModel = new Media;
+        $mediaModel = MediaModelRegistry::newInstance();
         $mediaConnection = $mediaModel->getConnectionName() ?? $default;
         $media = Schema::connection($mediaConnection);
         $inventory = [];

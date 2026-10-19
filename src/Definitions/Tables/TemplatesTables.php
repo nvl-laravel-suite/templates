@@ -21,6 +21,8 @@ final class TemplatesTables
 
     public const string Renders = 'nvl_templates_renders';
 
+    public const string OwnerGrants = 'nvl_templates_owner_grants';
+
     public const string TenantGrants = 'nvl_templates_tenant_grants';
 
     public const string TenantGrantLocks = 'nvl_templates_tenant_grant_locks';

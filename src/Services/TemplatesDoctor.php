@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use Illuminate\Contracts\View\Factory;
-use Illuminate\Support\Facades\Schema;
 use Mpdf\Mpdf;
 use Nvl\Content\Content;
 use Nvl\Support\Config\PackageOptions;
+use Nvl\Support\Ownership\Contracts\OwnershipReadiness;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Models\Template;
+use Nvl\Templates\Ownership\TemplatesOwnership;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Rendering\UnavailablePdfTemplateRenderer;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -33,6 +34,7 @@ final class TemplatesDoctor
         private PdfTemporaryDirectoryResolver $temporaryDirectories,
         private Factory $views,
         private Content $content,
+        private OwnershipReadiness $ownershipReadiness,
     ) {}
 
     /**
@@ -161,7 +163,7 @@ final class TemplatesDoctor
         Content $content,
         CanonicalJson $canonicalJson,
     ): array {
-        $schema = Schema::connection(TemplatesConfiguration::connection());
+        $schema = TemplateModelRegistry::newInstance()->getConnection()->getSchemaBuilder();
         $checks = [];
 
         foreach (array_keys(TemplatesSchemaContract::tables()) as $key) {
@@ -178,7 +180,7 @@ final class TemplatesDoctor
             };
             $checks["table.{$logicalKey}"] = $schema->hasTable($table);
             $issues = $checks["table.{$logicalKey}"]
-                ? TemplatesSchemaContract::issues($schema, $key)
+                ? TemplatesSchemaContract::issues($schema, $key, TemplatesOwnership::declared())
                 : ['columns' => ['table missing'], 'indexes' => ['table missing'], 'constraints' => ['table missing']];
             $checks["columns.{$logicalKey}.canonical"] = $issues['columns'] === [];
             $checks["indexes.{$logicalKey}.canonical"] = $issues['indexes'] === [];
@@ -186,6 +188,12 @@ final class TemplatesDoctor
         }
 
         $renderTable = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::Renders));
+        if (TemplatesOwnership::declared()) {
+            foreach (['templates.templates', 'templates.translations', 'templates.versions', 'templates.assignments', 'templates.renders', 'templates.catalog-grants'] as $key) {
+                $this->ownershipReadiness->assertActive($key);
+            }
+            $checks['schema.ownership'] = true;
+        }
         $checks['columns.template_renders.durable'] = $checks['table.template_renders']
             && $schema->hasColumns($renderTable, [
                 'processing_token',
@@ -291,7 +299,7 @@ final class TemplatesDoctor
         CanonicalJson $canonicalJson,
     ): bool {
         $registered = $definitions->all();
-        $stored = Template::query()->get()->keyBy('key');
+        $stored = TemplateModelRegistry::query()->get()->keyBy('key');
 
         foreach ($registered as $key => $definition) {
             $template = $stored->get($key);

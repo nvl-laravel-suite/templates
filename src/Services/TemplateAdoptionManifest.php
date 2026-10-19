@@ -14,6 +14,7 @@ use Nvl\Content\Services\ContentScopeRegistry;
 use Nvl\Content\Validation\ContentValueValidator;
 use Nvl\Media\Enums\MediaLifecycleStatus;
 use Nvl\Media\Models\Media;
+use Nvl\Media\Services\MediaModelRegistry;
 use Nvl\Templates\Data\MediaTemplateAssetData;
 use Nvl\Templates\Enums\TemplateStatus;
 
@@ -27,6 +28,7 @@ use Nvl\Templates\Enums\TemplateStatus;
  */
 final readonly class TemplateAdoptionManifest
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateDefinitionRegistry $templateDefinitions,
         private ContentDefinitionRegistry $contentDefinitions,
@@ -271,7 +273,7 @@ final readonly class TemplateAdoptionManifest
             );
         }
 
-        $media = Media::query()->with('imageVariations')->available()->find($mediaId);
+        $media = MediaModelRegistry::query()->with('imageVariations')->available()->find($mediaId);
 
         if (! $media instanceof Media) {
             throw new InvalidArgumentException(

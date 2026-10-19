@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Nvl\Templates\Actions;
 
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Nvl\Templates\Contracts\SyncTemplateDefinitionsContract;
 use Nvl\Templates\Data\TemplateDefinitionSyncData;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Atomically synchronizes source-controlled definitions and archives removed keys.
@@ -21,6 +20,7 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class SyncTemplateDefinitionsAction implements SyncTemplateDefinitionsContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(private TemplateDefinitionRegistry $definitions) {}
 
     /**
@@ -30,12 +30,12 @@ final readonly class SyncTemplateDefinitionsAction implements SyncTemplateDefini
      */
     public function execute(bool $dryRun = false): Collection
     {
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use ($dryRun): Collection {
                 $canonicalJson = new CanonicalJson;
                 $registered = $this->definitions->all();
                 $registeredKeys = array_keys($registered);
-                $stored = Template::query()
+                $stored = TemplateModelRegistry::query()
                     ->lockForUpdate()
                     ->get()
                     ->keyBy('key');
@@ -60,13 +60,17 @@ final readonly class SyncTemplateDefinitionsAction implements SyncTemplateDefini
                         continue;
                     }
 
-                    $template ??= new Template;
-                    $template->fill([
+                    $attributes = [
                         'key' => $definition->key,
                         'renderer' => $definition->renderer,
                         'status' => TemplateStatus::Active,
                         'schema' => $definition->schema,
-                    ])->save();
+                    ];
+                    if ($template === null) {
+                        $template = TemplateModelRegistry::create($attributes);
+                    } else {
+                        $template->fill($attributes)->save();
+                    }
                 }
 
                 foreach ($stored as $key => $template) {

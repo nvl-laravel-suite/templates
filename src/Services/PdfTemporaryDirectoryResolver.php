@@ -6,9 +6,11 @@ namespace Nvl\Templates\Services;
 
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\Enums\TenantContextMode;
 use Nvl\Support\Tenancy\Exceptions\TenantContextMissing;
+use Nvl\Templates\Ownership\TemplatesOwnership;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
@@ -16,9 +18,11 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class PdfTemporaryDirectoryResolver
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private SafeFilesystemPathResolver $paths,
         private TenantContext $context,
+        private OwnershipBoundary $ownershipBoundary,
     ) {}
 
     /**
@@ -51,7 +55,10 @@ final readonly class PdfTemporaryDirectoryResolver
         );
         $snapshot = $this->context->snapshot();
 
-        if ((bool) config('nvl-tenancy.enabled', false)) {
+        if (TemplatesOwnership::declared()) {
+            $scope = $this->ownershipBoundary->key('templates.templates', 'pdf-work');
+            $configured = rtrim($configured, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.hash('sha256', $scope).DIRECTORY_SEPARATOR.'work'.DIRECTORY_SEPARATOR.Str::uuid();
+        } elseif ((bool) config('nvl-tenancy.enabled', false)) {
             $scope = match ($snapshot->mode) {
                 TenantContextMode::Tenant => 'tenant/'.$snapshot->tenantId?->value,
                 TenantContextMode::Platform => 'platform',

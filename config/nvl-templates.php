@@ -3,15 +3,19 @@
 declare(strict_types=1);
 
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
+use Nvl\Templates\Models\Template;
 use Nvl\Templates\Rendering\BladeTemplateRenderer;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 
 /** Complete runtime defaults; publication sections are declared in ../resources/config/sections.json. */
 return [
+    'ownership' => ['owner_resources' => []],
+    'models' => ['template' => Template::class],
     'connection' => null,
 
     'tables' => [
+        'owner_grants' => TemplatesTables::OwnerGrants,
         'templates' => TemplatesTables::Templates,
         'templates_i18n' => TemplatesTables::I18n,
         'template_versions' => TemplatesTables::Versions,

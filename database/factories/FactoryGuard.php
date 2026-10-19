@@ -8,6 +8,7 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use InvalidArgumentException;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantBoundary;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\Contracts\TenantDirectory;
@@ -18,6 +19,8 @@ use Nvl\Support\Tenancy\Enums\TenantStatus;
 use Nvl\Support\Tenancy\Exceptions\TenantBoundaryViolation;
 use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
 use Nvl\Support\Tenancy\ValueObjects\TenantId;
+use Nvl\Templates\Ownership\TemplatesOwnership;
+use Nvl\Templates\Services\TemplateOwnerRegistry;
 
 /**
  * Checks fixture identities against native persistence and tenant admission.
@@ -47,6 +50,9 @@ final class FactoryGuard
         if ($parent->getConnection() !== $child->getConnection()) {
             throw new InvalidArgumentException('Factory parents and children require the same effective connection.');
         }
+        if (TemplatesOwnership::declared()) {
+            Container::getInstance()->make(OwnershipBoundary::class)->assertRecord($parent, TemplatesOwnership::resource($parent));
+        }
         if (config('nvl-tenancy.enabled') === true) {
             $container = Container::getInstance();
             $resource = $container->make(TenantResourceRegistry::class)->forModel($parent);
@@ -61,6 +67,9 @@ final class FactoryGuard
         $key = $child->getAttribute($idColumn);
         if (! is_string($type) || $type === '' || (! is_string($key) && ! is_int($key)) || $key === '') {
             throw new InvalidArgumentException('This factory requires forOwner() with a persisted real host model.');
+        }
+        if (TemplatesOwnership::declared()) {
+            return Container::getInstance()->make(TemplateOwnerRegistry::class)->resolve($type, (string) $key);
         }
         $class = Relation::getMorphedModel($type) ?? $type;
         if (! is_a($class, Model::class, true) || $class === Model::class) {

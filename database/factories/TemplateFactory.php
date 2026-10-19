@@ -6,6 +6,7 @@ namespace Nvl\Templates\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Nvl\Templates\Models\Template;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Builds Template fixture rows and their declared package parents.
@@ -17,6 +18,12 @@ use Nvl\Templates\Models\Template;
 final class TemplateFactory extends Factory
 {
     protected $model = Template::class;
+
+    /** Resolve the exact configured native root. */
+    public function modelName(): string
+    {
+        return TemplateModelRegistry::modelClass();
+    }
 
     /**
      * Prepare native parent and owner facts after Laravel expands relationships.

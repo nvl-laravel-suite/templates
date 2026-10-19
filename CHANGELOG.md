@@ -5,6 +5,11 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Optional native ownership with configurable root subclasses, inherited children, database constraints and reviewed adoption. Unowned applications retain their default models and need neither Ownership nor Tenancy.
+- Canonical source transactions, captured queue/event authority and format-3 Content snapshots for isolated Templates and catalog copies.
+
 ## [5.0.1] - 2026-10-08
 
 ### Changed

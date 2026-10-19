@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use Nvl\Support\Tenancy\Contracts\TenantContext;
 use Nvl\Support\Tenancy\Contracts\TenantDirectory;
 use Nvl\Support\Tenancy\Enums\TenantContextMode;
@@ -16,6 +15,7 @@ use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
@@ -25,16 +25,18 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class GrantTemplateToTenantAction implements GrantTemplateToTenantContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(private TenantContext $context, private TenantDirectory $directory) {}
 
+    /** Grant a published platform version to the explicit legacy recipient. */
     public function execute(string $versionId, TenantId $recipient, int $sourceRevision): TemplateTenantGrant
     {
         if ($this->context->snapshot()->mode !== TenantContextMode::Platform || $this->directory->find($recipient)->status !== TenantStatus::Active) {
             throw new TenantBoundaryViolation('Template catalog grants require platform context and an active recipient.');
         }
 
-        return DB::connection(TemplatesConfiguration::connection())->transaction(function () use ($versionId, $recipient, $sourceRevision): TemplateTenantGrant {
-            $connection = DB::connection(TemplatesConfiguration::connection());
+        return TemplateModelRegistry::newInstance()->getConnection()->transaction(function () use ($versionId, $recipient, $sourceRevision): TemplateTenantGrant {
+            $connection = TemplateModelRegistry::newInstance()->getConnection();
             $lockTable = TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::TenantGrantLocks));
             $connection->table($lockTable)->insertOrIgnore([
                 'recipient_tenant_id' => $recipient->value,

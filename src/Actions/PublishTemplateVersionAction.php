@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Nvl\Content\Content;
 use Nvl\Content\Data\ContentCompositionSnapshotBlockData;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\PublishTemplateVersionContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
@@ -19,11 +18,10 @@ use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Exceptions\StaleTemplateException;
-use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Publishes a complete version and retires its previously published sibling.
@@ -32,11 +30,12 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class PublishTemplateVersionAction implements PublishTemplateVersionContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateDefinitionRegistry $definitions,
         private Content $content,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
@@ -55,12 +54,12 @@ final readonly class PublishTemplateVersionAction implements PublishTemplateVers
             ['version_id' => $versionId],
         );
 
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use ($actor, $expectedRevision, $versionId): TemplateVersion {
                 $version = $this->boundary->query(TemplateVersion::query(), 'templates.versions')
                     ->lockForUpdate()
                     ->findOrFail($versionId);
-                $template = $this->boundary->query(Template::query(), 'templates.templates')
+                $template = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
                     ->lockForUpdate()
                     ->findOrFail($version->template_id);
                 $version->setRelation('template', $template);

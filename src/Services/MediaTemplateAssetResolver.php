@@ -6,7 +6,8 @@ namespace Nvl\Templates\Services;
 
 use Nvl\Media\Enums\MediaLifecycleStatus;
 use Nvl\Media\Models\Media;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Media\Services\MediaModelRegistry;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Data\MediaTemplateAssetData;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
@@ -16,12 +17,14 @@ use Nvl\Templates\Exceptions\TemplateResolutionException;
  */
 final readonly class MediaTemplateAssetResolver implements TemplateAssetResolver
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private MediaTemplateAssetRegistry $assets,
         private TemplateAssetGuard $guard,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
     ) {}
 
+    /** Resolve the current revision-aware Media asset through its canonical boundary. */
     public function resolve(string $key): ?string
     {
         $this->guard->key($key);
@@ -31,7 +34,7 @@ final readonly class MediaTemplateAssetResolver implements TemplateAssetResolver
             return null;
         }
 
-        $media = $this->boundary->query(Media::query(), 'media.assets')
+        $media = $this->boundary->query(MediaModelRegistry::query(), 'media.assets')
             ->with('imageVariations')
             ->available()
             ->find($asset->mediaId);

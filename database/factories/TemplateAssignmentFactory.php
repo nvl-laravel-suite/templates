@@ -10,6 +10,8 @@ use InvalidArgumentException;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Ownership\TemplatesOwnership;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Builds TemplateAssignment fixture rows and their declared package parents.
@@ -42,7 +44,7 @@ final class TemplateAssignmentFactory extends Factory
 
             $owner = FactoryGuard::owner($model, 'owner_type', 'owner_id');
             if ($model->getAttribute('template_id') !== null) {
-                $parent = Template::query()->findOrFail(FactoryGuard::identifier($model->getAttribute('template_id')));
+                $parent = TemplateModelRegistry::query()->findOrFail(FactoryGuard::identifier($model->getAttribute('template_id')));
                 FactoryGuard::parent($parent, $model);
                 FactoryGuard::inherit($model, $parent);
             }
@@ -115,8 +117,20 @@ final class TemplateAssignmentFactory extends Factory
     {
         FactoryGuard::parent($owner, new TemplateAssignment);
 
+        $alias = $owner->getMorphClass();
+        if (TemplatesOwnership::declared()) {
+            $resources = config('nvl-templates.ownership.owner_resources', []);
+            if (! is_array($resources)) {
+                throw new InvalidArgumentException('Invalid native Template host map.');
+            }
+            $alias = array_search(TemplatesOwnership::resource($owner), $resources, true);
+            if (! is_string($alias)) {
+                throw new InvalidArgumentException('Factory owner has no Template assignment alias.');
+            }
+        }
+
         return $this->state([
-            'owner_type' => $owner->getMorphClass(),
+            'owner_type' => $alias,
             'owner_id' => (string) FactoryGuard::identifier($owner->getKey()),
         ]);
     }

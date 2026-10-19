@@ -38,11 +38,13 @@ final class TemplateTenantGrant extends Model
 
     protected $attributes = ['revision' => 1];
 
+    /** Resolve the configured native table owned by this model. */
     public function getTable(): string
     {
         return TemplatesConfiguration::table(TemplatesTables::get(TemplatesTables::TenantGrants));
     }
 
+    /** Resolve the actual package source connection. */
     public function getConnectionName(): ?string
     {
         return PackageStorage::connectionName($this->connection ?? PackageStorage::connection('templates') ?? parent::getConnectionName());
@@ -53,7 +55,10 @@ final class TemplateTenantGrant extends Model
         return ['source_revision' => 'integer', 'revision' => 'integer', 'revoked_at' => 'immutable_datetime'];
     }
 
-    /** @return BelongsTo<TemplateVersion,$this> */
+    /**
+     * Read one immutable central publication through the admitted recipient boundary.
+     *
+     * @return BelongsTo<TemplateVersion,$this> */
     public function version(): BelongsTo
     {
         return $this->belongsTo(TemplateVersion::class, 'template_version_id');

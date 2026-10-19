@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Actions;
 
-use Illuminate\Support\Facades\DB;
 use Nvl\Support\Events\DomainEventDispatcher;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Contracts\UpdateTemplateContract;
 use Nvl\Templates\Data\Mutations\UpdateTemplateData;
@@ -16,7 +15,7 @@ use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Services\TemplateContentGuard;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Translatable\Enums\TranslationSyncMode;
 use Nvl\Translatable\Services\TranslationWriter;
 
@@ -27,11 +26,12 @@ use Nvl\Translatable\Services\TranslationWriter;
  */
 final readonly class UpdateTemplateAction implements UpdateTemplateContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private TemplateContentGuard $guard,
         private TranslationWriter $translations,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
         private DomainEventDispatcher $domainEvents,
     ) {}
 
@@ -52,14 +52,14 @@ final readonly class UpdateTemplateAction implements UpdateTemplateContract
         );
         $this->guard->metadata($data->metadata);
 
-        return DB::connection(TemplatesConfiguration::connection())
+        return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use (
                 $actor,
                 $data,
                 $templateId,
                 $translationMode,
             ): Template {
-                $template = $this->boundary->query(Template::query(), 'templates.templates')
+                $template = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
                     ->lockForUpdate()
                     ->findOrFail($templateId);
 

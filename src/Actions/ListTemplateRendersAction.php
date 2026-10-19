@@ -8,7 +8,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Nvl\Filterable\Data\FilterSet;
 use Nvl\Filterable\Services\EloquentFilterApplier;
-use Nvl\Support\Tenancy\Contracts\TenantBoundary;
+use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\ListTemplateRendersContract;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Data\TemplateActorData;
@@ -24,11 +24,12 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  */
 final readonly class ListTemplateRendersAction implements ListTemplateRendersContract
 {
+    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateAuthorization $authorization,
         private EloquentFilterApplier $filters,
         private TemplateRenderFilterSchema $filterSchema,
-        private TenantBoundary $boundary,
+        private OwnershipBoundary $boundary,
     ) {}
 
     /**

@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Nvl\Content\Data\ContentCompositionSnapshotData;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
  * Builds TemplateVersion fixture rows and their declared package parents.
@@ -40,7 +41,7 @@ final class TemplateVersionFactory extends Factory
             }
 
             if ($model->getAttribute('template_id') !== null) {
-                $parent = Template::query()->findOrFail(FactoryGuard::identifier($model->getAttribute('template_id')));
+                $parent = TemplateModelRegistry::query()->findOrFail(FactoryGuard::identifier($model->getAttribute('template_id')));
                 FactoryGuard::parent($parent, $model);
                 FactoryGuard::inherit($model, $parent);
                 if ($model->status->value === 'published') {
