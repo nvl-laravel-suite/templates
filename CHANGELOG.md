@@ -5,10 +5,12 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
-### Added
+## [6.0.0] - 2026-10-20
 
-- Optional native ownership with configurable root subclasses, inherited children, database constraints and reviewed adoption. Unowned applications retain their default models and need neither Ownership nor Tenancy.
-- Canonical source transactions, captured queue/event authority and format-3 Content snapshots for isolated Templates and catalog copies.
+### Changed
+
+- Integrate configured models and native/inherited ownership throughout template compositions, localized rows and document rendering. Revalidate canonical parents and private asset access inside the admitted owner.
+- Align required/development NVL peers on `^6.0`, optional peer conflicts on major 6, and `dev-main` on `6.x-dev`. Review [UPGRADING.md](UPGRADING.md) before rollout.
 
 ## [5.0.1] - 2026-10-08
 

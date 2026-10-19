@@ -3,12 +3,12 @@
 ## Quickstart
 
 ```sh
-composer require nvl/templates:^5.0
+composer require nvl/templates:^6.0
 php artisan nvl:install templates --dry-run
 php artisan nvl:install templates
 ```
 
-Required NVL dependencies: `nvl/content` (`^5.0`), `nvl/core` (`^5.0`), `nvl/filterable` (`^5.0`), `nvl/media` (`^5.0`), `nvl/translatable` (`^5.0`). Configure renderers, views, source definitions and TemplateActorData authorization. PDF is optional; a factory render row does not prove renderer readiness.
+Required NVL dependencies: `nvl/content` (`^6.0`), `nvl/core` (`^6.0`), `nvl/filterable` (`^6.0`), `nvl/media` (`^6.0`), `nvl/translatable` (`^6.0`). Configure renderers, views, source definitions and TemplateActorData authorization. PDF is optional; a factory render row does not prove renderer readiness.
 Review the published common config, select one migration owner, and run schema preflight before existing-table upgrades. The installer does not enable features or run migrations. Follow the detailed installation and capability sections below before invoking a storage/provider operation.
 
 Inject `Nvl\Templates\Contracts\ListTemplatesContract` in a host service. After supplying the trusted inputs described above, the first public call is:
@@ -34,7 +34,7 @@ See the [installation and publishing guide](https://github.com/nvl-laravel-suite
 
 | Item | Value |
 |---|---|
-| Installed through | `composer require nvl/templates:^5.0` |
+| Installed through | `composer require nvl/templates:^6.0` |
 | Module identifier | `nvl/templates` |
 | PHP namespace | `Nvl\Templates` |
 | Service provider | `Nvl\Templates\Providers\TemplatesServiceProvider` |
@@ -102,7 +102,7 @@ templates
 ## Installation
 
 ```bash
-composer require nvl/templates:^5.0
+composer require nvl/templates:^6.0
 php artisan migrate
 php artisan nvl:content:definitions:sync
 php artisan nvl:templates:sync
