@@ -10,6 +10,7 @@ use Nvl\Support\Ownership\ValueObjects\OwnershipResourceDefinition;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateOwnerGrant;
 use Nvl\Templates\Models\TemplateRender;
+use Nvl\Templates\Models\TemplateTenantGrant;
 use Nvl\Templates\Models\TemplateTranslation;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\TemplateModelRegistry;
@@ -31,9 +32,7 @@ final readonly class TemplatesResourceRegistrar
         $owned = $class::ownershipDefinition()->strategy !== 'unscoped';
         $central = $owned && $class::allowsCentralCatalog();
         $resources->register(new OwnershipResourceDefinition('templates.templates', 'templates', $class, $class::ownershipDefinition(), allowsCentral: $central));
-        if ($owned) {
-            $resources->register(new OwnershipResourceDefinition('templates.catalog-grants', 'templates', TemplateOwnerGrant::class, OwnershipDefinition::captured(), immutableFields: ['template_version_id', 'source_revision']));
-        }
+        $resources->register(new OwnershipResourceDefinition('templates.catalog-grants', 'templates', $owned ? TemplateOwnerGrant::class : TemplateTenantGrant::class, $owned ? OwnershipDefinition::captured() : OwnershipDefinition::unscoped(), immutableFields: $owned ? ['template_version_id', 'source_revision'] : []));
         foreach (['templates.translations' => TemplateTranslation::class, 'templates.versions' => TemplateVersion::class, 'templates.assignments' => TemplateAssignment::class, 'templates.renders' => TemplateRender::class] as $key => $model) {
             $immutable = match ($key) {
                 'templates.assignments' => ['owner_type', 'owner_id', 'profile'],

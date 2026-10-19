@@ -34,7 +34,7 @@ final readonly class TemplateGraphOwnership
         }
         if ($model instanceof TemplateVersion && $model->exists) {
             $row = $model->getConnection()->table($model->getTable())->where('id', $model->getRawOriginal('id'))->first();
-            if ($row !== null && in_array($row->status, ['published', 'retired'], true) && $model->isDirty(['metadata', 'content_snapshot', 'content_hash', 'published_by_type', 'published_by', 'published_at'])) {
+            if ($row !== null && in_array($row->status, ['published', 'retired'], true) && (! in_array($model->status->value, ['published', 'retired'], true) || $model->isDirty(['metadata', 'content_snapshot', 'content_hash', 'published_by_type', 'published_by', 'published_at']))) {
                 throw new OwnershipViolation('Published Template content is immutable.');
             }
         }

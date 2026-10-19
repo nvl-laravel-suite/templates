@@ -87,7 +87,7 @@ final readonly class TemplatesAdoptionAdapter implements OwnershipAdoptionAdapte
             $column = 'template_id';
             $found = false;
             foreach ($schema->getForeignKeys($child->getTable()) as $foreign) {
-                if ($foreign['columns'] === [$column] && $foreign['foreign_table'] === $root->getTable() && $foreign['foreign_columns'] === ['id']) {
+                if ($foreign['columns'] === [$column] && $foreign['foreign_table'] === $root->getConnection()->getTablePrefix().$root->getTable() && $foreign['foreign_columns'] === ['id']) {
                     $found = true;
                     break;
                 }
@@ -117,7 +117,7 @@ final readonly class TemplatesAdoptionAdapter implements OwnershipAdoptionAdapte
             $this->unique($parent, ['id', 'template_id'], 'templates_tuple_'.substr(hash('sha256', $parent->getTable()), 0, 20));
             $found = false;
             foreach ($schema->getForeignKeys($child->getTable()) as $foreign) {
-                if ($foreign['columns'] === [$column, 'template_id'] && $foreign['foreign_table'] === $parent->getTable()) {
+                if ($foreign['columns'] === [$column, 'template_id'] && $foreign['foreign_table'] === $parent->getConnection()->getTablePrefix().$parent->getTable()) {
                     $found = true;
                     break;
                 }
@@ -253,7 +253,7 @@ final readonly class TemplatesAdoptionAdapter implements OwnershipAdoptionAdapte
             $this->constraints->reference($child->getConnection(), $child->getTable(), $column, $parent->getTable(), 'id', $nullable, ['template_id']);
         }
         $version = new ($this->resources->get('templates.versions')->model);
-        $this->constraints->freeze($version->getConnection(), $version->getTable(), ['metadata', 'content_snapshot', 'content_hash', 'published_by_type', 'published_by', 'published_at'], afterStatuses: ['published', 'retired']);
+        $this->constraints->freeze($version->getConnection(), $version->getTable(), ['metadata', 'content_snapshot', 'content_hash', 'published_by_type', 'published_by', 'published_at'], afterStatuses: ['published', 'retired'], retainStatuses: true);
         $render = new ($this->resources->get('templates.renders')->model);
         $this->constraints->freeze($render->getConnection(), $render->getTable(), ['payload', 'settings'], eraseStatuses: ['completed', 'failed']);
         $this->constraints->freeze($render->getConnection(), $render->getTable(), ['template_assignment_id'], eraseStatuses: ['pending', 'processing', 'completed', 'failed']);

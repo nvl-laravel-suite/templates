@@ -207,3 +207,19 @@ it('rechecks the locked code definition after catalog content is staged', functi
         expect(TemplateModelRegistry::query()->count())->toBe(0);
     });
 });
+
+it('never returns a published or retired version to draft through quiet or raw writes', function (string $status, string $path): void {
+    app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function () use ($status, $path): void {
+        $version = OwnershipTemplateScenario::version();
+        if ($status === 'retired') {
+            $version->forceFill(['status' => 'retired'])->saveQuietly();
+        }
+        if ($path === 'quiet') {
+            expect(fn () => $version->forceFill(['status' => 'draft'])->saveQuietly())->toThrow(OwnershipViolation::class);
+        } else {
+            $connection = $version->getConnection();
+            expect(fn () => $connection->transaction(fn () => $connection->table($version->getTable())->where('id', $version->id)->update(['status' => 'draft'])))->toThrow(QueryException::class);
+        }
+        expect($version->refresh()->status->value)->toBe($status);
+    });
+})->with(['published', 'retired'])->with(['quiet', 'raw']);

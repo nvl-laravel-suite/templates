@@ -86,7 +86,8 @@ final class TemplateOwnerRegistry
         }
 
         if (TemplatesOwnership::declared()) {
-            if (config('nvl-templates.ownership.owner_resources.'.$alias) !== TemplatesOwnership::resource($owner)) {
+            $resources = config('nvl-templates.ownership.owner_resources', []);
+            if (! is_array($resources) || ($resources[$alias] ?? null) !== TemplatesOwnership::resource($owner)) {
                 throw new OwnershipViolation('Template assignment host has no canonical resource declaration.');
             }
             $key = $owner->getKey();

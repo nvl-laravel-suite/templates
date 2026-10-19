@@ -19,7 +19,6 @@ use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Services\TemplateModelRegistry;
-use Throwable;
 
 /**
  * Copies recipient-granted central publications into independent native graphs.
@@ -152,11 +151,10 @@ final readonly class TemplateOwnerCatalog
 
                 return $copy->refresh();
             });
-        } catch (Throwable $error) {
+        } finally {
             foreach ($staged as $file) {
                 $this->media->discard($file);
             }
-            throw $error;
         }
     }
 
