@@ -956,6 +956,21 @@
             "properties": [],
             "constants": []
         },
+        "Nvl\\Templates\\Exceptions\\TemplateDependencyUnavailableException": {
+            "kind": "class",
+            "file": "src/Exceptions/TemplateDependencyUnavailableException.php",
+            "methods": [
+                "package",
+                "publicContext",
+                "responseCode",
+                "responseHeaders",
+                "suggestedStatus",
+                "translationKey",
+                "translationParameters"
+            ],
+            "properties": [],
+            "constants": []
+        },
         "Nvl\\Templates\\Exceptions\\TemplateResolutionException": {
             "kind": "class",
             "file": "src/Exceptions/TemplateResolutionException.php",
