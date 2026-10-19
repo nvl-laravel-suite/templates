@@ -1,14 +1,18 @@
 <?php
 
 declare(strict_types=1);
+
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
+use Nvl\Templates\Models\Template;
 use Nvl\Templates\Rendering\BladeTemplateRenderer;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 
 return [
+    'models' => ['template' => Template::class],
+    'ownership' => ['owner_resources' => []],
     'connection' => null,
-    'tables' => ['templates' => TemplatesTables::Templates, 'templates_i18n' => TemplatesTables::I18n, 'template_versions' => TemplatesTables::Versions, 'template_assignments' => TemplatesTables::Assignments, 'template_renders' => TemplatesTables::Renders],
+    'tables' => ['owner_grants' => TemplatesTables::OwnerGrants, 'templates' => TemplatesTables::Templates, 'templates_i18n' => TemplatesTables::I18n, 'template_versions' => TemplatesTables::Versions, 'template_assignments' => TemplatesTables::Assignments, 'template_renders' => TemplatesTables::Renders],
     'migrations' => ['enabled' => true],
     'authorization' => ['class' => ConfiguredTemplateAuthorization::class],
     'routes' => ['management' => ['enabled' => false, 'prefix' => 'nvl/api/v1/templates', 'name' => 'nvl.templates.management.', 'middleware' => ['api', 'auth', 'throttle:60,1']], 'render' => ['enabled' => false, 'prefix' => 'nvl/api/v1/templates/render', 'name' => 'nvl.templates.render.', 'middleware' => ['api', 'auth', 'throttle:60,1']]],
