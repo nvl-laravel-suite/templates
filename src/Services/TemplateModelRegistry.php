@@ -7,7 +7,7 @@ namespace Nvl\Templates\Services;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Eloquent\Builder;
-use Nvl\Support\Models\ConfiguredModelResolver;
+use Nvl\Support\Models\ConfiguredModelRegistration;
 use Nvl\Support\OwnerRegistry;
 use Nvl\Support\Ownership\Contracts\OwnershipWriter;
 use Nvl\Support\Ownership\Exceptions\OwnershipConfigurationInvalid;
@@ -20,16 +20,27 @@ use Nvl\Templates\Models\Template;
  */
 final class TemplateModelRegistry
 {
-    /** @var class-string<Template>|null */
-    private ?string $definition = null;
-
-    private bool $validated = false;
+    /** @var ConfiguredModelRegistration<Template> */
+    private readonly ConfiguredModelRegistration $registration;
 
     /** Retain deployment configuration and the shared identity registry. */
     public function __construct(
-        private readonly Repository $configuration,
-        private readonly OwnerRegistry $identities,
-    ) {}
+        Repository $configuration,
+        OwnerRegistry $identities,
+    ) {
+        $this->registration = new ConfiguredModelRegistration(
+            $configuration,
+            $identities,
+            'nvl-templates.models.template',
+            Template::class,
+            'templates.templates',
+            static function (string $class): void {
+                if (! in_array($class::ownershipDefinition()->strategy, ['unscoped', 'column', 'pivot'], true)) {
+                    throw new OwnershipConfigurationInvalid('Template roots require a native column or concrete primary pivot.');
+                }
+            },
+        );
+    }
 
     /** Resolve and freeze the concrete Template class before resource compilation.
      * @internal
@@ -38,21 +49,7 @@ final class TemplateModelRegistry
      */
     public function prepare(): string
     {
-        if ($this->definition !== null) {
-            return $this->definition;
-        }
-        $configured = $this->configuration->get('nvl-templates.models.template', Template::class);
-        if (! is_string($configured)) {
-            throw new OwnershipConfigurationInvalid('Template model configuration must name a concrete Template subclass.');
-        }
-        $class = (new ConfiguredModelResolver)->resolve($configured, Template::class);
-        if (! in_array($class::ownershipDefinition()->strategy, ['unscoped', 'column', 'pivot'], true)) {
-            throw new OwnershipConfigurationInvalid('Template roots require a native column or concrete primary pivot.');
-        }
-        $this->identities->registerReplacement('templates.templates', Template::class, $class);
-        $this->definition = $class;
-
-        return $class;
+        return $this->registration->prepare();
     }
 
     /** Validate native capabilities after Laravel installs Eloquent's dispatcher.
@@ -60,16 +57,7 @@ final class TemplateModelRegistry
      */
     public function templateClass(): string
     {
-        $class = $this->prepare();
-        if ($this->validated) {
-            return $class;
-        }
-        $model = new $class;
-        $base = new Template;
-        (new ConfiguredModelResolver)->assertOwnershipCapabilities($model, $base);
-        $this->validated = true;
-
-        return $class;
+        return $this->registration->modelClass();
     }
 
     /** Resolve the immutable model from native framework entry points.

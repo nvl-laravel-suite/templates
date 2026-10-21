@@ -6,11 +6,9 @@ namespace Nvl\Templates\Ownership;
 
 use Illuminate\Database\Eloquent\Model;
 use Nvl\Support\Ownership\Compatibility\LegacyOwnershipSupport;
-use Nvl\Support\Ownership\Contracts\OwnershipContext;
-use Nvl\Support\Ownership\Enums\OwnershipContextMode;
+use Nvl\Support\Ownership\Services\OwnershipQueueCapture;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope;
-use Nvl\Support\Ownership\ValueObjects\OwnershipSnapshot;
 
 /**
  * Resolves canonical metadata without retaining request admission.
@@ -40,18 +38,7 @@ final class TemplatesOwnership
     /** Capture scalar admission; untouched graphs preserve disabled installation behavior. */
     public static function envelope(): OwnershipJobEnvelope
     {
-        $context = app(OwnershipContext::class);
-        if ($context->snapshot()->mode === OwnershipContextMode::Unresolved) {
-            foreach (app(OwnershipResourceRegistry::class)->all() as $resource) {
-                if ($resource->ownership->strategy !== 'unscoped') {
-                    return OwnershipJobEnvelope::capture($context);
-                }
-            }
-
-            return OwnershipJobEnvelope::fromSnapshot(new OwnershipSnapshot(OwnershipContextMode::Disabled));
-        }
-
-        return OwnershipJobEnvelope::capture($context);
+        return app(OwnershipQueueCapture::class)->capture();
     }
 
     private function __construct() {}
