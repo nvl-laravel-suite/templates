@@ -9,6 +9,7 @@ use Nvl\Templates\Data\PdfMargins;
 use Nvl\Templates\Data\PdfOptions;
 use Nvl\Templates\Enums\PdfOrientation;
 use Nvl\Templates\Enums\PdfPageSize;
+use Nvl\Templates\Support\LocalFilesystemPath;
 use Nvl\Templates\Support\PdfConfig\Data\HeaderFooterData;
 use Nvl\Templates\Support\PdfConfig\Data\MarginsData;
 use Nvl\Templates\Support\PdfConfig\Data\MetadataData;
@@ -141,8 +142,7 @@ final class EngineConfig
 
     public function setTempDir(string $path): self
     {
-        if (! str_starts_with($path, DIRECTORY_SEPARATOR)
-            || str_contains($path, "\0")) {
+        if (LocalFilesystemPath::normalize($path) === null) {
             throw new InvalidArgumentException(
                 'PDF temporary directory must be an absolute path.',
             );

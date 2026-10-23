@@ -6,6 +6,7 @@ namespace Nvl\Templates\Services;
 
 use Illuminate\Filesystem\Filesystem;
 use InvalidArgumentException;
+use Nvl\Templates\Support\LocalFilesystemPath;
 
 /**
  * Resolves local files and directories beneath existing non-symlink roots.
@@ -95,28 +96,12 @@ final readonly class SafeFilesystemPathResolver
 
     private function absolutePath(string $path, string $description): string
     {
-        if (! str_starts_with($path, DIRECTORY_SEPARATOR)
-            || str_contains($path, "\0")) {
+        $normalized = LocalFilesystemPath::normalize($path);
+        if ($normalized === null) {
             throw new InvalidArgumentException("{$description} must be an absolute safe path.");
         }
 
-        $segments = [];
-
-        foreach (explode(DIRECTORY_SEPARATOR, $path) as $segment) {
-            if ($segment === '' || $segment === '.') {
-                continue;
-            }
-
-            if ($segment === '..') {
-                array_pop($segments);
-
-                continue;
-            }
-
-            $segments[] = $segment;
-        }
-
-        return DIRECTORY_SEPARATOR.implode(DIRECTORY_SEPARATOR, $segments);
+        return $normalized;
     }
 
     /**
@@ -135,7 +120,6 @@ final readonly class SafeFilesystemPathResolver
 
         foreach ($allowedRoots as $root) {
             if (! is_string($root)
-                || ! str_starts_with($root, DIRECTORY_SEPARATOR)
                 || str_contains($root, "\0")) {
                 throw new InvalidArgumentException(
                     "{$description} allowed roots must be absolute path strings.",
@@ -197,6 +181,12 @@ final readonly class SafeFilesystemPathResolver
             || ($resolvedCursor !== $resolvedRoot
                 && ! str_starts_with($resolvedCursor, $rootPrefix))) {
             throw new InvalidArgumentException("{$description} escapes its resolved root.");
+        }
+
+        if (! is_dir($resolvedCursor)) {
+            throw new InvalidArgumentException(
+                "{$description} has a non-directory existing ancestor.",
+            );
         }
 
         if ($writable && ! is_writable($resolvedCursor)) {
