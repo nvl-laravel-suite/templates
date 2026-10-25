@@ -6,14 +6,12 @@ namespace Nvl\Templates\Data;
 
 use Nvl\Data\Traits\DataTransform;
 use Spatie\LaravelData\Data;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Optional PDF margin overrides expressed in millimetres.
  *
  * @api
  */
-#[TypeScript]
 final class PdfMargins extends Data
 {
     use DataTransform;

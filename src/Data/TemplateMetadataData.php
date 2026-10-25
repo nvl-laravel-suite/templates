@@ -8,8 +8,6 @@ use Nvl\Data\Traits\DataTransform;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Source-controlled identity and editor-facing capabilities for one template class.
@@ -17,7 +15,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  * @api
  */
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class TemplateMetadataData extends Data
 {
     use DataTransform;
@@ -31,7 +28,6 @@ final class TemplateMetadataData extends Data
         public readonly ?string $description = null,
         public readonly ?string $group = null,
         public readonly array $supportedVariants = [],
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $metadata = [],
     ) {}
 }

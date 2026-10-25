@@ -12,8 +12,6 @@ use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Complete structural template replacement with optimistic concurrency.
@@ -22,7 +20,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  */
 #[MapInputName(CamelCaseMapper::class)]
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class UpdateTemplateData extends Data
 {
     use DataTransform;
@@ -34,9 +31,7 @@ final class UpdateTemplateData extends Data
     public function __construct(
         public readonly TemplateStatus $status,
         public readonly int $expectedRevision,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $metadata = [],
-        #[LiteralTypeScriptType('Record<string, Record<string, unknown>>')]
         public readonly array $translations = [],
     ) {}
 

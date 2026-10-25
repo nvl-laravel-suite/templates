@@ -11,13 +11,11 @@ use Nvl\Templates\Models\TemplateRender;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Transport-safe durable render status and private output reference.
  */
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class TemplateRenderData extends Data
 {
     use DataTransform;

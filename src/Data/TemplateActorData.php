@@ -7,14 +7,12 @@ namespace Nvl\Templates\Data;
 use Nvl\Content\Data\ContentActorData;
 use Nvl\Data\Traits\DataTransform;
 use Spatie\LaravelData\Data;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Transport-neutral actor identity used by authorization and audit events.
  *
  * @api
  */
-#[TypeScript]
 final class TemplateActorData extends Data
 {
     use DataTransform;

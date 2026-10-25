@@ -12,14 +12,11 @@ use Nvl\Templates\Models\TemplateVersion;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Privileged, transport-safe template version representation.
  */
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class TemplateVersionData extends Data
 {
     use DataTransform;
@@ -35,7 +32,6 @@ final class TemplateVersionData extends Data
         public readonly int $revision,
         public readonly ?string $contentHash,
         public readonly int $contentBlockCount,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $metadata,
         public readonly ?string $publishedAt,
         public readonly string $createdAt,

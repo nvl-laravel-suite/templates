@@ -9,8 +9,6 @@ use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Validated synchronous or queued render request.
@@ -19,7 +17,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  */
 #[MapInputName(CamelCaseMapper::class)]
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class RenderTemplateData extends Data
 {
     use DataTransform;
@@ -29,7 +26,6 @@ final class RenderTemplateData extends Data
      */
     public function __construct(
         public readonly string $locale,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $payload,
         public readonly ?string $ownerType = null,
         public readonly ?string $ownerId = null,

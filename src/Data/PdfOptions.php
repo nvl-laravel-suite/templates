@@ -8,15 +8,12 @@ use Nvl\Data\Traits\DataTransform;
 use Nvl\Templates\Enums\PdfOrientation;
 use Nvl\Templates\Enums\PdfPageSize;
 use Spatie\LaravelData\Data;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Typed per-template overrides for the bundled mPDF implementation.
  *
  * @api
  */
-#[TypeScript]
 final class PdfOptions extends Data
 {
     use DataTransform;
@@ -44,11 +41,9 @@ final class PdfOptions extends Data
         public readonly ?string $keywords = null,
         public readonly ?string $headerView = null,
         public readonly ?string $headerHtml = null,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $headerData = [],
         public readonly ?string $footerView = null,
         public readonly ?string $footerHtml = null,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $footerData = [],
         public readonly ?string $watermark = null,
         public readonly ?float $watermarkOpacity = null,

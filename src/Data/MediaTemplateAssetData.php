@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Nvl\Templates\Data;
 
 use Spatie\LaravelData\Data;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * One stable template alias pointing at an exact NVL Media resource.
  */
-#[TypeScript]
 final class MediaTemplateAssetData extends Data
 {
     public function __construct(

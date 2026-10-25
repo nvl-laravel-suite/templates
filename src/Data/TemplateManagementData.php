@@ -13,14 +13,11 @@ use Nvl\Templates\Models\TemplateVersion;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Privileged template aggregate without raw Eloquent serialization.
  */
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class TemplateManagementData extends Data
 {
     use DataTransform;
@@ -38,11 +35,8 @@ final class TemplateManagementData extends Data
         public readonly string $renderer,
         public readonly TemplateStatus $status,
         public readonly int $revision,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $schema,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $metadata,
-        #[LiteralTypeScriptType('Record<string, { title: string; description: string | null }>')]
         public readonly array $translations,
         public readonly array $versions,
         public readonly array $assignments,

@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Enums;
 
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
-
 /**
  * Common print page sizes supported by the bundled PDF renderer.
  *
  * @api
  */
-#[TypeScript]
 enum PdfPageSize: string
 {
     case A3 = 'A3';

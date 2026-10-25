@@ -9,14 +9,11 @@ use Nvl\Templates\Models\TemplateAssignment;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Privileged owner assignment representation.
  */
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class TemplateAssignmentData extends Data
 {
     use DataTransform;
@@ -32,7 +29,6 @@ final class TemplateAssignmentData extends Data
         public readonly string $ownerId,
         public readonly string $profile,
         public readonly int $revision,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $settings,
     ) {}
 

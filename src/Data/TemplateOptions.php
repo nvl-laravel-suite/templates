@@ -6,15 +6,12 @@ namespace Nvl\Templates\Data;
 
 use Nvl\Data\Traits\DataTransform;
 use Spatie\LaravelData\Data;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Per-template renderer, locale, naming, and driver-specific overrides.
  *
  * @api
  */
-#[TypeScript]
 final class TemplateOptions extends Data
 {
     use DataTransform;
@@ -28,7 +25,6 @@ final class TemplateOptions extends Data
         public readonly ?string $subject = null,
         public readonly ?string $filename = null,
         public readonly ?PdfOptions $pdf = null,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $rendererOptions = [],
     ) {}
 }

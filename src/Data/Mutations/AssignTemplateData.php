@@ -9,8 +9,6 @@ use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\CamelCaseMapper;
-use Spatie\TypeScriptTransformer\Attributes\LiteralTypeScriptType;
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 /**
  * Validated template-to-owner assignment contract.
@@ -19,7 +17,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
  */
 #[MapInputName(CamelCaseMapper::class)]
 #[MapOutputName(CamelCaseMapper::class)]
-#[TypeScript]
 final class AssignTemplateData extends Data
 {
     use DataTransform;
@@ -32,7 +29,6 @@ final class AssignTemplateData extends Data
         public readonly string $ownerId,
         public readonly string $profile = 'default',
         public readonly ?string $versionId = null,
-        #[LiteralTypeScriptType('Record<string, unknown>')]
         public readonly array $settings = [],
         public readonly int $expectedRevision = 0,
     ) {}

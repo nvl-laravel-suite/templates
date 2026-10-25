@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Enums;
 
-use Spatie\TypeScriptTransformer\Attributes\TypeScript;
-
 /**
  * Page orientation supported by the bundled PDF renderer.
  *
  * @api
  */
-#[TypeScript]
 enum PdfOrientation: string
 {
     case Portrait = 'portrait';
