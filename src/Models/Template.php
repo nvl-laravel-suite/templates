@@ -90,7 +90,7 @@ class Template extends Model implements Ownable, TranslatableModel
             translationModel: TemplateTranslation::class,
             foreignKey: 'template_id',
             fields: ['title', 'description'],
-            mutationPolicy: TranslationMutationPolicy::DomainActionOnly,
+            mutationPolicy: TranslationMutationPolicy::OwningServiceOnly,
             ownershipResource: 'templates.templates',
         );
     }
