@@ -14,13 +14,15 @@ use Nvl\Templates\Models\TemplateVersion;
 
 /**
  * Applies the package's single publication-status policy to version selection.
+ *
+ * @internal
  */
 final class TemplateVersionResolver
 {
     /**
      * Resolve an immutable version that may be pinned to an assignment.
      *
-     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}  $data
+     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotency_key: string|null, download: bool}  $data
      */
     public function forRender(
         Template $template,
@@ -28,7 +30,7 @@ final class TemplateVersionResolver
         ?TemplateAssignment $assignment,
         Authenticatable|SystemActor $actor,
     ): TemplateVersion {
-        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         $explicitVersion = $data['versionId'] !== null;
         $assignmentVersion = ! $explicitVersion
             && $assignment?->template_version_id !== null;

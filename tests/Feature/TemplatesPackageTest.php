@@ -255,7 +255,7 @@ it('installs its composition schema with management routes disabled', function (
     $inactive = Template::query()->where('key', 'welcome')->firstOrFail();
     $inactive = app(TemplateLifecycle::class)->update(
         $inactive,
-        ['metadata' => [], 'translations' => [], 'status' => TemplateStatus::Inactive, 'expectedRevision' => $inactive->revision],
+        ['metadata' => [], 'translations' => [], 'status' => TemplateStatus::Inactive, 'expected_revision' => $inactive->revision],
         SystemActor::Background,
     );
     $this->artisan('nvl:templates:sync')->assertSuccessful();
@@ -513,23 +513,23 @@ it('publishes and queues an immutable localized content composition', function (
     );
     $result = app(TemplateRenderer::class)->render(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'],
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor);
     $queued = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor,
     );
     $same = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor,
     );
     app(ContentBlocks::class)->update(
         $block,
         [
-            'expectedRevision' => $block->revision,
+            'expected_revision' => $block->revision,
             'mode' => ContentMutationMode::Patch,
             'translations' => ['en' => ['text' => 'Changed after publication']],
         ],
@@ -537,8 +537,8 @@ it('publishes and queues an immutable localized content composition', function (
     );
     $snapshotResult = app(TemplateRenderer::class)->render(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'],
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor);
 
     expect($version->status)->toBe(TemplateVersionStatus::Published)
@@ -560,7 +560,7 @@ it('enforces optimistic concurrency and published version immutability', functio
     );
     $updatedTemplate = app(TemplateLifecycle::class)->update(
         $template,
-        ['metadata' => [], 'translations' => ['en' => ['title' => 'Updated welcome']], 'status' => TemplateStatus::Active, 'expectedRevision' => $template->revision],
+        ['metadata' => [], 'translations' => ['en' => ['title' => 'Updated welcome']], 'status' => TemplateStatus::Active, 'expected_revision' => $template->revision],
         $actor,
     );
 
@@ -572,7 +572,7 @@ it('enforces optimistic concurrency and published version immutability', functio
 
     expect(fn () => app(TemplateLifecycle::class)->update(
         $updatedTemplate,
-        ['metadata' => [], 'translations' => ['en' => ['title' => 'Stale']], 'status' => TemplateStatus::Active, 'expectedRevision' => 1],
+        ['metadata' => [], 'translations' => ['en' => ['title' => 'Stale']], 'status' => TemplateStatus::Active, 'expected_revision' => 1],
         $actor,
     ))->toThrow(StaleTemplateException::class);
 
@@ -584,7 +584,7 @@ it('enforces optimistic concurrency and published version immutability', functio
     );
     $draft = app(TemplateLifecycle::class)->updateVersion(
         $version,
-        ['metadata' => ['campaign' => 'welcome'], 'expectedRevision' => $version->revision],
+        ['metadata' => ['campaign' => 'welcome'], 'expected_revision' => $version->revision],
         $actor,
     );
     $published = app(TemplateLifecycle::class)->publishVersion(
@@ -595,7 +595,7 @@ it('enforces optimistic concurrency and published version immutability', functio
 
     expect(fn () => app(TemplateLifecycle::class)->updateVersion(
         $published,
-        ['metadata' => ['campaign' => 'forbidden'], 'expectedRevision' => $published->revision],
+        ['metadata' => ['campaign' => 'forbidden'], 'expected_revision' => $published->revision],
         $actor,
     ))->toThrow(InvalidArgumentException::class)
         ->and(fn () => app(TemplateLifecycle::class)->publishVersion(
@@ -636,12 +636,12 @@ it('assigns templates to registered owners with exact revisions', function (): v
     );
     $assignment = app(TemplateAssignments::class)->assign(
         $template,
-        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'friendly'], 'expectedRevision' => 0, 'ownerType' => 'member', 'ownerId' => $owner->id],
+        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'friendly'], 'expected_revision' => 0, 'ownerType' => 'member', 'ownerId' => $owner->id],
         $actor,
     );
     $updated = app(TemplateAssignments::class)->assign(
         $template,
-        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'formal'], 'expectedRevision' => $assignment->revision, 'ownerType' => 'member', 'ownerId' => $owner->id],
+        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'formal'], 'expected_revision' => $assignment->revision, 'ownerType' => 'member', 'ownerId' => $owner->id],
         $actor,
     );
 
@@ -682,7 +682,7 @@ it('authorizes every caller-selected stored render scope', function (): void {
     );
     app(TemplateAssignments::class)->assign(
         $template,
-        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'friendly'], 'expectedRevision' => 0, 'ownerType' => 'member', 'ownerId' => $owner->id],
+        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'friendly'], 'expected_revision' => 0, 'ownerType' => 'member', 'ownerId' => $owner->id],
         $system,
     );
     app()->instance(TemplateAuthorization::class, new class implements TemplateAuthorization
@@ -705,7 +705,7 @@ it('authorizes every caller-selected stored render scope', function (): void {
         }
     });
     $ownerActor = templateTestActor($owner->id);
-    $request = ['ownerType' => 'member', 'ownerId' => $owner->id, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'authorized-owner-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']];
+    $request = ['ownerType' => 'member', 'ownerId' => $owner->id, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'authorized-owner-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']];
 
     expect(app(TemplateRenderer::class)->render(
         $template,
@@ -744,12 +744,12 @@ it('uses canonical render requests and processes queued output idempotently', fu
     app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $actor);
     $render = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada', 'options' => ['b' => 2, 'a' => 1]]],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada', 'options' => ['b' => 2, 'a' => 1]]],
         $actor,
     );
     $same = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['options' => ['a' => 1, 'b' => 2], 'name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['options' => ['a' => 1, 'b' => 2], 'name' => 'Ada']],
         $actor,
     );
 
@@ -759,7 +759,7 @@ it('uses canonical render requests and processes queued output idempotently', fu
 
     expect(fn () => app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Grace']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'welcome-ada', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Grace']],
         $actor,
     ))->toThrow(TemplatesException::class);
 
@@ -767,7 +767,7 @@ it('uses canonical render requests and processes queued output idempotently', fu
     $again = app(TemplateRenderer::class)->process($completed);
     $terminal = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'terminal-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Terminal']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'terminal-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Terminal']],
         $actor,
     );
     (new RenderTemplateJob(
@@ -801,7 +801,7 @@ it('applies durable render job policies and records processing failures', functi
     app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $actor);
     $render = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'job-success', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'job-success', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor,
     );
     config()->set('nvl-templates.rendering.backoff', 'invalid');
@@ -823,7 +823,7 @@ it('applies durable render job policies and records processing failures', functi
 
     $failed = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'job-failure', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Grace']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'job-failure', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Grace']],
         $actor,
     );
     $failed->version()->update(['status' => TemplateVersionStatus::Draft]);
@@ -899,8 +899,8 @@ it('resolves revision-aware class-template aliases through NVL Media', function 
         [dirname($absolutePath, 3)],
     );
     $registry = app(MediaTemplateAssetRegistry::class);
-    $registry->register(['scope' => 'document', 'type' => 'logo', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => 3, 'key' => 'brand-logo', 'mediaId' => $media->id]);
-    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => 2, 'key' => 'stale-logo', 'mediaId' => $media->id]);
+    $registry->register(['scope' => 'document', 'type' => 'logo', 'variation' => '', 'delivery' => 'path', 'expected_revision' => 3, 'key' => 'brand-logo', 'mediaId' => $media->id]);
+    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => 2, 'key' => 'stale-logo', 'mediaId' => $media->id]);
     $registry->registerAdoptionAliases(['legacy-logo' => $media->id]);
     $resolver = app(MediaTemplateAssetResolver::class);
 
@@ -916,22 +916,22 @@ it('resolves revision-aware class-template aliases through NVL Media', function 
 
 it('fails closed across template Media alias registration and resolution', function (): void {
     $registry = app(MediaTemplateAssetRegistry::class);
-    $registered = ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null, 'key' => 'registered-logo', 'mediaId' => 'registered-media'];
+    $registered = ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => null, 'key' => 'registered-logo', 'mediaId' => 'registered-media'];
     $registry->register($registered);
 
     expect(fn () => $registry->register($registered))
         ->toThrow(InvalidArgumentException::class)
-        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null, 'key' => 'blank-media', 'mediaId' => ' ']))->toThrow(InvalidArgumentException::class)
-        ->and(fn () => $registry->register(['scope' => 'bad scope', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null, 'key' => 'invalid-scope', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
-        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => 'Bad!', 'delivery' => 'path', 'expectedRevision' => null, 'key' => 'invalid-variation', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
-        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'stream', 'expectedRevision' => null, 'key' => 'invalid-delivery', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
-        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => 0, 'key' => 'invalid-revision', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => null, 'key' => 'blank-media', 'mediaId' => ' ']))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $registry->register(['scope' => 'bad scope', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => null, 'key' => 'invalid-scope', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => 'Bad!', 'delivery' => 'path', 'expected_revision' => null, 'key' => 'invalid-variation', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'stream', 'expected_revision' => null, 'key' => 'invalid-delivery', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => 0, 'key' => 'invalid-revision', 'mediaId' => 'media']))->toThrow(InvalidArgumentException::class)
         ->and(fn () => $registry->registerAdoptionAliases(['legacy' => 42]))
         ->toThrow(InvalidArgumentException::class)
         ->and($registry->all())->toHaveKey('registered-logo');
 
     $resolver = app(MediaTemplateAssetResolver::class);
-    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null, 'key' => 'missing-media', 'mediaId' => (string) str()->uuid()]);
+    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => null, 'key' => 'missing-media', 'mediaId' => (string) str()->uuid()]);
 
     expect(fn () => $resolver->resolve('missing-media', SystemActor::Background))
         ->toThrow(TemplateResolutionException::class);
@@ -953,8 +953,8 @@ it('fails closed across template Media alias registration and resolution', funct
         'nvl-templates.pdf.remote_assets.allowed_hosts' => ['localhost'],
     ]);
     url()->forceRootUrl('http://localhost');
-    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => 'thumbnail', 'delivery' => 'path', 'expectedRevision' => null, 'key' => 'missing-variation', 'mediaId' => $media->id]);
-    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'url', 'expectedRevision' => null, 'key' => 'public-url', 'mediaId' => $media->id]);
+    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => 'thumbnail', 'delivery' => 'path', 'expected_revision' => null, 'key' => 'missing-variation', 'mediaId' => $media->id]);
+    $registry->register(['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'url', 'expected_revision' => null, 'key' => 'public-url', 'mediaId' => $media->id]);
 
     expect(fn () => $resolver->resolve('missing-variation', SystemActor::Background))
         ->toThrow(TemplateResolutionException::class)
@@ -1208,8 +1208,8 @@ it('renders a bounded source-controlled PDF and validates its payload schema', f
     app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $actor);
     $result = app(TemplateRenderer::class)->render(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'],
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor);
 
     expect($result['mime_type'])->toBe('application/pdf')
@@ -1237,8 +1237,8 @@ it('renders a bounded source-controlled PDF and validates its payload schema', f
 
     expect(fn () => app(TemplateRenderer::class)->render(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['unknown' => true]]['payload'],
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['unknown' => true]],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['unknown' => true]]['payload'],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['unknown' => true]],
         $actor))->toThrow(TemplateResolutionException::class);
 
     expect(fn () => app(PdfHtmlGuard::class)->validate(
@@ -1353,17 +1353,17 @@ it('snapshots queued assignment settings and recovers expired render leases', fu
     app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $actor);
     $assignment = app(TemplateAssignments::class)->assign(
         $template,
-        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'friendly'], 'expectedRevision' => 0, 'ownerType' => 'member', 'ownerId' => $owner->id],
+        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'friendly'], 'expected_revision' => 0, 'ownerType' => 'member', 'ownerId' => $owner->id],
         $actor,
     );
     $render = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => 'member', 'ownerId' => $owner->id, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'durable-friendly', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => 'member', 'ownerId' => $owner->id, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'durable-friendly', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor,
     );
     $updatedAssignment = app(TemplateAssignments::class)->assign(
         $template,
-        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'formal'], 'expectedRevision' => $assignment->revision, 'ownerType' => 'member', 'ownerId' => $owner->id],
+        ['profile' => 'default', 'versionId' => null, 'settings' => ['tone' => 'formal'], 'expected_revision' => $assignment->revision, 'ownerType' => 'member', 'ownerId' => $owner->id],
         $actor,
     );
     app(TemplateAssignments::class)->unassign(
@@ -1375,12 +1375,12 @@ it('snapshots queued assignment settings and recovers expired render leases', fu
     $completed = app(TemplateRenderer::class)->process($render);
     $recoverable = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'recoverable-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Grace']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'recoverable-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Grace']],
         $actor,
     );
     $stalePending = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'stale-pending-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Lin']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'stale-pending-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Lin']],
         $actor,
     );
     $oldJob = new RenderTemplateJob(
@@ -1445,7 +1445,7 @@ it('scopes render history to its requester and exposes only transport-safe facts
     );
     $render = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'owned-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'owned-render', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor,
     );
     $page = app(TemplateReader::class)->renders(
@@ -1514,7 +1514,7 @@ it('reloads render requester facts and media before disclosure', function (): vo
     app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $system);
     $render = app(TemplateRenderer::class)->queue(
         $template,
-        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+        ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
         $actor,
     );
     $forged = clone $render;
@@ -1546,12 +1546,12 @@ it('uses persisted template state for both stored render entry points', function
         ['en' => ['text' => 'Welcome']],
     );
     app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $actor);
-    app(TemplateLifecycle::class)->update($template, ['metadata' => [], 'translations' => [], 'status' => TemplateStatus::Archived, 'expectedRevision' => $template->revision], $actor);
+    app(TemplateLifecycle::class)->update($template, ['metadata' => [], 'translations' => [], 'status' => TemplateStatus::Archived, 'expected_revision' => $template->revision], $actor);
 
     expect($template->status)->toBe(TemplateStatus::Active)
         ->and(fn () => $action === 'render' ? app(TemplateRenderer::class)->render($template, ['name' => 'Ada'], ['locale' => 'en'], $actor) : app(TemplateRenderer::class)->queue(
             $template,
-            ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
+            ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']],
             $actor,
         ))->toThrow(TemplateResolutionException::class, 'is not active');
 })->with([
@@ -1805,8 +1805,8 @@ it('renders native host mapped TemplateVersion snapshots for immediate and durab
         [$version] = createComposedTemplateVersion($template, $actor, [], ['en' => ['text' => 'Native', 'subject' => 'Host identity']]);
         $version = app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $actor);
         expect($version->content_snapshot['ownerType'])->toBe('host-template-version');
-        $result = app(TemplateRenderer::class)->render($template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'], ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
-        $render = app(TemplateRenderer::class)->queue($template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'native-owner', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
+        $result = app(TemplateRenderer::class)->render($template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']]['payload'], ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
+        $render = app(TemplateRenderer::class)->queue($template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'native-owner', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
         $durable = app(StoredTemplateRenderResolver::class)->resolveDurable($render);
         expect($result['content'])->toBe('Native:Ada')
             ->and($result['subject'])->toBe('Host identity')

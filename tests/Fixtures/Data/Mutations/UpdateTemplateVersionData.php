@@ -25,7 +25,7 @@ final class UpdateTemplateVersionData extends Data
      * @param  array<string, mixed>  $metadata
      */
     public function __construct(
-        public readonly int $expectedRevision,
+        #[MapInputName('expected_revision')] #[MapOutputName('expected_revision')] public readonly int $expectedRevision,
         public readonly array $metadata = [],
     ) {}
 
@@ -35,7 +35,7 @@ final class UpdateTemplateVersionData extends Data
     public static function rules(): array
     {
         return [
-            'expectedRevision' => ['required', 'integer', 'min:1'],
+            'expected_revision' => ['required', 'integer', 'min:1'],
             'metadata' => ['array'],
         ];
     }

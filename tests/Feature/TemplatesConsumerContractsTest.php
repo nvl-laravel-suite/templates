@@ -100,7 +100,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         ->assertJsonPath('data.key', 'welcome');
     $updated = $this->putJson("/nvl/api/v1/templates/{$templateId}", [
         'status' => 'active',
-        'expectedRevision' => $created['revision'],
+        'expected_revision' => $created['revision'],
         'metadata' => ['channel' => 'email'],
         'translations' => ['en' => ['title' => 'Updated welcome']],
     ])->assertOk()->json('data');
@@ -110,7 +110,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
     ])->assertCreated()->json('data');
     $versionId = $version['id'];
     $version = $this->putJson("/nvl/api/v1/templates/versions/{$versionId}", [
-        'expectedRevision' => $version['revision'],
+        'expected_revision' => $version['revision'],
         'metadata' => ['campaign' => 'activation'],
     ])->assertOk()->json('data');
 
@@ -132,7 +132,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
     );
 
     $published = $this->postJson("/nvl/api/v1/templates/versions/{$versionId}/publish", [
-        'expectedRevision' => $version['revision'],
+        'expected_revision' => $version['revision'],
     ])->assertOk()->json('data');
 
     $assignment = $this->putJson("/nvl/api/v1/templates/{$templateId}/assignments", [
@@ -141,7 +141,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         'profile' => 'default',
         'versionId' => $published['id'],
         'settings' => ['tone' => 'formal'],
-        'expectedRevision' => 0,
+        'expected_revision' => 0,
     ])->assertOk()->json('data');
 
     $inline = $this->postJson('/nvl/api/v1/templates/render/welcome', [
@@ -158,7 +158,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         'payload' => ['name' => 'Ada'],
         'ownerType' => 'member',
         'ownerId' => $owner->id,
-        'idempotencyKey' => 'http-welcome-ada',
+        'idempotency_key' => 'http-welcome-ada',
     ])->assertAccepted();
     $queued = $queuedResponse->json('data');
 
@@ -170,7 +170,7 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         ->assertJsonPath('data.status', 'pending')
         ->assertJsonMissingPath('data.payload');
     $this->deleteJson('/nvl/api/v1/templates/assignments/'.$assignment['id'], [
-        'expectedRevision' => $assignment['revision'],
+        'expected_revision' => $assignment['revision'],
     ])->assertOk()->assertJsonPath('data.deleted', true);
 
     expect($updated['metadata'])->toBe(['channel' => 'email'])

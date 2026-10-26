@@ -326,7 +326,6 @@
             "methods": [
                 "allowsCentralCatalog",
                 "assignments",
-                "bootHasOwnership",
                 "delete",
                 "fresh",
                 "getAllTranslations",
@@ -387,7 +386,6 @@
             "kind": "class",
             "file": "src/Models/TemplateAssignment.php",
             "methods": [
-                "bootHasOwnership",
                 "delete",
                 "fresh",
                 "getConnectionName",
@@ -416,7 +414,6 @@
             "kind": "class",
             "file": "src/Models/TemplateOwnerGrant.php",
             "methods": [
-                "bootHasOwnership",
                 "delete",
                 "fresh",
                 "getConnectionName",
@@ -447,7 +444,6 @@
             "file": "src/Models/TemplateRender.php",
             "methods": [
                 "assignment",
-                "bootHasOwnership",
                 "delete",
                 "fresh",
                 "getConnectionName",
@@ -497,7 +493,6 @@
             "kind": "class",
             "file": "src/Models/TemplateTranslation.php",
             "methods": [
-                "bootHasOwnership",
                 "delete",
                 "fresh",
                 "getConnectionName",
@@ -523,7 +518,6 @@
             "kind": "class",
             "file": "src/Models/TemplateVersion.php",
             "methods": [
-                "bootHasOwnership",
                 "contentGroups",
                 "contentPlacements",
                 "delete",
@@ -599,12 +593,60 @@
             ],
             "constants": []
         },
+        "Nvl\\Templates\\Services\\TemplateAssignments": {
+            "kind": "class",
+            "file": "src/Services/TemplateAssignments.php",
+            "methods": [
+                "__construct",
+                "assign",
+                "unassign"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateDefinitionRegistry": {
+            "kind": "class",
+            "file": "src/Services/TemplateDefinitionRegistry.php",
+            "methods": [
+                "__construct",
+                "all",
+                "get",
+                "register"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateDefinitions": {
+            "kind": "class",
+            "file": "src/Services/TemplateDefinitions.php",
+            "methods": [
+                "__construct",
+                "sync"
+            ],
+            "properties": [],
+            "constants": []
+        },
         "Nvl\\Templates\\Services\\TemplateImporter": {
             "kind": "class",
             "file": "src/Services/TemplateImporter.php",
             "methods": [
                 "__construct",
                 "adopt"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateLifecycle": {
+            "kind": "class",
+            "file": "src/Services/TemplateLifecycle.php",
+            "methods": [
+                "__construct",
+                "create",
+                "createVersion",
+                "delete",
+                "publishVersion",
+                "update",
+                "updateVersion"
             ],
             "properties": [],
             "constants": []
@@ -616,6 +658,45 @@
                 "__construct",
                 "projectionColumns",
                 "templateClass"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateOwnerRegistry": {
+            "kind": "class",
+            "file": "src/Services/TemplateOwnerRegistry.php",
+            "methods": [
+                "__construct",
+                "aliases",
+                "has",
+                "register",
+                "resolve"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateReader": {
+            "kind": "class",
+            "file": "src/Services/TemplateReader.php",
+            "methods": [
+                "__construct",
+                "get",
+                "getRender",
+                "paginate",
+                "renders"
+            ],
+            "properties": [],
+            "constants": []
+        },
+        "Nvl\\Templates\\Services\\TemplateRenderer": {
+            "kind": "class",
+            "file": "src/Services/TemplateRenderer.php",
+            "methods": [
+                "__construct",
+                "process",
+                "queue",
+                "recover",
+                "render"
             ],
             "properties": [],
             "constants": []

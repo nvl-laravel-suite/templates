@@ -8,20 +8,22 @@ use InvalidArgumentException;
 
 /**
  * Stores validated Media aliases and provides a narrow legacy-alias adoption helper.
+ *
+ * @internal
  */
 final class MediaTemplateAssetRegistry
 {
-    /** @var array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}> */
+    /** @var array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null}> */
     private array $assets = [];
 
     public function __construct(private readonly TemplateAssetGuard $guard) {}
 
     /** Native Templates operation.
-     * @param  array{key: string, mediaId: string, scope?: string, type?: string, variation?: string, delivery?: string, expectedRevision?: int|null}  $asset
+     * @param  array{key: string, mediaId: string, scope?: string, type?: string, variation?: string, delivery?: string, expected_revision?: int|null}  $asset
      */
     public function register(array $asset): void
     {
-        $asset += ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null];
+        $asset += ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => null];
         $this->validate($asset);
 
         if (isset($this->assets[$asset['key']])) {
@@ -35,11 +37,11 @@ final class MediaTemplateAssetRegistry
     }
 
     /** Native Templates operation.
-     * @param  array{key: string, mediaId: string, scope?: string, type?: string, variation?: string, delivery?: string, expectedRevision?: int|null}  $asset
+     * @param  array{key: string, mediaId: string, scope?: string, type?: string, variation?: string, delivery?: string, expected_revision?: int|null}  $asset
      */
     public function validate(array $asset): void
     {
-        $asset += ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null];
+        $asset += ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expected_revision' => null];
         $this->guard->key($asset['key']);
 
         if (trim($asset['mediaId']) === '') {
@@ -69,7 +71,7 @@ final class MediaTemplateAssetRegistry
             );
         }
 
-        if ($asset['expectedRevision'] !== null && $asset['expectedRevision'] < 1) {
+        if ($asset['expected_revision'] !== null && $asset['expected_revision'] < 1) {
             throw new InvalidArgumentException(
                 "Template Media alias [{$asset['key']}] expected revision must be positive.",
             );
@@ -97,12 +99,12 @@ final class MediaTemplateAssetRegistry
                 );
             }
 
-            $this->register(['scope' => $scope, 'type' => $type, 'variation' => '', 'delivery' => $delivery, 'expectedRevision' => null, 'key' => $key, 'mediaId' => $mediaId]);
+            $this->register(['scope' => $scope, 'type' => $type, 'variation' => '', 'delivery' => $delivery, 'expected_revision' => null, 'key' => $key, 'mediaId' => $mediaId]);
         }
     }
 
     /** Native Templates operation.
-     * @return array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}|null
+     * @return array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null}|null
      */
     public function get(string $key): ?array
     {
@@ -110,7 +112,7 @@ final class MediaTemplateAssetRegistry
     }
 
     /**
-     * @return array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}>
+     * @return array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null}>
      */
     public function scope(string $scope, ?string $type = null): array
     {
@@ -122,7 +124,7 @@ final class MediaTemplateAssetRegistry
     }
 
     /**
-     * @return array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}>
+     * @return array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null}>
      */
     public function all(): array
     {

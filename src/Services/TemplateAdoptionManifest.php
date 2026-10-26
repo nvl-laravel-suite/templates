@@ -22,8 +22,10 @@ use Nvl\Templates\Enums\TemplateStatus;
  *
  * @phpstan-type TemplateItem array{legacy_key: string, key: string, status: TemplateStatus, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
  * @phpstan-type ContentItem array{legacy_identity: string, identity: string, definition: string, key: string, scope: string, scopeKey: string, visibility: ContentVisibility, values: array<string, mixed>, translations: array<string, array<string, mixed>>, metadata: array<string, mixed>, publish: bool}
- * @phpstan-type AssetItem array{legacy_alias: string, key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null, asset: array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}}
+ * @phpstan-type AssetItem array{legacy_alias: string, key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null, asset: array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null}}
  * @phpstan-type NormalizedManifest array{staging_connection: string, staging_tables: list<string>, legacy_asset_count: int, templates: list<TemplateItem>, content: list<ContentItem>, assets: list<AssetItem>}
+ *
+ * @internal
  */
 final readonly class TemplateAdoptionManifest
 {
@@ -286,7 +288,7 @@ final readonly class TemplateAdoptionManifest
             );
         }
 
-        $asset = ['scope' => $scope, 'type' => $type, 'variation' => $variation, 'delivery' => $delivery, 'expectedRevision' => $expectedRevision, 'key' => $key, 'mediaId' => $mediaId];
+        $asset = ['scope' => $scope, 'type' => $type, 'variation' => $variation, 'delivery' => $delivery, 'expected_revision' => $expectedRevision, 'key' => $key, 'mediaId' => $mediaId];
         $this->assets->validate($asset);
 
         if ($variation !== '') {
@@ -309,7 +311,7 @@ final readonly class TemplateAdoptionManifest
             'type' => $type,
             'variation' => $variation,
             'delivery' => $delivery,
-            'expectedRevision' => $expectedRevision,
+            'expected_revision' => $expectedRevision,
             'asset' => $asset,
         ];
     }

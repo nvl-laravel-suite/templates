@@ -42,7 +42,9 @@ final class TemplateModelRegistry
         );
     }
 
-    /** Resolve and freeze the concrete Template class before resource compilation.
+    /**
+     * Resolve and freeze the concrete Template class before resource compilation.
+     *
      * @internal
      *
      * @return class-string<Template>
@@ -60,7 +62,9 @@ final class TemplateModelRegistry
         return $this->registration->modelClass();
     }
 
-    /** Resolve the immutable model from native framework entry points.
+    /**
+     * Resolve the immutable model from native framework entry points.
+     *
      * @internal
      *
      * @return class-string<Template>
@@ -70,7 +74,9 @@ final class TemplateModelRegistry
         return Container::getInstance()->make(self::class)->templateClass();
     }
 
-    /** Construct the configured root.
+    /**
+     * Construct the configured root.
+     *
      * @internal
      *
      * @param  array<string,mixed>  $attributes
@@ -82,7 +88,9 @@ final class TemplateModelRegistry
         return new $class($attributes);
     }
 
-    /** Persist a package-authored attribute map under the exact source assignment.
+    /**
+     * Persist a package-authored attribute map under the exact source assignment.
+     *
      * @internal
      *
      * @param  array<string, mixed>  $attributes
@@ -111,7 +119,9 @@ final class TemplateModelRegistry
         return array_values(array_unique([...$columns, 'owner_scope_key', ...($definition->foreignKey === null ? [] : [$definition->foreignKey])]));
     }
 
-    /** Create the exact configured query.
+    /**
+     * Create the exact configured query.
+     *
      * @internal
      *
      * @return Builder<Template>

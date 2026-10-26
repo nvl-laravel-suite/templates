@@ -19,7 +19,11 @@ use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Ownership\TemplatesOwnership;
 
-/** Complete native template operations. @api */
+/**
+ * Complete native template operations.
+ *
+ * @api
+ */
 final readonly class TemplateAssignments
 {
     public function __construct(private TemplateAuthorization $authorization, private TemplateOwnerRegistry $owners, private TemplateDefinitionRegistry $definitions, private TemplateContentGuard $guard, private TemplateVersionResolver $versions, private OwnershipBoundary $boundary, private DomainEventDispatcher $domainEvents) {}
@@ -35,7 +39,7 @@ final readonly class TemplateAssignments
         Authenticatable|SystemActor $actor,
     ): TemplateAssignment {
         $data = app(TemplateContentGuard::class)->assign($data);
-        $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expectedRevision' => 0];
+        $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expected_revision' => 0];
         $templateId = $template instanceof Template ? $template->id : $template;
         app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
@@ -86,11 +90,11 @@ final readonly class TemplateAssignments
                         ->first();
 
                     if ($assignment !== null
-                        && $assignment->revision !== $data['expectedRevision']) {
+                        && $assignment->revision !== $data['expected_revision']) {
                         throw StaleTemplateException::forResource('template assignment', $assignment->id);
                     }
 
-                    if ($assignment === null && $data['expectedRevision'] !== 0) {
+                    if ($assignment === null && $data['expected_revision'] !== 0) {
                         throw StaleTemplateException::forResource('template assignment', 'new');
                     }
 

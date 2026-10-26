@@ -9,6 +9,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Rejects dangerous or unbounded HTML resource references before mPDF parses.
+ *
+ * @internal
  */
 final class PdfHtmlGuard
 {

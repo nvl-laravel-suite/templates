@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nvl\Templates\Console;
+namespace Nvl\Templates\Console\Commands;
 
 use FilesystemIterator;
 use Illuminate\Console\Command;
@@ -69,7 +69,7 @@ final class PublishTemplateViewsCommand extends Command
             writable: true,
             description: 'Template view destination',
         );
-        $source = realpath(__DIR__.'/../../resources/views');
+        $source = realpath(__DIR__.'/../../../resources/views');
 
         if ($source === false) {
             throw new InvalidArgumentException('The package view source is unavailable.');

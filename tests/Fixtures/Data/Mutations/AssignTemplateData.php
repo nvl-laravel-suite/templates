@@ -30,7 +30,7 @@ final class AssignTemplateData extends Data
         public readonly string $profile = 'default',
         public readonly ?string $versionId = null,
         public readonly array $settings = [],
-        public readonly int $expectedRevision = 0,
+        #[MapInputName('expected_revision')] #[MapOutputName('expected_revision')] public readonly int $expectedRevision = 0,
     ) {}
 
     /**
@@ -44,7 +44,7 @@ final class AssignTemplateData extends Data
             'profile' => ['required', 'string', 'max:100'],
             'versionId' => ['nullable', 'uuid'],
             'settings' => ['array'],
-            'expectedRevision' => ['required', 'integer', 'min:0'],
+            'expected_revision' => ['required', 'integer', 'min:0'],
         ];
     }
 }

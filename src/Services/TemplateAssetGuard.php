@@ -10,6 +10,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Validates local, inline, and remote class-template assets before Blade sees them.
+ *
+ * @internal
  */
 final class TemplateAssetGuard
 {

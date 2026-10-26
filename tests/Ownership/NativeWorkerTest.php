@@ -60,7 +60,7 @@ it('runs captured Template workers with private Media outputs and races version 
         $runner->run(OwnershipCompany::findOrFail($company), $actor, function () use ($company, &$renders, &$versions): void {
             $version = OwnershipTemplateScenario::version();
             $versions[$company] = $version;
-            $renders[$company] = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'same-key', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Owner '.$company]], SystemActor::Background)->id;
+            $renders[$company] = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'same-key', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Owner '.$company]], SystemActor::Background)->id;
         });
     }
     $source = json_encode(config('database.connections.sqlite'), JSON_THROW_ON_ERROR);

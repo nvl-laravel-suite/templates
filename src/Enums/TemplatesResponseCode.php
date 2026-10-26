@@ -6,7 +6,9 @@ namespace Nvl\Templates\Enums;
 
 use Nvl\Support\Contracts\ResponseCode;
 
-/** Stable public response discriminators for Templates.
+/**
+ * Stable public response discriminators for Templates.
+ *
  * @api
  */
 enum TemplatesResponseCode: string implements ResponseCode

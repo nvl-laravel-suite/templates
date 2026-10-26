@@ -75,7 +75,7 @@ final readonly class TemplateOwnerCatalog
     }
 
     /** Stage and recheck a granted graph before an atomic independent copy.
-     * @param  array{grantId: string, expectedGrantRevision: int, expectedSourceRevision: int, targetKey: string, idempotencyKey: string, mediaGrantIds: array<string,string>}  $data
+     * @param  array{grantId: string, expectedGrantRevision: int, expectedSourceRevision: int, targetKey: string, idempotency_key: string, mediaGrantIds: array<string,string>}  $data
      */
     public function import(array $data, Authenticatable|SystemActor $actor): TemplateVersion
     {
@@ -126,7 +126,7 @@ final readonly class TemplateOwnerCatalog
                 $map = $data['mediaGrantIds'];
                 ksort($map);
                 $hash = $this->json->digest([$data['grantId'], $data['expectedGrantRevision'], $data['expectedSourceRevision'], $source['sourceHash'], $data['targetKey'], $map]);
-                $existing = TemplateVersion::query()->where('catalog_import_key', $data['idempotencyKey'])->lockForUpdate()->first();
+                $existing = TemplateVersion::query()->where('catalog_import_key', $data['idempotency_key'])->lockForUpdate()->first();
                 if ($existing !== null) {
                     if ($existing->getAttribute('catalog_import_request_hash') !== $hash) {
                         throw new OwnershipViolation('Template import key belongs to another request.');
@@ -139,10 +139,10 @@ final readonly class TemplateOwnerCatalog
                 }
                 $template = TemplateModelRegistry::create(['key' => $data['targetKey'], 'renderer' => $definition['renderer'], 'status' => 'active', 'schema' => $definition['schema'], 'metadata' => ['catalog_source_key' => $version->template->key]]);
                 $copy = new TemplateVersion;
-                $copy->forceFill(['template_id' => $template->id, 'version' => 1, 'status' => TemplateVersionStatus::Draft, 'metadata' => [], 'catalog_grant_id' => $locked->id, 'catalog_source_version_id' => $source['ownerId'], 'catalog_source_revision' => $source['sourceRevision'], 'catalog_source_hash' => $source['sourceHash'], 'catalog_import_key' => $data['idempotencyKey'], 'catalog_import_request_hash' => $hash])->save();
+                $copy->forceFill(['template_id' => $template->id, 'version' => 1, 'status' => TemplateVersionStatus::Draft, 'metadata' => [], 'catalog_grant_id' => $locked->id, 'catalog_source_version_id' => $source['ownerId'], 'catalog_source_revision' => $source['sourceRevision'], 'catalog_source_hash' => $source['sourceHash'], 'catalog_import_key' => $data['idempotency_key'], 'catalog_import_request_hash' => $hash])->save();
                 $mediaMap = [];
                 foreach ($sourceIds as $sourceId) {
-                    $id = $this->media->persist($actor, $snapshots[$sourceId], $staged[$sourceId], $this->mediaKey($data['idempotencyKey'], $sourceId))->getKey();
+                    $id = $this->media->persist($actor, $snapshots[$sourceId], $staged[$sourceId], $this->mediaKey($data['idempotency_key'], $sourceId))->getKey();
                     if (! is_string($id)) {
                         throw new OwnershipViolation('Copied Media identifier is invalid.');
                     }
@@ -161,7 +161,7 @@ final readonly class TemplateOwnerCatalog
     }
 
     /** Native Templates operation.
-     * @param  array{grantId: string, expectedGrantRevision: int, expectedSourceRevision: int, targetKey: string, idempotencyKey: string, mediaGrantIds: array<string,string>}  $data
+     * @param  array{grantId: string, expectedGrantRevision: int, expectedSourceRevision: int, targetKey: string, idempotency_key: string, mediaGrantIds: array<string,string>}  $data
      */
     private function assertTuple(TemplateOwnerGrant $grant, TemplateVersion $version, array $data): void
     {

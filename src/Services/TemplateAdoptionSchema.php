@@ -17,6 +17,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @phpstan-type CanonicalTable array{connection: string, exists: bool}
  * @phpstan-type SchemaInventory array{driver: string, staging: array<string, array{exists: bool, columns: list<string>, indexes: list<array{name: string, columns: list<string>, type: string, unique: bool, primary: bool}>}>, canonical: array<string, CanonicalTable>}
+ *
+ * @internal
  */
 final class TemplateAdoptionSchema
 {

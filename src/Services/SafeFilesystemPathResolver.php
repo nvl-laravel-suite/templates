@@ -10,6 +10,8 @@ use Nvl\Templates\Support\LocalFilesystemPath;
 
 /**
  * Resolves local files and directories beneath existing non-symlink roots.
+ *
+ * @internal
  */
 final readonly class SafeFilesystemPathResolver
 {

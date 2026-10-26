@@ -12,7 +12,11 @@ use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Models\Template;
 
-/** Complete native template operations. @api */
+/**
+ * Complete native template operations.
+ *
+ * @api
+ */
 final readonly class TemplateDefinitions
 {
     public function __construct(private TemplateDefinitionRegistry $definitions, private TemplateAuthorization $authorization) {}

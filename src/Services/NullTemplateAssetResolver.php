@@ -10,6 +10,8 @@ use Nvl\Templates\Contracts\TemplateAssetResolver;
 
 /**
  * Safe default that requires applications to opt into alias-based asset resolution.
+ *
+ * @internal
  */
 final class NullTemplateAssetResolver implements TemplateAssetResolver
 {

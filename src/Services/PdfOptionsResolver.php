@@ -12,6 +12,8 @@ use Nvl\Templates\Rendering\TemplateRenderContext;
 
 /**
  * Resolves and validates typed PDF options against package configuration.
+ *
+ * @internal
  */
 final readonly class PdfOptionsResolver
 {

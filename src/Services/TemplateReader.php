@@ -16,7 +16,11 @@ use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
-/** Complete native template operations. @api */
+/**
+ * Complete native template operations.
+ *
+ * @api
+ */
 final readonly class TemplateReader
 {
     public function __construct(private TemplateAuthorization $authorization, private OwnershipBoundary $boundary) {}

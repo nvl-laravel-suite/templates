@@ -15,6 +15,8 @@ use Nvl\Templates\Ownership\TemplatesOwnership;
 
 /**
  * Allowlist for assignment owner aliases exposed to routes and imports.
+ *
+ * @api
  */
 final class TemplateOwnerRegistry
 {

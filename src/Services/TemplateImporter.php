@@ -13,7 +13,9 @@ use Nvl\Content\Services\ContentBlocks;
 use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Models\Template;
 
-/** Complete native template operations.
+/**
+ * Complete native template operations.
+ *
  * @phpstan-import-type TemplateItem from TemplateAdoptionManifest
  * @phpstan-import-type ContentItem from TemplateAdoptionManifest
  * @phpstan-import-type AssetItem from TemplateAdoptionManifest
@@ -100,7 +102,7 @@ final readonly class TemplateImporter
             } elseif ($this->templateMatches($template, $item)) {
                 $operation = 'unchanged';
             } else {
-                $this->updateTemplate->update($template, ['metadata' => $item['metadata'], 'translations' => $item['translations'], 'status' => $item['status'], 'expectedRevision' => $template->revision], $actor);
+                $this->updateTemplate->update($template, ['metadata' => $item['metadata'], 'translations' => $item['translations'], 'status' => $item['status'], 'expected_revision' => $template->revision], $actor);
                 $operation = 'updated';
             }
 
@@ -153,7 +155,7 @@ final readonly class TemplateImporter
                 }
 
                 $block = $this->blocks->update($block, [
-                    'expectedRevision' => $block->revision,
+                    'expected_revision' => $block->revision,
                     'mode' => ContentMutationMode::Replace,
                     'visibility' => $item['visibility'],
                     'values' => $item['values'],
@@ -284,7 +286,7 @@ final readonly class TemplateImporter
                 'type' => $item['type'],
                 'variation' => $item['variation'],
                 'delivery' => $item['delivery'],
-                'expected_revision' => $item['expectedRevision'],
+                'expected_revision' => $item['expected_revision'],
             ];
         }
 

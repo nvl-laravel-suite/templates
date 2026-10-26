@@ -44,7 +44,7 @@ it('discards every unconsumed physical Media stage on successful idempotent impo
         $mediaGrant = app(MediaOwnerCatalog::class)->grant(SystemActor::Background, $media->id, $media->revision);
         $catalog = app(TemplateOwnerCatalog::class);
         $grant = $catalog->grant($source->id, $source->revision);
-        $data = ['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotencyKey' => 'physical-retry', 'mediaGrantIds' => [$media->id => $mediaGrant->id]];
+        $data = ['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotency_key' => 'physical-retry', 'mediaGrantIds' => [$media->id => $mediaGrant->id]];
         $copy = $catalog->import($data, SystemActor::Background);
         $files = Storage::disk('public')->allFiles();
         sort($files);

@@ -23,7 +23,7 @@ it('assigns a host whose registered alias contains a literal dot', function (): 
 
             return $host;
         });
-        $assignment = app(TemplateAssignments::class)->assign($version->template, ['ownerType' => $alias, 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $version->id, 'expectedRevision' => 0], SystemActor::Background);
+        $assignment = app(TemplateAssignments::class)->assign($version->template, ['ownerType' => $alias, 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $version->id, 'expected_revision' => 0], SystemActor::Background);
         expect($assignment->owner_type)->toBe($alias)->and($assignment->owner_id)->toBe($host->id);
     });
 });

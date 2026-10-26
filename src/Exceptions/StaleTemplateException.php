@@ -6,7 +6,7 @@ namespace Nvl\Templates\Exceptions;
 
 /**
  * @api
-
+ *
  * Raised when an optimistic-lock token no longer matches persisted state.
  */
 final class StaleTemplateException extends TemplatesException

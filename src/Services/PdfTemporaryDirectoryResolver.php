@@ -12,6 +12,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Validates and creates the mPDF workspace without escaping allowed roots.
+ *
+ * @internal
  */
 final readonly class PdfTemporaryDirectoryResolver
 {

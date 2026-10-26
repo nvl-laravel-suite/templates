@@ -13,6 +13,8 @@ use Nvl\Templates\Exceptions\TemplateResolutionException;
  *
  * Consumer applications may bind a full schema implementation behind the
  * contract without changing template Actions.
+ *
+ * @internal
  */
 final class ConfiguredTemplatePayloadValidator implements TemplatePayloadValidator
 {

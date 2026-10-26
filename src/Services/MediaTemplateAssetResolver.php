@@ -20,6 +20,8 @@ use Nvl\Templates\Models\TemplateRender;
 
 /**
  * Resolves opt-in template aliases through revision-aware NVL Media delivery.
+ *
+ * @internal
  */
 final readonly class MediaTemplateAssetResolver implements TemplateAssetResolver
 {
@@ -45,9 +47,9 @@ final readonly class MediaTemplateAssetResolver implements TemplateAssetResolver
             throw new TemplateResolutionException('Template Media alias points to missing or unavailable media.', previous: $exception);
         }
 
-        if ($asset['expectedRevision'] !== null && $media->revision !== $asset['expectedRevision']) {
+        if ($asset['expected_revision'] !== null && $media->revision !== $asset['expected_revision']) {
             throw new TemplateResolutionException(
-                "Template Media alias [{$key}] expected revision {$asset['expectedRevision']}, current revision is {$media->revision}.",
+                "Template Media alias [{$key}] expected revision {$asset['expected_revision']}, current revision is {$media->revision}.",
             );
         }
 

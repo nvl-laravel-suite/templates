@@ -12,6 +12,8 @@ use Nvl\Templates\Models\TemplateRender;
 
 /**
  * Dispatches persisted renders onto the package-configured queue boundary.
+ *
+ * @internal
  */
 final readonly class TemplateRenderDispatcher
 {

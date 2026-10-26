@@ -6,6 +6,8 @@ namespace Nvl\Templates\Services;
 
 /**
  * Produces stable JSON and digests independent of associative key insertion order.
+ *
+ * @internal
  */
 final class CanonicalJson
 {

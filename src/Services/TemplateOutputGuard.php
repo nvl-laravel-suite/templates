@@ -10,6 +10,8 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 
 /**
  * Verifies renderer output facts and global size limits before returning bytes.
+ *
+ * @internal
  */
 final class TemplateOutputGuard
 {

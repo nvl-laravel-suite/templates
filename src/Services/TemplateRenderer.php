@@ -32,7 +32,11 @@ use Nvl\Templates\Support\TemplatesConfiguration;
 use Nvl\Templates\Template as RenderableTemplate;
 use Throwable;
 
-/** Complete native template operations. @api */
+/**
+ * Complete native template operations.
+ *
+ * @api
+ */
 final readonly class TemplateRenderer
 {
     public function __construct(private TemplateContextFactory $contexts, private TemplateRendererRegistry $renderers, private TemplateOutputGuard $outputGuard, private TemplateAuthorization $authorization, private StoredTemplateRenderResolver $resolver, private OwnershipBoundary $boundary, private CanonicalJson $canonicalJson, private TemplateRenderDispatcher $dispatcher, private DomainEventDispatcher $domainEvents) {}
@@ -83,7 +87,7 @@ final readonly class TemplateRenderer
         Authenticatable|SystemActor $actor,
     ): array {
         $data = app(TemplateContentGuard::class)->render($data);
-        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         $model = $template instanceof StoredTemplate
             ? $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')->findOrFail($template->id)
             : $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
@@ -122,7 +126,7 @@ final readonly class TemplateRenderer
         Authenticatable|SystemActor $actor,
     ): TemplateRender {
         $data = app(TemplateContentGuard::class)->render($data);
-        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         $model = $template instanceof Template
             ? $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')->findOrFail($template->id)
             : $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
@@ -172,9 +176,9 @@ final readonly class TemplateRenderer
                     $requestDigest,
                     $ownershipEnvelope,
                 ): TemplateRender {
-                    if ($data['idempotencyKey'] !== null) {
+                    if ($data['idempotency_key'] !== null) {
                         $existing = $this->boundary->query(TemplateRender::query(), 'templates.renders')
-                            ->where('idempotency_key', $data['idempotencyKey'])
+                            ->where('idempotency_key', $data['idempotency_key'])
                             ->lockForUpdate()
                             ->first();
 
@@ -200,7 +204,7 @@ final readonly class TemplateRenderer
                         'profile' => $data['profile'],
                         'settings' => $resolved['renderable']->settings,
                         'status' => TemplateRenderStatus::Pending,
-                        'idempotency_key' => $data['idempotencyKey'],
+                        'idempotency_key' => $data['idempotency_key'],
                         'payload_digest' => $requestDigest,
                         'payload' => $resolved['payload'],
                         'requested_by_type' => ($actor instanceof Model ? $actor->getMorphClass() : null),
@@ -215,12 +219,12 @@ final readonly class TemplateRenderer
                     return $render;
                 });
         } catch (UniqueConstraintViolationException $exception) {
-            if ($data['idempotencyKey'] === null) {
+            if ($data['idempotency_key'] === null) {
                 throw $exception;
             }
 
             $existing = $this->boundary->query(TemplateRender::query(), 'templates.renders')
-                ->where('idempotency_key', $data['idempotencyKey'])
+                ->where('idempotency_key', $data['idempotency_key'])
                 ->first();
 
             if ($existing === null) {

@@ -12,6 +12,8 @@ use Nvl\Templates\Template;
 
 /**
  * Validates one Template and creates the renderer-neutral context.
+ *
+ * @internal
  */
 final readonly class TemplateContextFactory
 {

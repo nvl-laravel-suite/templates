@@ -22,7 +22,11 @@ use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Translatable\Enums\TranslationSyncMode;
 use Nvl\Translatable\Services\RelatedTranslationStore;
 
-/** Complete native template operations. @api */
+/**
+ * Complete native template operations.
+ *
+ * @api
+ */
 final readonly class TemplateLifecycle
 {
     public function __construct(private TemplateAuthorization $authorization, private TemplateDefinitionRegistry $definitions, private TemplateContentGuard $guard, private RelatedTranslationStore $translations, private OwnershipBoundary $boundary, private DomainEventDispatcher $domainEvents) {}
@@ -95,7 +99,7 @@ final readonly class TemplateLifecycle
                     ->lockForUpdate()
                     ->findOrFail($templateId);
 
-                if ($template->revision !== $data['expectedRevision']) {
+                if ($template->revision !== $data['expected_revision']) {
                     throw StaleTemplateException::forResource('template', $template->id);
                 }
 
@@ -178,7 +182,7 @@ final readonly class TemplateLifecycle
                     ->lockForUpdate()
                     ->findOrFail($versionId);
 
-                if ($version->revision !== $data['expectedRevision']) {
+                if ($version->revision !== $data['expected_revision']) {
                     throw StaleTemplateException::forResource('template version', $version->id);
                 }
 

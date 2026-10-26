@@ -18,11 +18,11 @@ use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Providers\SupportServiceProvider;
 use Nvl\Support\Traits\MergesPackageConfiguration;
 use Nvl\Support\Traits\RegistersNamespacedResources;
-use Nvl\Templates\Console\AdoptTemplatesCommand;
-use Nvl\Templates\Console\PublishTemplateViewsCommand;
-use Nvl\Templates\Console\RecoverTemplateRendersCommand;
-use Nvl\Templates\Console\SyncTemplateDefinitionsCommand;
-use Nvl\Templates\Console\TemplatesDoctorCommand;
+use Nvl\Templates\Console\Commands\AdoptTemplatesCommand;
+use Nvl\Templates\Console\Commands\PublishTemplateViewsCommand;
+use Nvl\Templates\Console\Commands\RecoverTemplateRendersCommand;
+use Nvl\Templates\Console\Commands\SyncTemplateDefinitionsCommand;
+use Nvl\Templates\Console\Commands\TemplatesDoctorCommand;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Contracts\TemplateCatalogAccess;
@@ -362,7 +362,7 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
                 );
             }
 
-            $registry->register(['scope' => $scope, 'type' => $type, 'variation' => $variation, 'delivery' => $delivery, 'expectedRevision' => $expectedRevision, 'key' => $key, 'mediaId' => $mediaId]);
+            $registry->register(['scope' => $scope, 'type' => $type, 'variation' => $variation, 'delivery' => $delivery, 'expected_revision' => $expectedRevision, 'key' => $key, 'mediaId' => $mediaId]);
         }
     }
 

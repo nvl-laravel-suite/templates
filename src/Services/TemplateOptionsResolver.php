@@ -12,6 +12,8 @@ use Nvl\Templates\Template;
 
 /**
  * Resolves application defaults and per-template options into a safe render context.
+ *
+ * @internal
  */
 final readonly class TemplateOptionsResolver
 {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Tests\Fixtures\Data;
 
+use Spatie\LaravelData\Attributes\MapInputName;
+use Spatie\LaravelData\Attributes\MapOutputName;
 use Spatie\LaravelData\Data;
 
 /**
@@ -18,6 +20,6 @@ final class MediaTemplateAssetData extends Data
         public readonly string $type = 'image',
         public readonly string $variation = '',
         public readonly string $delivery = 'path',
-        public readonly ?int $expectedRevision = null,
+        #[MapInputName('expected_revision')] #[MapOutputName('expected_revision')] public readonly ?int $expectedRevision = null,
     ) {}
 }

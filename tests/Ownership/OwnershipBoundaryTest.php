@@ -35,7 +35,7 @@ it('publishes a native snapshot and processes an isolated durable render', funct
     app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): void {
         $version = OwnershipTemplateScenario::version();
         expect($version->content_snapshot['formatVersion'])->toBe(3);
-        $render = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'one', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], SystemActor::Background);
+        $render = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'one', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], SystemActor::Background);
         $job = null;
         Queue::assertPushed(RenderTemplateJob::class, function (RenderTemplateJob $item) use (&$job): bool {
             $job = $item;
@@ -103,7 +103,7 @@ it('copies only an exact granted central version and denies revoked grants while
         $catalog = app(TemplateOwnerCatalog::class);
         $grant = $catalog->grant($source->id, $source->revision);
         expect(TemplateOwnerGrant::factory()->forVersion($source)->make())->toBeInstanceOf(TemplateOwnerGrant::class);
-        $request = ['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotencyKey' => 'owned-copy', 'mediaGrantIds' => []];
+        $request = ['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotency_key' => 'owned-copy', 'mediaGrantIds' => []];
         $copy = app(TemplateOwnerCatalog::class)->import($request, SystemActor::Background);
         expect($copy->id)->not->toBe($source->id)->and($copy->content_snapshot['formatVersion'])->toBe(3)->and($copy->content_snapshot['ownerId'])->toBe($copy->id);
         expect(app(TemplateOwnerCatalog::class)->import($request, SystemActor::Background)->id)->toBe($copy->id);
@@ -119,7 +119,7 @@ it('protects published snapshots against raw writes and permits terminal payload
         $version = OwnershipTemplateScenario::version();
         $c = $version->getConnection();
         expect(fn () => $c->transaction(fn () => $c->table($version->getTable())->where('id', $version->id)->update(['content_hash' => str_repeat('0', 64)])))->toThrow(QueryException::class);
-        $render = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'erase', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], SystemActor::Background);
+        $render = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => 'erase', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], SystemActor::Background);
         expect(app(TemplateRenderer::class)->process($render)->payload)->toBeNull();
     });
 });
@@ -137,9 +137,9 @@ it('reassigns an owner profile without changing the authority of an existing dur
         });
         $actor = SystemActor::Background;
         $assign = app(TemplateAssignments::class);
-        $row = $assign->assign($first->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $first->id, 'expectedRevision' => 0], $actor);
-        $render = app(TemplateRenderer::class)->queue($first->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
-        $replacement = $assign->assign($other->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $other->id, 'expectedRevision' => $row->revision], $actor);
+        $row = $assign->assign($first->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $first->id, 'expected_revision' => 0], $actor);
+        $render = app(TemplateRenderer::class)->queue($first->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
+        $replacement = $assign->assign($other->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $other->id, 'expected_revision' => $row->revision], $actor);
         expect($replacement->template_id)->toBe($other->template_id)->and(app(TemplateRenderer::class)->process($render)->template_version_id)->toBe($first->id);
     });
 });
@@ -187,7 +187,7 @@ it('rechecks the locked code definition after catalog content is staged', functi
                 $runner->central('templates-maintain', $actor, fn () => TemplateModelRegistry::query()->findOrFail($source->template_id)->forceFill(['renderer' => 'changed'])->save());
             }
         });
-        expect(fn () => app(TemplateOwnerCatalog::class)->import(['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotencyKey' => 'stale-definition', 'mediaGrantIds' => []], SystemActor::Background))->toThrow(OwnershipViolation::class);
+        expect(fn () => app(TemplateOwnerCatalog::class)->import(['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotency_key' => 'stale-definition', 'mediaGrantIds' => []], SystemActor::Background))->toThrow(OwnershipViolation::class);
         expect(TemplateModelRegistry::query()->count())->toBe(0);
     });
 });

@@ -31,7 +31,7 @@ final class RenderTemplateData extends Data
         public readonly ?string $ownerId = null,
         public readonly string $profile = 'default',
         public readonly ?string $versionId = null,
-        public readonly ?string $idempotencyKey = null,
+        #[MapInputName('idempotency_key')] #[MapOutputName('idempotency_key')] public readonly ?string $idempotencyKey = null,
         public readonly bool $download = false,
     ) {}
 
@@ -47,7 +47,7 @@ final class RenderTemplateData extends Data
             'ownerId' => ['nullable', 'required_with:ownerType', 'string', 'max:255'],
             'profile' => ['string', 'max:100'],
             'versionId' => ['nullable', 'uuid'],
-            'idempotencyKey' => ['nullable', 'string', 'max:191'],
+            'idempotency_key' => ['nullable', 'string', 'max:191'],
             'download' => ['boolean'],
         ];
     }

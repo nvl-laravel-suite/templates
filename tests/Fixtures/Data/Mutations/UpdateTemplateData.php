@@ -30,7 +30,7 @@ final class UpdateTemplateData extends Data
      */
     public function __construct(
         public readonly TemplateStatus $status,
-        public readonly int $expectedRevision,
+        #[MapInputName('expected_revision')] #[MapOutputName('expected_revision')] public readonly int $expectedRevision,
         public readonly array $metadata = [],
         public readonly array $translations = [],
     ) {}
@@ -42,7 +42,7 @@ final class UpdateTemplateData extends Data
     {
         return [
             'status' => ['required', Rule::enum(TemplateStatus::class)],
-            'expectedRevision' => ['required', 'integer', 'min:1'],
+            'expected_revision' => ['required', 'integer', 'min:1'],
             'metadata' => ['array'],
             'translations' => ['array', new SupportedLocaleMapRule],
             'translations.*.title' => ['required', 'string', 'max:255'],

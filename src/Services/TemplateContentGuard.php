@@ -18,6 +18,8 @@ use Nvl\Translatable\Rules\SupportedLocaleMapRule;
 
 /**
  * Applies deterministic byte, depth, and item limits to template-owned values.
+ *
+ * @internal
  */
 final class TemplateContentGuard
 {
@@ -271,14 +273,14 @@ final class TemplateContentGuard
 
     /** Native Templates operation.
      * @param  array<string,mixed>  $data
-     * @return array{status: TemplateStatus, expectedRevision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
+     * @return array{status: TemplateStatus, expected_revision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
      */
     public function updateTemplate(array $data): array
     {
         $data += ['metadata' => [], 'translations' => []];
         $rules = [
             'status' => ['required', Rule::enum(TemplateStatus::class)],
-            'expectedRevision' => ['required', 'integer', 'min:1'],
+            'expected_revision' => ['required', 'integer', 'min:1'],
             'metadata' => ['array'],
             'translations' => ['array', new SupportedLocaleMapRule],
             'translations.*.title' => ['required', 'string', 'max:255'],
@@ -290,9 +292,9 @@ final class TemplateContentGuard
         if (is_string($data['status'])) {
             $data['status'] = TemplateStatus::from($data['status']);
         }
-        $data['expectedRevision'] = is_int($data['expectedRevision']) ? $data['expectedRevision'] : (int) (is_string($data['expectedRevision']) ? $data['expectedRevision'] : 0);
+        $data['expected_revision'] = is_int($data['expected_revision']) ? $data['expected_revision'] : (int) (is_string($data['expected_revision']) ? $data['expected_revision'] : 0);
 
-        /** @var array{status: TemplateStatus, expectedRevision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>} $data */
+        /** @var array{status: TemplateStatus, expected_revision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>} $data */
         return $data;
     }
 
@@ -315,55 +317,55 @@ final class TemplateContentGuard
 
     /** Native Templates operation.
      * @param  array<string,mixed>  $data
-     * @return array{expectedRevision: int, metadata: array<string, mixed>}
+     * @return array{expected_revision: int, metadata: array<string, mixed>}
      */
     public function updateVersion(array $data): array
     {
         $data += ['metadata' => []];
         $rules = [
-            'expectedRevision' => ['required', 'integer', 'min:1'],
+            'expected_revision' => ['required', 'integer', 'min:1'],
             'metadata' => ['array'],
         ];
 
         Validator::make($data, $rules)->validate();
 
-        $data['expectedRevision'] = is_int($data['expectedRevision']) ? $data['expectedRevision'] : (int) (is_string($data['expectedRevision']) ? $data['expectedRevision'] : 0);
+        $data['expected_revision'] = is_int($data['expected_revision']) ? $data['expected_revision'] : (int) (is_string($data['expected_revision']) ? $data['expected_revision'] : 0);
 
-        /** @var array{expectedRevision: int, metadata: array<string, mixed>} $data */
+        /** @var array{expected_revision: int, metadata: array<string, mixed>} $data */
         return $data;
     }
 
     /** Native Templates operation.
      * @param  array<string,mixed>  $data
-     * @return array{ownerType: string, ownerId: string, profile: string, versionId: string|null, settings: array<string, mixed>, expectedRevision: int}
+     * @return array{ownerType: string, ownerId: string, profile: string, versionId: string|null, settings: array<string, mixed>, expected_revision: int}
      */
     public function assign(array $data): array
     {
-        $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expectedRevision' => 0];
+        $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expected_revision' => 0];
         $rules = [
             'ownerType' => ['required', 'string', 'max:100'],
             'ownerId' => ['required', 'string', 'max:255'],
             'profile' => ['required', 'string', 'max:100'],
             'versionId' => ['nullable', 'uuid'],
             'settings' => ['array'],
-            'expectedRevision' => ['required', 'integer', 'min:0'],
+            'expected_revision' => ['required', 'integer', 'min:0'],
         ];
 
         Validator::make($data, $rules)->validate();
 
-        $data['expectedRevision'] = is_int($data['expectedRevision']) ? $data['expectedRevision'] : (int) (is_string($data['expectedRevision']) ? $data['expectedRevision'] : 0);
+        $data['expected_revision'] = is_int($data['expected_revision']) ? $data['expected_revision'] : (int) (is_string($data['expected_revision']) ? $data['expected_revision'] : 0);
 
-        /** @var array{ownerType: string, ownerId: string, profile: string, versionId: string|null, settings: array<string, mixed>, expectedRevision: int} $data */
+        /** @var array{ownerType: string, ownerId: string, profile: string, versionId: string|null, settings: array<string, mixed>, expected_revision: int} $data */
         return $data;
     }
 
     /** Native Templates operation.
      * @param  array<string,mixed>  $data
-     * @return array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}
+     * @return array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotency_key: string|null, download: bool}
      */
     public function render(array $data): array
     {
-        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         $rules = [
             'locale' => ['required', 'string', 'max:35'],
             'payload' => ['array'],
@@ -371,7 +373,7 @@ final class TemplateContentGuard
             'ownerId' => ['nullable', 'required_with:ownerType', 'string', 'max:255'],
             'profile' => ['string', 'max:100'],
             'versionId' => ['nullable', 'uuid'],
-            'idempotencyKey' => ['nullable', 'string', 'max:191'],
+            'idempotency_key' => ['nullable', 'string', 'max:191'],
             'download' => ['boolean'],
         ];
 
@@ -379,7 +381,7 @@ final class TemplateContentGuard
 
         $data['download'] = (bool) $data['download'];
 
-        /** @var array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool} $data */
+        /** @var array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotency_key: string|null, download: bool} $data */
         return $data;
     }
 }

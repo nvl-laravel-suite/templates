@@ -10,6 +10,8 @@ use Nvl\Templates\Enums\PdfPageSize;
 
 /**
  * Converts source-controlled stored-definition options into typed core options.
+ *
+ * @internal
  */
 final class StoredTemplateOptionsFactory
 {

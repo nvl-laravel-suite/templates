@@ -21,6 +21,8 @@ use Nvl\Templates\Support\TemplatesSchemaContract;
 
 /**
  * Performs non-mutating core, database, route, and queue diagnostics.
+ *
+ * @internal
  */
 final class TemplatesDoctor
 {

@@ -10,6 +10,8 @@ use Nvl\Support\Contracts\LocaleCatalog;
 
 /**
  * Normalizes template locales into one stable lowercase BCP-47-like form.
+ *
+ * @internal
  */
 final class TemplateLocaleResolver
 {

@@ -7,7 +7,11 @@ namespace Nvl\Templates\Rendering;
 use Nvl\Templates\Contracts\TemplateRenderer;
 use Nvl\Templates\Exceptions\TemplateDependencyUnavailableException;
 
-/** Retains the built-in PDF alias safely while its optional runtime dependency is absent. @internal */
+/**
+ * Retains the built-in PDF alias safely while its optional runtime dependency is absent.
+ *
+ * @internal
+ */
 final readonly class UnavailablePdfTemplateRenderer implements TemplateRenderer
 {
     /** Report the selected dependency requirement without fabricating PDF output.

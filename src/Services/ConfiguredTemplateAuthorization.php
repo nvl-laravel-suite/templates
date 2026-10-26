@@ -14,6 +14,8 @@ use Nvl\Templates\Enums\TemplateAbility;
  * Safe default authorization boundary: default deny.
  *
  * Consumer applications should bind TemplateAuthorization to their policy adapter.
+ *
+ * @internal
  */
 final class ConfiguredTemplateAuthorization implements TemplateAuthorization
 {

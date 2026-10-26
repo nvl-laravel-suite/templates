@@ -20,6 +20,8 @@ use Nvl\Templates\Template as RenderableTemplate;
 
 /**
  * Resolves every stored-template invariant into one immutable render plan.
+ *
+ * @internal
  */
 final readonly class StoredTemplateRenderResolver
 {
@@ -37,7 +39,7 @@ final readonly class StoredTemplateRenderResolver
     /**
      * Resolve and validate a stored template without producing output bytes.
      *
-     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}  $data
+     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotency_key: string|null, download: bool}  $data
      * @return array{template: Template, assignment: TemplateAssignment|null, version: TemplateVersion, renderable: RenderableTemplate, locale: string, payload: array<string, mixed>}
      */
     public function resolve(
@@ -45,7 +47,7 @@ final readonly class StoredTemplateRenderResolver
         array $data,
         Authenticatable|SystemActor $actor,
     ): array {
-        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         $this->boundary->assertRecord($template, 'templates.templates');
         $payload = $this->guard->payload($data['payload']);
         $locale = $this->locales->resolve($data['locale']);
@@ -206,13 +208,13 @@ final readonly class StoredTemplateRenderResolver
     }
 
     /** Native Templates operation.
-     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}  $data
+     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotency_key: string|null, download: bool}  $data
      */
     private function assignment(
         Template $template,
         array $data,
     ): ?TemplateAssignment {
-        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         if (($data['ownerType'] === null) !== ($data['ownerId'] === null)) {
             throw new TemplateResolutionException(
                 'Template assignment resolution requires both owner type and owner id.',

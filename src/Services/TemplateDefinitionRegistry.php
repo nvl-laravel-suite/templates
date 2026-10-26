@@ -9,6 +9,8 @@ use Nvl\Templates\Contracts\TemplatePayloadValidator;
 
 /**
  * Central registry for source-controlled views, renderers, profiles, and schemas.
+ *
+ * @api
  */
 final class TemplateDefinitionRegistry
 {

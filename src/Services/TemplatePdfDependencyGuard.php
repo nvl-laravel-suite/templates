@@ -9,7 +9,11 @@ use Mpdf\Container\SimpleContainer;
 use Mpdf\Mpdf;
 use Nvl\Templates\Exceptions\TemplateDependencyUnavailableException;
 
-/** Checks optional PDF dependencies before loading an implementation with an mPDF parent. @internal */
+/**
+ * Checks optional PDF dependencies before loading an implementation with an mPDF parent.
+ *
+ * @internal
+ */
 final readonly class TemplatePdfDependencyGuard
 {
     /** Determine whether all classes required by the built-in PDF renderer are available. */
