@@ -6,7 +6,7 @@ use Illuminate\Config\Repository;
 use Nvl\Support\Contracts\LocaleCatalog;
 use Nvl\Support\Facades\Locales;
 use Nvl\Support\Locales\ApplicationLocaleCatalog;
-use Nvl\Templates\Html\TemplateContext;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Html\TemplateContext;
 
 it('uses the content catalog for template defaults independently of UI locale', function (): void {
     app()->setLocale('en');

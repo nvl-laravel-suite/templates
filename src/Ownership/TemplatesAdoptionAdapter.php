@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\Blueprint;
 use Nvl\Content\Contracts\ContentSnapshotIntegrity;
-use Nvl\Content\Data\ContentCompositionSnapshotData;
 use Nvl\Ownership\Contracts\OwnershipAdoptionAdapter;
 use Nvl\Ownership\Services\OwnershipAdoptionStore;
 use Nvl\Ownership\Services\OwnershipDatabaseConstraints;
@@ -36,7 +35,6 @@ final readonly class TemplatesAdoptionAdapter implements OwnershipAdoptionAdapte
         private OwnershipAdoptionStore $mappings,
         private OwnershipSchema $schema,
         private OwnershipDatabaseConstraints $constraints,
-        private ContentSnapshotIntegrity $snapshots,
     ) {}
 
     /** @return list<string> */
@@ -158,14 +156,15 @@ final readonly class TemplatesAdoptionAdapter implements OwnershipAdoptionAdapte
                 if (! is_array($payload)) {
                     throw new OwnershipConfigurationInvalid('Stored Template snapshot is malformed.');
                 }
-                $snapshot = ContentCompositionSnapshotData::from($payload);
+                /** @var array{ownerType:string,ownerId:string,group:string,blocks:list<array{placementId:string,parentId:string|null,key:string,region:string,sortOrder:int,blockId:string,definitionKey:string,definitionSchema:array<string,mixed>,definitionView:string|null,visibility:string,values:array<string, mixed>,translations:array<string, array<string, mixed>>,overrides:array<string, mixed>,blockRevision:int,placementRevision:int}>,version:string,tenantId:string|null,formatVersion:int,ownershipContext:array<string,mixed>|null} $snapshot */
+                $snapshot = $payload;
                 $context = ['mode' => $owner === null ? 'central' : 'owner', 'owner' => $owner?->toArray()];
-                if ($snapshot->ownerId !== $row->id || $snapshot->ownerType !== $model->getMorphClass() || $snapshot->group !== TemplateVersion::CONTENT_GROUP || $snapshot->version !== $row->content_hash || ($snapshot->formatVersion === 2 && ($mapping->legacyTenantId === null || $snapshot->tenantId !== $mapping->legacyTenantId)) || ($snapshot->formatVersion === 3 && $snapshot->ownershipContext !== $context)) {
+                if ($snapshot['ownerId'] !== $row->id || $snapshot['ownerType'] !== $model->getMorphClass() || $snapshot['group'] !== TemplateVersion::CONTENT_GROUP || $snapshot['version'] !== $row->content_hash || ($snapshot['formatVersion'] === 2 && ($mapping->legacyTenantId === null || $snapshot['tenantId'] !== $mapping->legacyTenantId)) || ($snapshot['formatVersion'] === 3 && $snapshot['ownershipContext'] !== $context)) {
                     throw new OwnershipConfigurationInvalid('Reviewed Template snapshots must preserve canonical source identity and checksum.');
                 }
-                $snapshot = $this->snapshots->rebind($snapshot, $snapshot->ownerType, $snapshot->ownerId, $context);
-                $attributes['content_snapshot'] = json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR);
-                $attributes['content_hash'] = $snapshot->version;
+                $snapshot = app(ContentSnapshotIntegrity::class)->rebind($snapshot, $snapshot['ownerType'], $snapshot['ownerId'], $context);
+                $attributes['content_snapshot'] = json_encode($snapshot, JSON_THROW_ON_ERROR);
+                $attributes['content_hash'] = $snapshot['version'];
             }
 
             return $attributes;

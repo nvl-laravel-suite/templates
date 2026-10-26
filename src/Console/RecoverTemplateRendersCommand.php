@@ -6,7 +6,8 @@ namespace Nvl\Templates\Console;
 
 use Illuminate\Console\Command;
 use InvalidArgumentException;
-use Nvl\Templates\Actions\RecoverStaleTemplateRendersAction;
+use Nvl\Support\Enums\SystemActor;
+use Nvl\Templates\Services\TemplateRenderer;
 
 /**
  * Recovers durable renders stalled before or during queue processing.
@@ -22,7 +23,7 @@ final class RecoverTemplateRendersCommand extends Command
     /**
      * Recover and report one configured batch of stale renders.
      */
-    public function handle(RecoverStaleTemplateRendersAction $action): int
+    public function handle(TemplateRenderer $action): int
     {
         $format = $this->option('format');
 
@@ -32,7 +33,7 @@ final class RecoverTemplateRendersCommand extends Command
             );
         }
 
-        $renders = $action->execute();
+        $renders = $action->recover(SystemActor::Background);
         $renderIds = array_map('strval', $renders->modelKeys());
 
         if ($format === 'json') {

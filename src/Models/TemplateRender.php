@@ -10,9 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Nvl\Media\Contracts\HasMedia;
 use Nvl\Media\Models\Media;
-use Nvl\Media\Traits\InteractsWithMedia;
 use Nvl\Support\Config\PackageStorage;
 use Nvl\Support\Ownership\Contracts\Ownable;
 use Nvl\Templates\Database\Factories\TemplateRenderFactory;
@@ -26,7 +24,6 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  * Idempotent persisted render request with a private one-to-one output.
  *
  * @property string $id
- * @property string|null $tenant_id
  * @property string $template_id
  * @property string $template_version_id
  * @property string|null $template_assignment_id
@@ -58,13 +55,12 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final class TemplateRender extends Model implements HasMedia, Ownable
+final class TemplateRender extends Model implements Ownable
 {
     /** @use HasFactory<TemplateRenderFactory> */
     use HasFactory;
 
     use HasUuids;
-    use InteractsWithMedia;
     use OwnsTemplateChild;
 
     /** @var array<string, int|string> */
@@ -78,7 +74,6 @@ final class TemplateRender extends Model implements HasMedia, Ownable
     /** @var list<string> */
     protected $fillable = [
         'template_id',
-        'tenant_id',
         'template_version_id',
         'template_assignment_id',
         'locale',
@@ -148,10 +143,6 @@ final class TemplateRender extends Model implements HasMedia, Ownable
     /**
      * Render outputs are private and atomically replaceable.
      */
-    public function registerMediaSlots(): void
-    {
-        $this->addMediaSlot('output')->oneToOne();
-    }
 
     /**
      * @return BelongsTo<Template, $this>

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Rendering;
 
-use Nvl\Content\Data\RenderedContentBlockData;
-use Nvl\Content\Data\RenderedContentCompositionData;
-use Nvl\Templates\Data\PdfOptions;
+use Nvl\Templates\Enums\PdfOrientation;
+use Nvl\Templates\Enums\PdfPageSize;
 use Nvl\Templates\Template;
 
 /**
@@ -18,6 +17,7 @@ final readonly class TemplateRenderContext
 {
     /**
      * @param  array<string, mixed>  $rendererOptions
+     * @param  array{pageSize?: PdfPageSize|null, orientation?: PdfOrientation|null, margins?: array{left?: float|null, right?: float|null, top?: float|null, bottom?: float|null, header?: float|null, footer?: float|null}|null, defaultFont?: string|null, defaultFontSize?: float|null, dpi?: int|null, imageDpi?: int|null, imageQuality?: int|null, showImageErrors?: bool|null, temporaryDirectory?: string|null, title?: string|null, author?: string|null, creator?: string|null, subject?: string|null, keywords?: string|null, headerView?: string|null, headerHtml?: string|null, headerData?: array<string, mixed>, footerView?: string|null, footerHtml?: string|null, footerData?: array<string, mixed>, watermark?: string|null, watermarkOpacity?: float|null, compress?: bool|null, pdfa?: bool|null, pdfaAuto?: bool|null, protectionPermissions?: list<string>, userPassword?: string|null, ownerPassword?: string|null}|null  $pdf
      */
     public function __construct(
         public Template $template,
@@ -26,14 +26,16 @@ final readonly class TemplateRenderContext
         public string $locale,
         public ?string $subject,
         public ?string $filename,
-        public ?PdfOptions $pdf,
+        public ?array $pdf,
         public array $rendererOptions,
     ) {}
 
     /**
      * Return the optional Content composition.
+     *
+     * @return array{blocks:list<array<string,mixed>>,regions:array<string,list<array<string,mixed>>>,locale:string,...}|null
      */
-    public function composition(): ?RenderedContentCompositionData
+    public function composition(): ?array
     {
         return $this->template->composition;
     }
@@ -61,25 +63,25 @@ final readonly class TemplateRenderContext
     /**
      * Return the root Content blocks or an empty list.
      *
-     * @return list<RenderedContentBlockData>
+     * @return list<array<string, mixed>>
      */
     public function blocks(): array
     {
         $composition = $this->composition();
 
-        return $composition === null ? [] : $composition->blocks;
+        return $composition === null ? [] : $composition['blocks'];
     }
 
     /**
      * Return Content blocks grouped by region or an empty map.
      *
-     * @return array<string, list<RenderedContentBlockData>>
+     * @return array<string, list<array<string, mixed>>>
      */
     public function regions(): array
     {
         $composition = $this->composition();
 
-        return $composition === null ? [] : $composition->regions;
+        return $composition === null ? [] : $composition['regions'];
     }
 
     /**
@@ -88,9 +90,9 @@ final readonly class TemplateRenderContext
      * @return array{
      *     template: Template,
      *     options: self,
-     *     composition: RenderedContentCompositionData|null,
-     *     blocks: list<RenderedContentBlockData>,
-     *     regions: array<string, list<RenderedContentBlockData>>,
+     *     composition: array<string,mixed>|null,
+     *     blocks: list<array<string, mixed>>,
+     *     regions: array<string, list<array<string, mixed>>>,
      *     data: array<string, mixed>,
      *     settings: array<string, mixed>
      * }

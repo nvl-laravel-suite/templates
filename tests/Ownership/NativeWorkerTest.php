@@ -5,11 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Nvl\Ownership\Services\OwnershipRunner;
-use Nvl\Templates\Actions\QueueTemplateRenderAction;
-use Nvl\Templates\Data\Mutations\RenderTemplateData;
-use Nvl\Templates\Data\TemplateActorData;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Services\TemplateRenderer;
 use Nvl\Templates\Tests\Fixtures\OwnershipActor;
 use Nvl\Templates\Tests\Fixtures\OwnershipCompany;
 use Nvl\Templates\Tests\Fixtures\OwnershipTemplateScenario;
@@ -61,7 +60,7 @@ it('runs captured Template workers with private Media outputs and races version 
         $runner->run(OwnershipCompany::findOrFail($company), $actor, function () use ($company, &$renders, &$versions): void {
             $version = OwnershipTemplateScenario::version();
             $versions[$company] = $version;
-            $renders[$company] = app(QueueTemplateRenderAction::class)->execute($version->template, new RenderTemplateData('en', ['name' => 'Owner '.$company], idempotencyKey: 'same-key'), TemplateActorData::system())->id;
+            $renders[$company] = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'same-key', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Owner '.$company]], SystemActor::Background)->id;
         });
     }
     $source = json_encode(config('database.connections.sqlite'), JSON_THROW_ON_ERROR);

@@ -6,11 +6,10 @@ namespace Nvl\Templates\Services;
 
 use Illuminate\Contracts\View\Factory;
 use Mpdf\Mpdf;
-use Nvl\Content\Content;
+use Nvl\Content\Services\ContentDefinitionRegistry;
 use Nvl\Support\Config\PackageOptions;
 use Nvl\Support\Ownership\Contracts\OwnershipReadiness;
 use Nvl\Templates\Contracts\TemplateAuthorization;
-use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Models\Template;
@@ -33,7 +32,6 @@ final class TemplatesDoctor
         private TemplateOwnerRegistry $owners,
         private PdfTemporaryDirectoryResolver $temporaryDirectories,
         private Factory $views,
-        private Content $content,
         private OwnershipReadiness $ownershipReadiness,
     ) {}
 
@@ -50,7 +48,7 @@ final class TemplatesDoctor
         $owners = $this->owners;
         $temporaryDirectories = $this->temporaryDirectories;
         $views = $this->views;
-        $content = $this->content;
+        $content = config('nvl-templates.integrations.content', false) ? app(ContentDefinitionRegistry::class) : null;
 
         $canonicalJson = new CanonicalJson;
         $required = [];
@@ -143,7 +141,7 @@ final class TemplatesDoctor
     {
         $selected = [config('nvl-templates.default_renderer', 'blade')];
         foreach ($definitions->all() as $definition) {
-            $selected[] = $definition->renderer;
+            $selected[] = $definition['renderer'];
         }
         $classes = $renderers->all();
         foreach ($selected as $alias) {
@@ -160,7 +158,7 @@ final class TemplatesDoctor
      */
     private function databaseChecks(
         TemplateDefinitionRegistry $definitions,
-        Content $content,
+        ?ContentDefinitionRegistry $content,
         CanonicalJson $canonicalJson,
     ): array {
         $schema = TemplateModelRegistry::newInstance()->getConnection()->getSchemaBuilder();
@@ -206,7 +204,7 @@ final class TemplatesDoctor
         $tablesHealthy = ! in_array(false, $checks, true);
         $checks['definitions.synchronized'] = $tablesHealthy
             && $this->definitionsAreSynchronized($definitions, $canonicalJson);
-        $checks['definitions.content'] = $this->contentDefinitionsAreRegistered(
+        $checks['definitions.content'] = $content === null || $this->contentDefinitionsAreRegistered(
             $definitions,
             $content,
         );
@@ -267,7 +265,7 @@ final class TemplatesDoctor
         Factory $views,
     ): bool {
         foreach ($definitions->all() as $definition) {
-            if (! $views->exists($definition->view)) {
+            if (! $views->exists($definition['view'])) {
                 return false;
             }
         }
@@ -277,14 +275,12 @@ final class TemplatesDoctor
 
     private function contentDefinitionsAreRegistered(
         TemplateDefinitionRegistry $definitions,
-        Content $content,
+        ?ContentDefinitionRegistry $content,
     ): bool {
-        $available = $content->definitions(
-            TemplateActorData::system()->contentActor(),
-        )->pluck('key')->all();
+        $available = $content === null ? [] : array_column($content->all(), 'key');
 
         foreach ($definitions->all() as $definition) {
-            foreach ($definition->allowedContentDefinitions as $key) {
+            foreach ($definition['allowedContentDefinitions'] as $key) {
                 if (! in_array($key, $available, true)) {
                     return false;
                 }
@@ -305,9 +301,9 @@ final class TemplatesDoctor
             $template = $stored->get($key);
 
             if (! $template instanceof Template
-                || $template->renderer !== $definition->renderer
+                || $template->renderer !== $definition['renderer']
                 || $canonicalJson->digest($template->schema)
-                    !== $canonicalJson->digest($definition->schema)
+                    !== $canonicalJson->digest($definition['schema'])
                 || $template->status === TemplateStatus::Archived) {
                 return false;
             }

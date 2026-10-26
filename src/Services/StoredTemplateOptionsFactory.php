@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use InvalidArgumentException;
-use Nvl\Templates\Data\PdfMargins;
-use Nvl\Templates\Data\PdfOptions;
-use Nvl\Templates\Data\TemplateOptions;
 use Nvl\Templates\Enums\PdfOrientation;
 use Nvl\Templates\Enums\PdfPageSize;
 
@@ -18,21 +15,16 @@ final class StoredTemplateOptionsFactory
 {
     /**
      * @param  array<string, mixed>  $configured
+     * @return array{renderer: string|null, locale: string|null, subject: string|null, filename: string|null, pdf: array{pageSize: PdfPageSize|null, orientation: PdfOrientation|null, margins: array{left: float|null, right: float|null, top: float|null, bottom: float|null, header: float|null, footer: float|null}|null, defaultFont: string|null, defaultFontSize: float|null, dpi: int|null, imageDpi: int|null, imageQuality: int|null, showImageErrors: bool|null, temporaryDirectory: string|null, title: string|null, author: string|null, creator: string|null, subject: string|null, keywords: string|null, headerView: string|null, headerHtml: string|null, headerData: array<string, mixed>, footerView: string|null, footerHtml: string|null, footerData: array<string, mixed>, watermark: string|null, watermarkOpacity: float|null, compress: bool|null, pdfa: bool|null, pdfaAuto: bool|null, protectionPermissions: list<string>, userPassword: string|null, ownerPassword: string|null}|null, rendererOptions: array<string, mixed>}
      */
     public function make(
         string $renderer,
         string $locale,
         ?string $subject,
         array $configured,
-    ): TemplateOptions {
+    ): array {
         if ($renderer !== 'pdf') {
-            return new TemplateOptions(
-                renderer: $renderer,
-                locale: $locale,
-                subject: $subject,
-                filename: $this->nullableString($configured['filename'] ?? null, 'filename'),
-                rendererOptions: $configured,
-            );
+            return ['renderer' => $renderer, 'locale' => $locale, 'subject' => $subject, 'filename' => $this->nullableString($configured['filename'] ?? null, 'filename'), 'pdf' => null, 'rendererOptions' => $configured];
         }
 
         $allowed = [
@@ -68,70 +60,40 @@ final class StoredTemplateOptionsFactory
             );
         }
 
-        return new TemplateOptions(
-            renderer: $renderer,
-            locale: $locale,
-            subject: $subject,
-            filename: $this->nullableString($configured['filename'] ?? null, 'filename'),
-            pdf: new PdfOptions(
-                pageSize: $this->pageSize($configured['page_size'] ?? null),
-                orientation: $this->orientation($configured['orientation'] ?? null),
-                margins: $this->margins($configured['margins'] ?? null),
-                defaultFont: $this->nullableString(
-                    $configured['default_font'] ?? null,
-                    'default_font',
-                ),
-                defaultFontSize: $this->nullableFloat(
-                    $configured['default_font_size'] ?? null,
-                    'default_font_size',
-                ),
-                dpi: $this->nullableInteger($configured['dpi'] ?? null, 'dpi'),
-                imageDpi: $this->nullableInteger(
-                    $configured['image_dpi'] ?? null,
-                    'image_dpi',
-                ),
-                imageQuality: $this->nullableInteger(
-                    $configured['image_quality'] ?? null,
-                    'image_quality',
-                ),
-                title: $this->nullableString($configured['title'] ?? null, 'title'),
-                author: $this->nullableString($configured['author'] ?? null, 'author'),
-                creator: $this->nullableString($configured['creator'] ?? null, 'creator'),
-                subject: $this->nullableString($configured['subject'] ?? null, 'subject'),
-                keywords: $this->nullableString(
-                    $configured['keywords'] ?? null,
-                    'keywords',
-                ),
-                headerView: $this->nullableString(
-                    $configured['header_view'] ?? null,
-                    'header_view',
-                ),
-                headerData: $this->map($configured['header_data'] ?? [], 'header_data'),
-                footerView: $this->nullableString(
-                    $configured['footer_view'] ?? null,
-                    'footer_view',
-                ),
-                footerData: $this->map($configured['footer_data'] ?? [], 'footer_data'),
-                watermark: $this->nullableString(
-                    $configured['watermark'] ?? null,
-                    'watermark',
-                ),
-                watermarkOpacity: $this->nullableFloat(
-                    $configured['watermark_opacity'] ?? null,
-                    'watermark_opacity',
-                ),
-                compress: $this->nullableBoolean(
-                    $configured['compress'] ?? null,
-                    'compress',
-                ),
-                pdfa: $this->nullableBoolean($configured['pdfa'] ?? null, 'pdfa'),
-                pdfaAuto: $this->nullableBoolean(
-                    $configured['pdfa_auto'] ?? null,
-                    'pdfa_auto',
-                ),
-            ),
-            rendererOptions: $configured,
-        );
+        return ['renderer' => $renderer, 'locale' => $locale, 'subject' => $subject, 'filename' => $this->nullableString($configured['filename'] ?? null, 'filename'), 'pdf' => ['pageSize' => $this->pageSize($configured['page_size'] ?? null), 'orientation' => $this->orientation($configured['orientation'] ?? null), 'margins' => $this->margins($configured['margins'] ?? null), 'defaultFont' => $this->nullableString(
+            $configured['default_font'] ?? null,
+            'default_font',
+        ), 'defaultFontSize' => $this->nullableFloat(
+            $configured['default_font_size'] ?? null,
+            'default_font_size',
+        ), 'dpi' => $this->nullableInteger($configured['dpi'] ?? null, 'dpi'), 'imageDpi' => $this->nullableInteger(
+            $configured['image_dpi'] ?? null,
+            'image_dpi',
+        ), 'imageQuality' => $this->nullableInteger(
+            $configured['image_quality'] ?? null,
+            'image_quality',
+        ), 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => $this->nullableString($configured['title'] ?? null, 'title'), 'author' => $this->nullableString($configured['author'] ?? null, 'author'), 'creator' => $this->nullableString($configured['creator'] ?? null, 'creator'), 'subject' => $this->nullableString($configured['subject'] ?? null, 'subject'), 'keywords' => $this->nullableString(
+            $configured['keywords'] ?? null,
+            'keywords',
+        ), 'headerView' => $this->nullableString(
+            $configured['header_view'] ?? null,
+            'header_view',
+        ), 'headerHtml' => null, 'headerData' => $this->map($configured['header_data'] ?? [], 'header_data'), 'footerView' => $this->nullableString(
+            $configured['footer_view'] ?? null,
+            'footer_view',
+        ), 'footerHtml' => null, 'footerData' => $this->map($configured['footer_data'] ?? [], 'footer_data'), 'watermark' => $this->nullableString(
+            $configured['watermark'] ?? null,
+            'watermark',
+        ), 'watermarkOpacity' => $this->nullableFloat(
+            $configured['watermark_opacity'] ?? null,
+            'watermark_opacity',
+        ), 'compress' => $this->nullableBoolean(
+            $configured['compress'] ?? null,
+            'compress',
+        ), 'pdfa' => $this->nullableBoolean($configured['pdfa'] ?? null, 'pdfa'), 'pdfaAuto' => $this->nullableBoolean(
+            $configured['pdfa_auto'] ?? null,
+            'pdfa_auto',
+        ), 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null], 'rendererOptions' => $configured];
     }
 
     private function pageSize(mixed $value): ?PdfPageSize
@@ -162,9 +124,12 @@ final class StoredTemplateOptionsFactory
             ?? throw new InvalidArgumentException('PDF orientation is invalid.');
     }
 
-    private function margins(mixed $value): ?PdfMargins
+    /** Native Templates operation.
+     * @return array{left: float|null, right: float|null, top: float|null, bottom: float|null, header: float|null, footer: float|null}|null
+     */
+    private function margins(mixed $value): ?array
     {
-        if ($value === null || $value instanceof PdfMargins) {
+        if ($value === null) {
             return $value;
         }
 
@@ -178,14 +143,7 @@ final class StoredTemplateOptionsFactory
             throw new InvalidArgumentException('PDF margins contain an unknown key.');
         }
 
-        return new PdfMargins(
-            left: $this->nullableFloat($margins['left'] ?? null, 'margins.left'),
-            right: $this->nullableFloat($margins['right'] ?? null, 'margins.right'),
-            top: $this->nullableFloat($margins['top'] ?? null, 'margins.top'),
-            bottom: $this->nullableFloat($margins['bottom'] ?? null, 'margins.bottom'),
-            header: $this->nullableFloat($margins['header'] ?? null, 'margins.header'),
-            footer: $this->nullableFloat($margins['footer'] ?? null, 'margins.footer'),
-        );
+        return ['left' => $this->nullableFloat($margins['left'] ?? null, 'margins.left'), 'right' => $this->nullableFloat($margins['right'] ?? null, 'margins.right'), 'top' => $this->nullableFloat($margins['top'] ?? null, 'margins.top'), 'bottom' => $this->nullableFloat($margins['bottom'] ?? null, 'margins.bottom'), 'header' => $this->nullableFloat($margins['header'] ?? null, 'margins.header'), 'footer' => $this->nullableFloat($margins['footer'] ?? null, 'margins.footer')];
     }
 
     /**

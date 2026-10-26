@@ -1,37 +1,25 @@
 <?php
 
 declare(strict_types=1);
-
-use Illuminate\Auth\GenericUser;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
-use Nvl\Content\Actions\CreateContentBlockAction;
-use Nvl\Content\Actions\PlaceContentBlockAction;
-use Nvl\Content\Actions\SyncContentDefinitionsAction;
-use Nvl\Content\Data\ContentActorData;
-use Nvl\Content\Data\Mutations\CreateContentBlockData;
-use Nvl\Content\Data\Mutations\PlaceContentBlockData;
+use Nvl\Content\Services\ContentBlocks;
+use Nvl\Content\Services\ContentDefinitions;
+use Nvl\Content\Services\ContentPlacements;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Contracts\TemplatePayloadValidator;
-use Nvl\Templates\Data\PdfOptions as TypedPdfOptions;
-use Nvl\Templates\Data\RenderedTemplateData;
-use Nvl\Templates\Data\TemplateActorData;
-use Nvl\Templates\Data\TemplateDefinitionData;
-use Nvl\Templates\Data\TemplateOptions;
 use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
-use Nvl\Templates\Html\TemplateContext;
-use Nvl\Templates\Html\TemplateRenderer;
 use Nvl\Templates\Jobs\RenderTemplateJob;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateVersion;
-use Nvl\Templates\Pdf\Contracts\PdfServiceInterface;
-use Nvl\Templates\Pdf\Options\PdfOptions as FluentPdfOptions;
 use Nvl\Templates\Rendering\TemplateRenderContext;
 use Nvl\Templates\Services\ConfiguredTemplatePayloadValidator;
 use Nvl\Templates\Services\PdfOptionsResolver;
@@ -44,31 +32,35 @@ use Nvl\Templates\Services\TemplateOptionsResolver;
 use Nvl\Templates\Services\TemplateOutputGuard;
 use Nvl\Templates\Services\TemplateOwnerRegistry;
 use Nvl\Templates\Services\TemplateRendererRegistry;
-use Nvl\Templates\Support\PdfConfig\Data\HeaderFooterData;
-use Nvl\Templates\Support\PdfConfig\Data\MarginsData;
-use Nvl\Templates\Support\PdfConfig\Data\MetadataData;
-use Nvl\Templates\Support\PdfConfig\Data\PageNumberingData;
-use Nvl\Templates\Support\PdfConfig\Data\ProtectionData;
-use Nvl\Templates\Support\PdfConfig\Data\WatermarkData;
-use Nvl\Templates\Support\PdfConfig\EngineConfig;
-use Nvl\Templates\Support\PdfConfig\Enums\PageOrientation;
-use Nvl\Templates\Support\PdfConfig\Enums\PaperSize;
-use Nvl\Templates\Support\TemplatesRouteConfiguration;
-use Nvl\Templates\Support\View\AssetAccessor;
-use Nvl\Templates\Support\View\ContentAccessor;
 use Nvl\Templates\Template as RenderableTemplate;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Html\TemplateContext;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Html\TemplateRenderer;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Pdf\Contracts\PdfServiceInterface;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Pdf\Options\PdfOptions as FluentPdfOptions;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Data\HeaderFooterData;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Data\MarginsData;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Data\MetadataData;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Data\PageNumberingData;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Data\ProtectionData;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Data\WatermarkData;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\EngineConfig;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Enums\PageOrientation;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Enums\PaperSize;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\TemplatesRouteConfiguration;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\View\AssetAccessor;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\View\ContentAccessor;
 use Nvl\Templates\Tests\Fixtures\TestClassPdfTemplate;
 use Nvl\Templates\Tests\Fixtures\TestTemplateOwner;
 use Nvl\Templates\Tests\Fixtures\TestTemplateOwnerResolver;
 use Nvl\Templates\Tests\Fixtures\TestTemplateRenderer;
 
 beforeEach(function (): void {
-    app(SyncContentDefinitionsAction::class)->execute(ContentActorData::system());
+    app(ContentDefinitions::class)->sync(SystemActor::Background);
     app()->instance(TemplateAuthorization::class, new class implements TemplateAuthorization
     {
         public function authorize(
             TemplateAbility $ability,
-            TemplateActorData $actor,
+            Authenticatable|SystemActor $actor,
             array $context = [],
         ): void {}
     });
@@ -76,14 +68,15 @@ beforeEach(function (): void {
 
 it('supports the complete opt-in management and render HTTP workflow', function (): void {
     Queue::fake();
-    $this->be(new GenericUser(['id' => 'consumer-actor']));
+    $this->be(templateTestActor('consumer-actor'));
     config()->set([
         'nvl-templates.routes.management.enabled' => true,
+        'nvl-templates.routes.management.prefix' => 'nvl/api/v1/templates',
         'nvl-templates.routes.management.middleware' => ['api'],
         'nvl-templates.routes.render.enabled' => true,
         'nvl-templates.routes.render.middleware' => ['api'],
     ]);
-    require __DIR__.'/../../routes/api.php';
+    require __DIR__.'/../Fixtures/routes/api.php';
     Route::getRoutes()->refreshNameLookups();
 
     $owner = TestTemplateOwner::query()->create(['name' => 'Ada']);
@@ -121,21 +114,21 @@ it('supports the complete opt-in management and render HTTP workflow', function 
         'metadata' => ['campaign' => 'activation'],
     ])->assertOk()->json('data');
 
-    $content = app(CreateContentBlockAction::class)->execute(
-        new CreateContentBlockData(
-            definition: 'template-copy',
-            key: "http-template-{$versionId}",
-            values: [],
-            translations: ['en' => ['text' => 'Welcome', 'subject' => 'Hello']],
-        ),
-        ContentActorData::system(),
+    $content = app(ContentBlocks::class)->create(
+        [
+            'definition' => 'template-copy',
+            'key' => "http-template-{$versionId}",
+            'values' => [],
+            'translations' => ['en' => ['text' => 'Welcome', 'subject' => 'Hello']],
+        ],
+        SystemActor::Background,
     );
-    app(PlaceContentBlockAction::class)->execute(
+    app(ContentPlacements::class)->place(
         $content,
         TemplateVersion::query()->findOrFail($versionId),
         TemplateVersion::CONTENT_GROUP,
-        new PlaceContentBlockData(key: 'body', region: 'main'),
-        ContentActorData::system(),
+        ['key' => 'body', 'region' => 'main'],
+        SystemActor::Background,
     );
 
     $published = $this->postJson("/nvl/api/v1/templates/versions/{$versionId}/publish", [
@@ -373,14 +366,14 @@ it('covers the complete fluent PDF configuration adapter', function (): void {
         ->imageQuality(80)
         ->debugImages();
 
-    expect($data->pageSize->value)->toBe('Letter')
-        ->and($data->orientation->value)->toBe('landscape')
-        ->and($data->watermark)->toBe('DRAFT')
-        ->and($data->protectionPermissions)->toBe(['print'])
+    expect($data['pageSize']->value)->toBe('Letter')
+        ->and($data['orientation']->value)->toBe('landscape')
+        ->and($data['watermark'])->toBe('DRAFT')
+        ->and($data['protectionPermissions'])->toBe(['print'])
         ->and($array['orientation'])->toBe('L')
         ->and($array['dpi'])->toBe(144)
         ->and($array['compress'])->toBeFalse()
-        ->and($fluent->toData()->showImageErrors)->toBeTrue()
+        ->and($fluent->toData()['showImageErrors'])->toBeTrue()
         ->and($fluent->toMpdfConfig()['jpgQuality'])->toBe(80)
         ->and(fn () => (new EngineConfig)->setDefaultFont('bad font'))
         ->toThrow(InvalidArgumentException::class)
@@ -408,14 +401,14 @@ it('supports the complete class-template compatibility workflow', function (): v
     {
         public function __construct(private readonly string $assetPath) {}
 
-        public function resolve(string $key): ?string
+        public function resolve(string $key, Authenticatable|SystemActor $actor): ?string
         {
             return in_array($key, ['frame', 'sticker', 'extra'], true)
                 ? $this->assetPath
                 : null;
         }
 
-        public function scope(string $scope, ?string $type = null): array
+        public function scope(string $scope, Authenticatable|SystemActor $actor, ?string $type = null): array
         {
             if ($scope !== 'document') {
                 return [];
@@ -620,16 +613,7 @@ it('validates renderer definition owner and direct template registry boundaries'
     $definitions = app(TemplateDefinitionRegistry::class);
     $owners = app(TemplateOwnerRegistry::class);
     $owner = TestTemplateOwner::query()->create(['name' => 'Ada']);
-    $definition = new TemplateDefinitionData(
-        key: 'aaa-contract',
-        renderer: 'test',
-        view: 'template-tests::core',
-        profiles: ['default', 'email'],
-        schema: ['name' => ['type' => 'string']],
-        subjectPath: 'body.subject',
-        requiredRegions: ['main'],
-        allowedContentDefinitions: ['template-copy'],
-    );
+    $definition = ['profiles' => ['default', 'email'], 'schema' => ['name' => ['type' => 'string']], 'rendererOptions' => [], 'subjectPath' => 'body.subject', 'requiredRegions' => ['main'], 'allowedContentDefinitions' => ['template-copy'], 'key' => 'aaa-contract', 'renderer' => 'test', 'view' => 'template-tests::core'];
     $definitions->register($definition);
 
     expect($renderers->has('test'))->toBeTrue()
@@ -664,31 +648,16 @@ it('validates renderer definition owner and direct template registry boundaries'
         ->toThrow(InvalidArgumentException::class);
 
     $invalidDefinitions = [
-        new TemplateDefinitionData('Bad Key', 'test', 'template-tests::core'),
-        new TemplateDefinitionData('bad-renderer-alias', 'Bad Alias', 'template-tests::core'),
-        new TemplateDefinitionData('missing-renderer', 'missing', 'template-tests::core'),
-        new TemplateDefinitionData('bad-view', 'test', '../unsafe'),
-        new TemplateDefinitionData('empty-profiles', 'test', 'template-tests::core', []),
-        new TemplateDefinitionData('duplicate-profiles', 'test', 'template-tests::core', ['web', 'web']),
-        new TemplateDefinitionData('bad-profile', 'test', 'template-tests::core', ['Bad Alias']),
-        new TemplateDefinitionData(
-            'bad-subject',
-            'test',
-            'template-tests::core',
-            subjectPath: 'bad path',
-        ),
-        new TemplateDefinitionData(
-            'duplicate-regions',
-            'test',
-            'template-tests::core',
-            requiredRegions: ['main', 'main'],
-        ),
-        new TemplateDefinitionData(
-            'bad-content-alias',
-            'test',
-            'template-tests::core',
-            allowedContentDefinitions: ['Bad Alias'],
-        ),
+        ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'Bad Key', 'renderer' => 'test', 'view' => 'template-tests::core'],
+        ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'bad-renderer-alias', 'renderer' => 'Bad Alias', 'view' => 'template-tests::core'],
+        ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'missing-renderer', 'renderer' => 'missing', 'view' => 'template-tests::core'],
+        ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'bad-view', 'renderer' => 'test', 'view' => '../unsafe'],
+        ['profiles' => [], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'empty-profiles', 'renderer' => 'test', 'view' => 'template-tests::core'],
+        ['profiles' => ['web', 'web'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'duplicate-profiles', 'renderer' => 'test', 'view' => 'template-tests::core'],
+        ['profiles' => ['Bad Alias'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'bad-profile', 'renderer' => 'test', 'view' => 'template-tests::core'],
+        ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => 'bad path', 'requiredRegions' => [], 'allowedContentDefinitions' => [], 'key' => 'bad-subject', 'renderer' => 'test', 'view' => 'template-tests::core'],
+        ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => ['main', 'main'], 'allowedContentDefinitions' => [], 'key' => 'duplicate-regions', 'renderer' => 'test', 'view' => 'template-tests::core'],
+        ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => ['Bad Alias'], 'key' => 'bad-content-alias', 'renderer' => 'test', 'view' => 'template-tests::core'],
     ];
 
     foreach ($invalidDefinitions as $invalidDefinition) {
@@ -728,15 +697,7 @@ it('rejects dishonest or unsafe renderer output facts', function (): void {
         ?string $checksum = null,
         ?string $subject = null,
         ?string $filename = null,
-    ): RenderedTemplateData => new RenderedTemplateData(
-        content: $content,
-        mimeType: $mime,
-        renderer: $renderer,
-        byteSize: $size ?? strlen($content),
-        checksum: $checksum ?? hash('sha256', $content),
-        subject: $subject,
-        suggestedFilename: $filename,
-    );
+    ): array => ['subject' => $subject, 'suggested_filename' => $filename, 'content' => $content, 'mime_type' => $mime, 'renderer' => $renderer, 'byte_size' => $size ?? strlen($content), 'checksum' => $checksum ?? hash('sha256', $content)];
 
     $guard->validate($context, $result(filename: 'safe.txt', subject: 'Subject'));
     $guard->validateFilename('safe-file.pdf');
@@ -813,11 +774,11 @@ it('fails closed across stored core PDF content and filesystem options', functio
     ]);
     $blade = $storedOptions->make('blade', 'en', null, ['filename' => 'message.html']);
 
-    expect($stored->pdf?->pageSize?->value)->toBe('A5')
-        ->and($stored->pdf?->orientation?->value)->toBe('landscape')
-        ->and($stored->filename)->toBe('statement.pdf')
-        ->and($blade->renderer)->toBe('blade')
-        ->and($blade->filename)->toBe('message.html');
+    expect($stored['pdf']['pageSize']?->value)->toBe('A5')
+        ->and($stored['pdf']['orientation']?->value)->toBe('landscape')
+        ->and($stored['filename'])->toBe('statement.pdf')
+        ->and($blade['renderer'])->toBe('blade')
+        ->and($blade['filename'])->toBe('message.html');
 
     $invalidStoredOptions = [
         ['unknown' => true],
@@ -844,17 +805,12 @@ it('fails closed across stored core PDF content and filesystem options', functio
     $coreResolver->resolve(new RenderableTemplate(
         key: 'core-options',
         view: 'template-tests::core',
-        options: new TemplateOptions(
-            renderer: 'blade',
-            locale: 'en',
-            subject: 'Subject',
-            filename: 'safe.html',
-        ),
+        options: ['renderer' => 'blade', 'locale' => 'en', 'subject' => 'Subject', 'filename' => 'safe.html', 'pdf' => null, 'rendererOptions' => []],
     ));
     $invalidCoreOptions = [
-        new TemplateOptions(renderer: 'Bad Alias'),
-        new TemplateOptions(subject: "bad\nsubject"),
-        new TemplateOptions(filename: '../unsafe.html'),
+        ['renderer' => 'Bad Alias', 'locale' => null, 'subject' => null, 'filename' => null, 'pdf' => null, 'rendererOptions' => []],
+        ['renderer' => null, 'locale' => null, 'subject' => "bad\nsubject", 'filename' => null, 'pdf' => null, 'rendererOptions' => []],
+        ['renderer' => null, 'locale' => null, 'subject' => null, 'filename' => '../unsafe.html', 'pdf' => null, 'rendererOptions' => []],
     ];
 
     foreach ($invalidCoreOptions as $options) {
@@ -866,7 +822,7 @@ it('fails closed across stored core PDF content and filesystem options', functio
     }
 
     $pdfResolver = app(PdfOptionsResolver::class);
-    $pdfContext = static fn (TypedPdfOptions $pdf): TemplateRenderContext => new TemplateRenderContext(
+    $pdfContext = static fn (array $pdf): TemplateRenderContext => new TemplateRenderContext(
         template: new RenderableTemplate('pdf-options'),
         view: 'nvl-templates::pdf.document',
         renderer: 'pdf',
@@ -876,23 +832,19 @@ it('fails closed across stored core PDF content and filesystem options', functio
         pdf: $pdf,
         rendererOptions: [],
     );
-    $pdfResolver->resolve($pdfContext(new TypedPdfOptions(
-        headerView: 'nvl-templates::pdf.header',
-        footerView: 'nvl-templates::pdf.footer',
-        protectionPermissions: ['print', 'print'],
-    )));
+    $pdfResolver->resolve($pdfContext(['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => 'nvl-templates::pdf.header', 'headerHtml' => null, 'headerData' => [], 'footerView' => 'nvl-templates::pdf.footer', 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => ['print', 'print'], 'userPassword' => null, 'ownerPassword' => null]));
     $invalidPdfOptions = [
-        new TypedPdfOptions(defaultFont: 'bad font'),
-        new TypedPdfOptions(defaultFontSize: 1),
-        new TypedPdfOptions(dpi: 1),
-        new TypedPdfOptions(imageDpi: 1),
-        new TypedPdfOptions(imageQuality: 0),
-        new TypedPdfOptions(headerView: 'missing::view'),
-        new TypedPdfOptions(pdfa: false, pdfaAuto: true),
-        new TypedPdfOptions(showImageErrors: true),
-        new TypedPdfOptions(watermarkOpacity: 2),
-        new TypedPdfOptions(protectionPermissions: ['execute']),
-        new TypedPdfOptions(title: "bad\0title"),
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => 'bad font', 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => 1, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => 1, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => 1, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => 0, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => 'missing::view', 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => false, 'pdfaAuto' => true, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => true, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => 2, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => ['execute'], 'userPassword' => null, 'ownerPassword' => null],
+        ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => "bad\0title", 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null],
     ];
 
     foreach ($invalidPdfOptions as $options) {
@@ -914,7 +866,7 @@ it('fails closed across stored core PDF content and filesystem options', functio
 
     foreach ($invalidPdfDefaults as $defaults) {
         config()->set('nvl-templates.pdf.defaults', $defaults);
-        expect(fn () => $pdfResolver->resolve($pdfContext(new TypedPdfOptions)))
+        expect(fn () => $pdfResolver->resolve($pdfContext([])))
             ->toThrow(InvalidArgumentException::class);
     }
     config()->set('nvl-templates.pdf.defaults', $pdfDefaults);

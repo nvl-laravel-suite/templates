@@ -5,66 +5,73 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use InvalidArgumentException;
-use Nvl\Templates\Data\MediaTemplateAssetData;
 
 /**
  * Stores validated Media aliases and provides a narrow legacy-alias adoption helper.
  */
 final class MediaTemplateAssetRegistry
 {
-    /** @var array<string, MediaTemplateAssetData> */
+    /** @var array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}> */
     private array $assets = [];
 
     public function __construct(private readonly TemplateAssetGuard $guard) {}
 
-    public function register(MediaTemplateAssetData $asset): void
+    /** Native Templates operation.
+     * @param  array{key: string, mediaId: string, scope?: string, type?: string, variation?: string, delivery?: string, expectedRevision?: int|null}  $asset
+     */
+    public function register(array $asset): void
     {
+        $asset += ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null];
         $this->validate($asset);
 
-        if (isset($this->assets[$asset->key])) {
+        if (isset($this->assets[$asset['key']])) {
             throw new InvalidArgumentException(
-                "Template Media alias [{$asset->key}] is already registered.",
+                "Template Media alias [{$asset['key']}] is already registered.",
             );
         }
 
-        $this->assets[$asset->key] = $asset;
+        $this->assets[$asset['key']] = $asset;
         ksort($this->assets);
     }
 
-    public function validate(MediaTemplateAssetData $asset): void
+    /** Native Templates operation.
+     * @param  array{key: string, mediaId: string, scope?: string, type?: string, variation?: string, delivery?: string, expectedRevision?: int|null}  $asset
+     */
+    public function validate(array $asset): void
     {
-        $this->guard->key($asset->key);
+        $asset += ['scope' => 'default', 'type' => 'image', 'variation' => '', 'delivery' => 'path', 'expectedRevision' => null];
+        $this->guard->key($asset['key']);
 
-        if (trim($asset->mediaId) === '') {
+        if (trim($asset['mediaId']) === '') {
             throw new InvalidArgumentException(
-                "Template Media alias [{$asset->key}] requires a media ID.",
+                "Template Media alias [{$asset['key']}] requires a media ID.",
             );
         }
 
-        foreach (['scope' => $asset->scope, 'type' => $asset->type] as $field => $value) {
+        foreach (['scope' => $asset['scope'], 'type' => $asset['type']] as $field => $value) {
             if (preg_match('/^[a-z0-9][a-z0-9._-]{0,100}$/D', $value) !== 1) {
                 throw new InvalidArgumentException(
-                    "Template Media alias [{$asset->key}] has an invalid {$field}.",
+                    "Template Media alias [{$asset['key']}] has an invalid {$field}.",
                 );
             }
         }
 
-        if ($asset->variation !== ''
-            && preg_match('/^[a-z0-9][a-z0-9._-]{0,100}$/D', $asset->variation) !== 1) {
+        if ($asset['variation'] !== ''
+            && preg_match('/^[a-z0-9][a-z0-9._-]{0,100}$/D', $asset['variation']) !== 1) {
             throw new InvalidArgumentException(
-                "Template Media alias [{$asset->key}] has an invalid variation.",
+                "Template Media alias [{$asset['key']}] has an invalid variation.",
             );
         }
 
-        if (! in_array($asset->delivery, ['path', 'url'], true)) {
+        if (! in_array($asset['delivery'], ['path', 'url'], true)) {
             throw new InvalidArgumentException(
-                "Template Media alias [{$asset->key}] delivery must be path or url.",
+                "Template Media alias [{$asset['key']}] delivery must be path or url.",
             );
         }
 
-        if ($asset->expectedRevision !== null && $asset->expectedRevision < 1) {
+        if ($asset['expectedRevision'] !== null && $asset['expectedRevision'] < 1) {
             throw new InvalidArgumentException(
-                "Template Media alias [{$asset->key}] expected revision must be positive.",
+                "Template Media alias [{$asset['key']}] expected revision must be positive.",
             );
         }
 
@@ -90,35 +97,32 @@ final class MediaTemplateAssetRegistry
                 );
             }
 
-            $this->register(new MediaTemplateAssetData(
-                key: $key,
-                mediaId: $mediaId,
-                scope: $scope,
-                type: $type,
-                delivery: $delivery,
-            ));
+            $this->register(['scope' => $scope, 'type' => $type, 'variation' => '', 'delivery' => $delivery, 'expectedRevision' => null, 'key' => $key, 'mediaId' => $mediaId]);
         }
     }
 
-    public function get(string $key): ?MediaTemplateAssetData
+    /** Native Templates operation.
+     * @return array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}|null
+     */
+    public function get(string $key): ?array
     {
         return $this->assets[$key] ?? null;
     }
 
     /**
-     * @return array<string, MediaTemplateAssetData>
+     * @return array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}>
      */
     public function scope(string $scope, ?string $type = null): array
     {
         return array_filter(
             $this->assets,
-            static fn (MediaTemplateAssetData $asset): bool => $asset->scope === $scope
-                && ($type === null || $asset->type === $type),
+            static fn (array $asset): bool => $asset['scope'] === $scope
+                && ($type === null || $asset['type'] === $type),
         );
     }
 
     /**
-     * @return array<string, MediaTemplateAssetData>
+     * @return array<string, array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}>
      */
     public function all(): array
     {

@@ -6,7 +6,6 @@ namespace Nvl\Templates\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use InvalidArgumentException;
-use Nvl\Content\Data\ContentCompositionSnapshotData;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\TemplateModelRegistry;
@@ -46,9 +45,8 @@ final class TemplateVersionFactory extends Factory
                 FactoryGuard::inherit($model, $parent);
                 if ($model->status->value === 'published') {
                     $snapshot = $model->content_snapshot;
-                    if ($snapshot === null || $snapshot->blocks === [] || $snapshot->ownerId !== $model->id
-                        || $model->content_hash !== $snapshot->version
-                        || (config('nvl-tenancy.enabled') === true && $snapshot->tenantId !== $model->tenant_id)) {
+                    if ($snapshot === null || $snapshot['blocks'] === [] || $snapshot['ownerId'] !== $model->id
+                        || $model->content_hash !== $snapshot['version']) {
                         throw new InvalidArgumentException('Published fixtures require the exact version composition and tenant identity.');
                     }
                 }
@@ -88,19 +86,21 @@ final class TemplateVersionFactory extends Factory
     /** Declare an immutable publication fixture from a supplied native composition.
      *
      * @api
+     *
+     * @param  array{ownerType:string,ownerId:string,group:string,blocks:list<array{placementId:string,parentId:string|null,key:string,region:string,sortOrder:int,blockId:string,definitionKey:string,definitionSchema:array<string,mixed>,definitionView:string|null,visibility:string,values:array<string, mixed>,translations:array<string, array<string, mixed>>,overrides:array<string, mixed>,blockRevision:int,placementRevision:int}>,version:string,tenantId:string|null,formatVersion:int,ownershipContext:array<string,mixed>|null}  $snapshot
      */
-    public function published(ContentCompositionSnapshotData $snapshot): static
+    public function published(array $snapshot): static
     {
-        if ($snapshot->blocks === [] || $snapshot->ownerType !== TemplateVersion::CONTENT_OWNER_TYPE
-            || $snapshot->group !== TemplateVersion::CONTENT_GROUP) {
+        if ($snapshot['blocks'] === [] || $snapshot['ownerType'] !== TemplateVersion::CONTENT_OWNER_TYPE
+            || $snapshot['group'] !== TemplateVersion::CONTENT_GROUP) {
             throw new InvalidArgumentException('Published version fixtures require a nonempty native composition snapshot.');
         }
 
         return $this->state([
-            'id' => $snapshot->ownerId,
+            'id' => $snapshot['ownerId'],
             'status' => 'published',
             'content_snapshot' => $snapshot,
-            'content_hash' => $snapshot->version,
+            'content_hash' => $snapshot['version'],
             'published_at' => now(),
         ]);
     }

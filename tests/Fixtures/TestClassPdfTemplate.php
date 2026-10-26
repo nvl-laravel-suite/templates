@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Tests\Fixtures;
 
-use Nvl\Templates\Support\PdfConfig\Data\MetadataData;
-use Nvl\Templates\Support\PdfConfig\Enums\PaperSize;
-use Nvl\Templates\Templates\BasePdfTemplate;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Data\MetadataData;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\Enums\PaperSize;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Templates\BasePdfTemplate;
 
 /**
  * Exercises the reusable class-template surface in an isolated consumer.

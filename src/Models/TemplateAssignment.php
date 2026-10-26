@@ -41,7 +41,6 @@ final class TemplateAssignment extends Model implements Ownable
     /** @var list<string> */
     protected $fillable = [
         'template_id',
-        'tenant_id',
         'template_version_id',
         'owner_type',
         'owner_id',

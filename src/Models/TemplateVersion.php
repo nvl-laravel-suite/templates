@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
-use Nvl\Content\Casts\ContentCompositionSnapshotCast;
-use Nvl\Content\Contracts\ContentOwner;
-use Nvl\Content\Data\ContentCompositionSnapshotData;
-use Nvl\Content\Traits\HasContent;
+use Nvl\Content\Models\ContentPlacement;
+use Nvl\Content\Relations\StringMorphMany;
+use Nvl\Content\Services\ContentOwnerDeletion;
 use Nvl\Support\Config\PackageStorage;
 use Nvl\Support\Ownership\Contracts\Ownable;
 use Nvl\Templates\Database\Factories\TemplateVersionFactory;
@@ -28,12 +28,11 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @property string|null $owner_scope_key
  * @property string $id
- * @property string|null $tenant_id
  * @property string $template_id
  * @property int $version
  * @property TemplateVersionStatus $status
  * @property array<string, mixed>|null $metadata
- * @property ContentCompositionSnapshotData|null $content_snapshot
+ * @property array{ownerType:string,ownerId:string,group:string,blocks:list<array{placementId:string,parentId:string|null,key:string,region:string,sortOrder:int,blockId:string,definitionKey:string,definitionSchema:array<string,mixed>,definitionView:string|null,visibility:string,values:array<string, mixed>,translations:array<string, array<string, mixed>>,overrides:array<string, mixed>,blockRevision:int,placementRevision:int}>,version:string,tenantId:string|null,formatVersion:int,ownershipContext:array<string,mixed>|null}|null $content_snapshot
  * @property string|null $content_hash
  * @property int $revision
  * @property string|null $catalog_grant_id
@@ -48,14 +47,13 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  *
  * @api
  */
-final class TemplateVersion extends Model implements ContentOwner, Ownable
+final class TemplateVersion extends Model implements Ownable
 {
-    use HasContent, OwnsTemplateChild { HasContent::delete insteadof OwnsTemplateChild; }
-
     /** @use HasFactory<TemplateVersionFactory> */
     use HasFactory;
 
     use HasUuids;
+    use OwnsTemplateChild;
 
     public const string CONTENT_OWNER_TYPE = 'nvl-template-version';
 
@@ -64,7 +62,6 @@ final class TemplateVersion extends Model implements ContentOwner, Ownable
     /** @var list<string> */
     protected $fillable = [
         'template_id',
-        'tenant_id',
         'version',
         'status',
         'metadata',
@@ -108,7 +105,7 @@ final class TemplateVersion extends Model implements ContentOwner, Ownable
             'version' => 'integer',
             'status' => TemplateVersionStatus::class,
             'metadata' => 'array',
-            'content_snapshot' => ContentCompositionSnapshotCast::class,
+            'content_snapshot' => 'array',
             'revision' => 'integer',
             'published_at' => 'immutable_datetime',
         ];
@@ -153,5 +150,31 @@ final class TemplateVersion extends Model implements ContentOwner, Ownable
     protected static function newFactory(): TemplateVersionFactory
     {
         return TemplateVersionFactory::new();
+    }
+
+    /** Keep optional Content placement cleanup on the owning connection. */
+    public function delete(): ?bool
+    {
+        if (config('nvl-templates.integrations.content', false)) {
+            return app(ContentOwnerDeletion::class)->execute($this, fn (): ?bool => parent::delete());
+        }
+
+        return parent::delete();
+    }
+
+    /** @return list<string> */
+    public function contentGroups(): array
+    {
+        return [self::CONTENT_GROUP];
+    }
+
+    /** Relation used only by the explicitly enabled Content integration.
+     * @return MorphMany<ContentPlacement, $this>
+     */
+    public function contentPlacements(): MorphMany
+    {
+        $related = new ContentPlacement;
+
+        return new StringMorphMany($related->newQuery(), $this, $related->qualifyColumn('owner_type'), $related->qualifyColumn('owner_id'), $this->getKeyName());
     }
 }

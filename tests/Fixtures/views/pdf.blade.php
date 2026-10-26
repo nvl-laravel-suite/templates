@@ -5,7 +5,7 @@
     <title>{{ $options->subject }}</title>
 </head>
 <body>
-    <h1>{{ $composition?->value('body.heading') }}</h1>
+    <h1>{{ app(\Nvl\Templates\Services\TemplateContentGuard::class)->compositionValue($composition ?? [], 'body.heading') }}</h1>
     <p>{{ $data['name'] ?? '' }}</p>
 </body>
 </html>

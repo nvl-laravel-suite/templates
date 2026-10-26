@@ -4,15 +4,47 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use JsonException;
+use Nvl\Support\Enums\SystemActor;
+use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Translatable\Rules\SupportedLocaleMapRule;
 
 /**
  * Applies deterministic byte, depth, and item limits to template-owned values.
  */
 final class TemplateContentGuard
 {
+    public function actor(Authenticatable|SystemActor $actor): void
+    {
+        if ($actor instanceof SystemActor) {
+            return;
+        }
+        if (! $actor instanceof Model || ! $actor->exists || $actor->getKey() === null || $actor->getRawOriginal($actor->getKeyName()) !== $actor->getKey() || ! $actor->newQuery()->whereKey($actor->getKey())->exists()) {
+            throw new AuthorizationException('Templates requires a persisted actor.');
+        }
+    }
+
+    /** Resolve the persisted actor identity without coercing objects or arrays. */
+    public static function actorId(Authenticatable|SystemActor $actor): ?string
+    {
+        if ($actor instanceof SystemActor) {
+            return null;
+        }
+        $id = $actor->getAuthIdentifier();
+        if (! is_int($id) && ! is_string($id)) {
+            throw new AuthorizationException('Templates requires a scalar actor identity.');
+        }
+
+        return (string) $id;
+    }
+
     /**
      * @param  array<array-key, mixed>  $value
      * @return array<string, mixed>
@@ -172,5 +204,182 @@ final class TemplateContentGuard
                 );
             }
         }
+    }
+
+    /** Read the existing placement-key/field fallback projection from native Content arrays.
+     * @param  array<string,mixed>  $composition
+     */
+    public function compositionValue(array $composition, string $path): mixed
+    {
+        $flattened = [];
+        $append = function (array $block) use (&$append, &$flattened): void {
+            $flattened[] = $block;
+            /** @var list<array<string,mixed>> $children */
+            $children = $block['children'];
+            foreach ($children as $child) {
+                $append($child);
+            }
+        };
+        /** @var list<array<string,mixed>> $blocks */
+        $blocks = $composition['blocks'] ?? [];
+        foreach ($blocks as $block) {
+            $append($block);
+        }
+        [$blockKey, $fieldPath] = array_pad(explode('.', $path, 2), 2, null);
+        if ($fieldPath !== null) {
+            foreach ($flattened as $block) {
+                if ($block['key'] === $blockKey) {
+                    return data_get($block['values'], $fieldPath);
+                }
+            }
+        }
+        foreach ($flattened as $block) {
+            $value = data_get($block['values'], $path);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /** Native Templates operation.
+     * @param  array<string,mixed>  $data
+     * @return array{key: string, status: TemplateStatus, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
+     */
+    public function createTemplate(array $data): array
+    {
+        $data += ['status' => TemplateStatus::Active, 'metadata' => [], 'translations' => []];
+        $rules = [
+            'key' => ['required', 'string', 'max:191', 'regex:/^[a-z0-9][a-z0-9._-]*$/'],
+            'status' => ['required', Rule::enum(TemplateStatus::class)],
+            'metadata' => ['array'],
+            'translations' => ['array', new SupportedLocaleMapRule],
+            'translations.*.title' => ['required', 'string', 'max:255'],
+            'translations.*.description' => ['nullable', 'string'],
+        ];
+
+        Validator::make($data, $rules)->validate();
+
+        if (is_string($data['status'])) {
+            $data['status'] = TemplateStatus::from($data['status']);
+        }
+
+        /** @var array{key: string, status: TemplateStatus, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>} $data */
+        return $data;
+    }
+
+    /** Native Templates operation.
+     * @param  array<string,mixed>  $data
+     * @return array{status: TemplateStatus, expectedRevision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
+     */
+    public function updateTemplate(array $data): array
+    {
+        $data += ['metadata' => [], 'translations' => []];
+        $rules = [
+            'status' => ['required', Rule::enum(TemplateStatus::class)],
+            'expectedRevision' => ['required', 'integer', 'min:1'],
+            'metadata' => ['array'],
+            'translations' => ['array', new SupportedLocaleMapRule],
+            'translations.*.title' => ['required', 'string', 'max:255'],
+            'translations.*.description' => ['nullable', 'string'],
+        ];
+
+        Validator::make($data, $rules)->validate();
+
+        if (is_string($data['status'])) {
+            $data['status'] = TemplateStatus::from($data['status']);
+        }
+        $data['expectedRevision'] = is_int($data['expectedRevision']) ? $data['expectedRevision'] : (int) (is_string($data['expectedRevision']) ? $data['expectedRevision'] : 0);
+
+        /** @var array{status: TemplateStatus, expectedRevision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>} $data */
+        return $data;
+    }
+
+    /** Native Templates operation.
+     * @param  array<string,mixed>  $data
+     * @return array{metadata: array<string, mixed>}
+     */
+    public function createVersion(array $data): array
+    {
+        $data += ['metadata' => []];
+        $rules = [
+            'metadata' => ['array'],
+        ];
+
+        Validator::make($data, $rules)->validate();
+
+        /** @var array{metadata: array<string, mixed>} $data */
+        return $data;
+    }
+
+    /** Native Templates operation.
+     * @param  array<string,mixed>  $data
+     * @return array{expectedRevision: int, metadata: array<string, mixed>}
+     */
+    public function updateVersion(array $data): array
+    {
+        $data += ['metadata' => []];
+        $rules = [
+            'expectedRevision' => ['required', 'integer', 'min:1'],
+            'metadata' => ['array'],
+        ];
+
+        Validator::make($data, $rules)->validate();
+
+        $data['expectedRevision'] = is_int($data['expectedRevision']) ? $data['expectedRevision'] : (int) (is_string($data['expectedRevision']) ? $data['expectedRevision'] : 0);
+
+        /** @var array{expectedRevision: int, metadata: array<string, mixed>} $data */
+        return $data;
+    }
+
+    /** Native Templates operation.
+     * @param  array<string,mixed>  $data
+     * @return array{ownerType: string, ownerId: string, profile: string, versionId: string|null, settings: array<string, mixed>, expectedRevision: int}
+     */
+    public function assign(array $data): array
+    {
+        $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expectedRevision' => 0];
+        $rules = [
+            'ownerType' => ['required', 'string', 'max:100'],
+            'ownerId' => ['required', 'string', 'max:255'],
+            'profile' => ['required', 'string', 'max:100'],
+            'versionId' => ['nullable', 'uuid'],
+            'settings' => ['array'],
+            'expectedRevision' => ['required', 'integer', 'min:0'],
+        ];
+
+        Validator::make($data, $rules)->validate();
+
+        $data['expectedRevision'] = is_int($data['expectedRevision']) ? $data['expectedRevision'] : (int) (is_string($data['expectedRevision']) ? $data['expectedRevision'] : 0);
+
+        /** @var array{ownerType: string, ownerId: string, profile: string, versionId: string|null, settings: array<string, mixed>, expectedRevision: int} $data */
+        return $data;
+    }
+
+    /** Native Templates operation.
+     * @param  array<string,mixed>  $data
+     * @return array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}
+     */
+    public function render(array $data): array
+    {
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $rules = [
+            'locale' => ['required', 'string', 'max:35'],
+            'payload' => ['array'],
+            'ownerType' => ['nullable', 'required_with:ownerId', 'string', 'max:100'],
+            'ownerId' => ['nullable', 'required_with:ownerType', 'string', 'max:255'],
+            'profile' => ['string', 'max:100'],
+            'versionId' => ['nullable', 'uuid'],
+            'idempotencyKey' => ['nullable', 'string', 'max:191'],
+            'download' => ['boolean'],
+        ];
+
+        Validator::make($data, $rules)->validate();
+
+        $data['download'] = (bool) $data['download'];
+
+        /** @var array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool} $data */
+        return $data;
     }
 }

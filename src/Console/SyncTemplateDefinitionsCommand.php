@@ -6,8 +6,8 @@ namespace Nvl\Templates\Console;
 
 use Illuminate\Console\Command;
 use InvalidArgumentException;
-use Nvl\Templates\Actions\SyncTemplateDefinitionsAction;
-use Nvl\Templates\Data\TemplateDefinitionSyncData;
+use Nvl\Support\Enums\SystemActor;
+use Nvl\Templates\Services\TemplateDefinitions;
 
 /**
  * Reports or applies an atomic source-definition synchronization plan.
@@ -23,7 +23,7 @@ final class SyncTemplateDefinitionsCommand extends Command
     /**
      * Plan or synchronize source definitions and archive removed keys.
      */
-    public function handle(SyncTemplateDefinitionsAction $action): int
+    public function handle(TemplateDefinitions $action): int
     {
         $format = $this->option('format');
 
@@ -33,20 +33,20 @@ final class SyncTemplateDefinitionsCommand extends Command
             );
         }
 
-        $plan = $action->execute((bool) $this->option('dry-run'));
+        $plan = $action->sync(SystemActor::Background, (bool) $this->option('dry-run'));
 
         if ($format === 'json') {
             $this->line((string) json_encode(
                 $plan
                     ->map(
-                        static fn (TemplateDefinitionSyncData $item): array => $item->toArray(),
+                        static fn (array $item): array => $item,
                     )
                     ->all(),
                 JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR,
             ));
         } else {
             foreach ($plan as $item) {
-                $this->line("{$item->operation}: {$item->key}");
+                $this->line("{$item['operation']}: {$item['key']}");
             }
         }
 

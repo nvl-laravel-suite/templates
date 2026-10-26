@@ -12,7 +12,7 @@ uses(OwnershipAdoptionTestCase::class);
 it('rebinds only reviewed legacy version snapshots before native activation', function (): void {
     app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): void {
         $version = TemplateVersion::query()->findOrFail($this->legacyVersionId);
-        expect($version->content_snapshot?->formatVersion)->toBe(3)->and($version->content_snapshot?->ownershipContext['owner']['key'])->toBe('7')->and($version->content_hash)->toBe($version->content_snapshot?->version);
+        expect($version->content_snapshot['formatVersion'])->toBe(3)->and($version->content_snapshot['ownershipContext']['owner']['key'])->toBe('7')->and($version->content_hash)->toBe($version->content_snapshot['version']);
         app(ContentSnapshotIntegrity::class)->assertValid($version->content_snapshot);
     });
 });

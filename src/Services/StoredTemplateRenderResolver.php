@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
-use Nvl\Content\Content;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Nvl\Content\Services\ContentSnapshotService;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
 use Nvl\Templates\Contracts\TemplatePayloadValidator;
-use Nvl\Templates\Data\Mutations\RenderTemplateData;
-use Nvl\Templates\Data\TemplateActorData;
-use Nvl\Templates\Data\TemplateDefinitionData;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
@@ -17,7 +16,6 @@ use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateVersion;
-use Nvl\Templates\Rendering\ResolvedStoredTemplateRender;
 use Nvl\Templates\Template as RenderableTemplate;
 
 /**
@@ -32,22 +30,25 @@ final readonly class StoredTemplateRenderResolver
         private TemplatePayloadValidator $payloadValidator,
         private TemplateLocaleResolver $locales,
         private TemplateVersionResolver $versions,
-        private Content $content,
         private StoredTemplateOptionsFactory $optionsFactory,
         private OwnershipBoundary $boundary,
     ) {}
 
     /**
      * Resolve and validate a stored template without producing output bytes.
+     *
+     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}  $data
+     * @return array{template: Template, assignment: TemplateAssignment|null, version: TemplateVersion, renderable: RenderableTemplate, locale: string, payload: array<string, mixed>}
      */
     public function resolve(
         Template $template,
-        RenderTemplateData $data,
-        TemplateActorData $actor,
-    ): ResolvedStoredTemplateRender {
+        array $data,
+        Authenticatable|SystemActor $actor,
+    ): array {
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
         $this->boundary->assertRecord($template, 'templates.templates');
-        $payload = $this->guard->payload($data->payload);
-        $locale = $this->locales->resolve($data->locale);
+        $payload = $this->guard->payload($data['payload']);
+        $locale = $this->locales->resolve($data['locale']);
         $definition = $this->definition($template);
 
         if ($template->status !== TemplateStatus::Active) {
@@ -56,9 +57,9 @@ final readonly class StoredTemplateRenderResolver
             );
         }
 
-        if (! in_array($data->profile, $definition->profiles, true)) {
+        if (! in_array($data['profile'], $definition['profiles'], true)) {
             throw new TemplateResolutionException(
-                "Template profile [{$data->profile}] is not registered.",
+                "Template profile [{$data['profile']}] is not registered.",
             );
         }
 
@@ -82,8 +83,10 @@ final readonly class StoredTemplateRenderResolver
 
     /**
      * Resolve the exact immutable request captured by a durable render record.
+     *
+     * @return array{template: Template, assignment: TemplateAssignment|null, version: TemplateVersion, renderable: RenderableTemplate, locale: string, payload: array<string, mixed>}
      */
-    public function resolveDurable(TemplateRender $render): ResolvedStoredTemplateRender
+    public function resolveDurable(TemplateRender $render): array
     {
         $this->boundary->assertRecord($render, 'templates.renders');
         $template = $render->template;
@@ -113,25 +116,28 @@ final readonly class StoredTemplateRenderResolver
             locale: $locale,
             payload: $payload,
             settings: $settings,
-            actor: TemplateActorData::system(),
+            actor: SystemActor::Background,
         );
     }
 
     /**
      * @param  array<string, mixed>  $payload
      * @param  array<string, mixed>  $settings
+     * @param  array{key: string, renderer: string, view: string, profiles: list<string>, schema: array<string, mixed>, rendererOptions: array<string, mixed>, subjectPath: string|null, requiredRegions: list<string>, allowedContentDefinitions: list<string>}  $definition
+     * @return array{template: Template, assignment: TemplateAssignment|null, version: TemplateVersion, renderable: RenderableTemplate, locale: string, payload: array<string, mixed>}
      */
     private function makePlan(
         Template $template,
         ?TemplateAssignment $assignment,
         TemplateVersion $version,
-        TemplateDefinitionData $definition,
+        array $definition,
         string $locale,
         array $payload,
         array $settings,
-        TemplateActorData $actor,
-    ): ResolvedStoredTemplateRender {
-        $this->payloadValidator->validate($definition->schema, $payload);
+        Authenticatable|SystemActor $actor,
+    ): array {
+        $definition += ['profiles' => ['default'], 'schema' => [], 'rendererOptions' => [], 'subjectPath' => null, 'requiredRegions' => [], 'allowedContentDefinitions' => []];
+        $this->payloadValidator->validate($definition['schema'], $payload);
         $snapshot = $version->content_snapshot;
 
         if ($snapshot === null) {
@@ -140,61 +146,57 @@ final readonly class StoredTemplateRenderResolver
             );
         }
 
-        if (! hash_equals((string) $version->content_hash, $snapshot->version)
-            || $snapshot->ownerType !== $version->getMorphClass()
-            || $snapshot->ownerId !== $version->id
-            || $snapshot->group !== TemplateVersion::CONTENT_GROUP) {
+        if (! hash_equals((string) $version->content_hash, $snapshot['version'])
+            || $snapshot['ownerType'] !== $version->getMorphClass()
+            || $snapshot['ownerId'] !== $version->id
+            || $snapshot['group'] !== TemplateVersion::CONTENT_GROUP) {
             throw new TemplateResolutionException(
                 'Template Content snapshot identity or integrity is invalid.',
             );
         }
 
-        $composition = $this->content->renderSnapshot(
+        $composition = app(ContentSnapshotService::class)->render(
             $snapshot,
             $locale,
-            $actor->contentActor(),
+            $actor,
         );
-        $subject = $definition->subjectPath === null
+        $subject = $definition['subjectPath'] === null
             ? null
-            : $composition->value($definition->subjectPath);
+            : $this->guard->compositionValue($composition, $definition['subjectPath']);
 
         if ($subject !== null && ! is_string($subject)) {
             throw new TemplateResolutionException(
-                "Template subject path [{$definition->subjectPath}] must resolve to text.",
+                "Template subject path [{$definition['subjectPath']}] must resolve to text.",
             );
         }
 
-        return new ResolvedStoredTemplateRender(
-            template: $template,
-            assignment: $assignment,
-            version: $version,
-            renderable: new RenderableTemplate(
-                key: $template->key,
-                view: $definition->view,
-                data: $payload,
-                options: $this->optionsFactory->make(
-                    renderer: $template->renderer,
-                    locale: $locale,
-                    subject: $subject,
-                    configured: $definition->rendererOptions,
-                ),
-                composition: $composition,
-                schema: $definition->schema,
-                settings: $settings,
+        return ['template' => $template, 'assignment' => $assignment, 'version' => $version, 'renderable' => new RenderableTemplate(
+            key: $template->key,
+            view: $definition['view'],
+            data: $payload,
+            options: $this->optionsFactory->make(
+                renderer: $template->renderer,
+                locale: $locale,
+                subject: $subject,
+                configured: $definition['rendererOptions'],
             ),
-            locale: $locale,
-            payload: $payload,
-        );
+            composition: $composition,
+            schema: $definition['schema'],
+            settings: $settings,
+        ), 'locale' => $locale, 'payload' => $payload];
     }
 
-    private function definition(Template $template): TemplateDefinitionData
+    /** Native Templates operation.
+     * @return array{key: string, renderer: string, view: string, profiles: list<string>, schema: array<string, mixed>, rendererOptions: array<string, mixed>, subjectPath: string|null, requiredRegions: list<string>, allowedContentDefinitions: list<string>}
+     */
+    private function definition(Template $template): array
     {
         $definition = $this->definitions->get($template->key);
         $canonicalJson = new CanonicalJson;
 
-        if ($template->renderer !== $definition->renderer
+        if ($template->renderer !== $definition['renderer']
             || $canonicalJson->digest($template->schema)
-                !== $canonicalJson->digest($definition->schema)) {
+                !== $canonicalJson->digest($definition['schema'])) {
             throw new TemplateResolutionException(
                 "Template [{$template->key}] is stale; synchronize its source definition.",
             );
@@ -203,25 +205,29 @@ final readonly class StoredTemplateRenderResolver
         return $definition;
     }
 
+    /** Native Templates operation.
+     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}  $data
+     */
     private function assignment(
         Template $template,
-        RenderTemplateData $data,
+        array $data,
     ): ?TemplateAssignment {
-        if (($data->ownerType === null) !== ($data->ownerId === null)) {
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        if (($data['ownerType'] === null) !== ($data['ownerId'] === null)) {
             throw new TemplateResolutionException(
                 'Template assignment resolution requires both owner type and owner id.',
             );
         }
 
-        if ($data->ownerType === null || $data->ownerId === null) {
+        if ($data['ownerType'] === null || $data['ownerId'] === null) {
             return null;
         }
 
         return $this->boundary->query(TemplateAssignment::query(), 'templates.assignments')
             ->where('template_id', $template->id)
-            ->where('owner_type', $data->ownerType)
-            ->where('owner_id', $data->ownerId)
-            ->where('profile', $data->profile)
+            ->where('owner_type', $data['ownerType'])
+            ->where('owner_id', $data['ownerId'])
+            ->where('profile', $data['profile'])
             ->first()
             ?? throw new TemplateResolutionException(
                 'No matching template assignment exists for the requested owner and profile.',

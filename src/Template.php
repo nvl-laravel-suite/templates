@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Nvl\Templates;
 
 use InvalidArgumentException;
-use Nvl\Content\Data\RenderedContentCompositionData;
-use Nvl\Templates\Data\TemplateOptions;
+use Nvl\Templates\Enums\PdfOrientation;
+use Nvl\Templates\Enums\PdfPageSize;
 
 /**
  * Describes one source-controlled view, its bounded data, options, and optional Content composition.
@@ -22,13 +22,15 @@ class Template
      * @param  array<string, mixed>  $data
      * @param  array<string, mixed>  $schema
      * @param  array<string, mixed>  $settings
+     * @param  array{renderer?: string|null, locale?: string|null, subject?: string|null, filename?: string|null, pdf?: array{pageSize?: PdfPageSize|null, orientation?: PdfOrientation|null, margins?: array{left?: float|null, right?: float|null, top?: float|null, bottom?: float|null, header?: float|null, footer?: float|null}|null, defaultFont?: string|null, defaultFontSize?: float|null, dpi?: int|null, imageDpi?: int|null, imageQuality?: int|null, showImageErrors?: bool|null, temporaryDirectory?: string|null, title?: string|null, author?: string|null, creator?: string|null, subject?: string|null, keywords?: string|null, headerView?: string|null, headerHtml?: string|null, headerData?: array<string, mixed>, footerView?: string|null, footerHtml?: string|null, footerData?: array<string, mixed>, watermark?: string|null, watermarkOpacity?: float|null, compress?: bool|null, pdfa?: bool|null, pdfaAuto?: bool|null, protectionPermissions?: list<string>, userPassword?: string|null, ownerPassword?: string|null}|null, rendererOptions?: array<string, mixed>}|null  $options
+     * @param  array{blocks:list<array<string,mixed>>,regions:array<string,list<array<string,mixed>>>,locale:string,...}|null  $composition
      */
     public function __construct(
         public readonly string $key,
         public readonly string $view = '',
         public readonly array $data = [],
-        public readonly ?TemplateOptions $options = null,
-        public readonly ?RenderedContentCompositionData $composition = null,
+        public readonly ?array $options = null,
+        public readonly ?array $composition = null,
         public readonly array $schema = [],
         public readonly array $settings = [],
     ) {

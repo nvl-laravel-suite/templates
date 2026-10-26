@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
-use Nvl\Templates\Data\Mutations\RenderTemplateData;
-use Nvl\Templates\Data\TemplateActorData;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
 use Nvl\Templates\Models\Template;
@@ -19,18 +19,21 @@ final class TemplateVersionResolver
 {
     /**
      * Resolve an immutable version that may be pinned to an assignment.
+     *
+     * @param  array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotencyKey: string|null, download: bool}  $data
      */
     public function forRender(
         Template $template,
-        RenderTemplateData $data,
+        array $data,
         ?TemplateAssignment $assignment,
-        TemplateActorData $actor,
+        Authenticatable|SystemActor $actor,
     ): TemplateVersion {
-        $explicitVersion = $data->versionId !== null;
+        $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false];
+        $explicitVersion = $data['versionId'] !== null;
         $assignmentVersion = ! $explicitVersion
             && $assignment?->template_version_id !== null;
-        $versionId = $data->versionId ?? $assignment?->template_version_id;
-        $statuses = $actor->system || $assignmentVersion
+        $versionId = $data['versionId'] ?? $assignment?->template_version_id;
+        $statuses = ($actor instanceof SystemActor) || $assignmentVersion
             ? [
                 TemplateVersionStatus::Published->value,
                 TemplateVersionStatus::Retired->value,

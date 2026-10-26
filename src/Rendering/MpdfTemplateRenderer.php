@@ -8,7 +8,6 @@ use Illuminate\Contracts\View\Factory;
 use Mpdf\Container\SimpleContainer;
 use Mpdf\Mpdf;
 use Nvl\Templates\Contracts\TemplateRenderer;
-use Nvl\Templates\Data\RenderedTemplateData;
 use Nvl\Templates\Services\PdfAssetFetcher;
 use Nvl\Templates\Services\PdfHtmlGuard;
 use Nvl\Templates\Services\PdfOptionsResolver;
@@ -30,8 +29,10 @@ final readonly class MpdfTemplateRenderer implements TemplateRenderer
 
     /**
      * Render one template context into a PDF document.
+     *
+     * @return array{content: string, mime_type: string, renderer: string, byte_size: int, checksum: string, subject: string|null, suggested_filename: string|null}
      */
-    public function render(TemplateRenderContext $context): RenderedTemplateData
+    public function render(TemplateRenderContext $context): array
     {
         $this->assets->beginRender();
         $html = $this->views
@@ -41,71 +42,71 @@ final readonly class MpdfTemplateRenderer implements TemplateRenderer
         $options = $this->optionsResolver->resolve($context);
         $mpdf = new Mpdf([
             'tempDir' => $this->temporaryDirectories->resolve(
-                $options->temporaryDirectory,
+                $options['temporaryDirectory'],
             ),
-            'format' => $options->pageSize->value,
-            'orientation' => $options->orientation->mpdfValue(),
-            'margin_left' => $options->margins['left'],
-            'margin_right' => $options->margins['right'],
-            'margin_top' => $options->margins['top'],
-            'margin_bottom' => $options->margins['bottom'],
-            'margin_header' => $options->margins['header'],
-            'margin_footer' => $options->margins['footer'],
-            'default_font' => $options->defaultFont,
-            'default_font_size' => $options->defaultFontSize,
-            'dpi' => $options->dpi,
-            'img_dpi' => $options->imageDpi,
-            'jpgQuality' => $options->imageQuality,
-            'showImageErrors' => $options->showImageErrors,
-            'PDFA' => $options->pdfa,
-            'PDFAauto' => $options->pdfaAuto,
+            'format' => $options['pageSize']->value,
+            'orientation' => $options['orientation']->mpdfValue(),
+            'margin_left' => $options['margins']['left'],
+            'margin_right' => $options['margins']['right'],
+            'margin_top' => $options['margins']['top'],
+            'margin_bottom' => $options['margins']['bottom'],
+            'margin_header' => $options['margins']['header'],
+            'margin_footer' => $options['margins']['footer'],
+            'default_font' => $options['defaultFont'],
+            'default_font_size' => $options['defaultFontSize'],
+            'dpi' => $options['dpi'],
+            'img_dpi' => $options['imageDpi'],
+            'jpgQuality' => $options['imageQuality'],
+            'showImageErrors' => $options['showImageErrors'],
+            'PDFA' => $options['pdfa'],
+            'PDFAauto' => $options['pdfaAuto'],
             'allowAnnotationFiles' => false,
             'curlAllowUnsafeSslRequests' => false,
         ], new SimpleContainer(['assetFetcher' => $this->assets]));
-        $mpdf->SetCompression($options->compress);
-        $mpdf->SetTitle($options->title ?? $context->subject ?? $context->template->key);
-        $mpdf->SetAuthor($options->author);
-        $mpdf->SetCreator($options->creator);
-        $mpdf->SetSubject($options->subject ?? $context->subject ?? '');
+        $mpdf->SetCompression($options['compress']);
+        $mpdf->SetTitle($options['title'] ?? $context->subject ?? $context->template->key);
+        $mpdf->SetAuthor($options['author']);
+        $mpdf->SetCreator($options['creator']);
+        $mpdf->SetSubject($options['subject'] ?? $context->subject ?? '');
 
-        if ($options->keywords !== '') {
-            $mpdf->SetKeywords($options->keywords);
+        if ($options['keywords'] !== '') {
+            $mpdf->SetKeywords($options['keywords']);
         }
 
-        if ($options->headerView !== null) {
+        if ($options['headerView'] !== null) {
             $mpdf->SetHTMLHeader($this->renderPartial(
-                $options->headerView,
-                $options->headerData,
+                $options['headerView'],
+                $options['headerData'],
                 $context,
             ));
-        } elseif ($options->headerHtml !== null) {
-            $this->htmlGuard->validate($options->headerHtml);
-            $mpdf->SetHTMLHeader($options->headerHtml);
+        } elseif ($options['headerHtml'] !== null) {
+            $this->htmlGuard->validate($options['headerHtml']);
+            $mpdf->SetHTMLHeader($options['headerHtml']);
         }
 
-        if ($options->footerView !== null) {
+        if ($options['footerView'] !== null) {
             $mpdf->SetHTMLFooter($this->renderPartial(
-                $options->footerView,
-                $options->footerData,
+                $options['footerView'],
+                $options['footerData'],
                 $context,
             ));
-        } elseif ($options->footerHtml !== null) {
-            $this->htmlGuard->validate($options->footerHtml);
-            $mpdf->SetHTMLFooter($options->footerHtml);
+        } elseif ($options['footerHtml'] !== null) {
+            $this->htmlGuard->validate($options['footerHtml']);
+            $mpdf->SetHTMLFooter($options['footerHtml']);
         }
 
-        if ($options->protectionPermissions !== []
-            || $options->userPassword !== null
-            || $options->ownerPassword !== null) {
+        if ($options['protectionPermissions'] !== []
+            || $options['userPassword'] !== null
+            || $options['ownerPassword'] !== null) {
             $mpdf->SetProtection(
-                $options->protectionPermissions,
-                $options->userPassword ?? '',
-                $options->ownerPassword,
+                $options['protectionPermissions'],
+                $options['userPassword'] ?? '',
+                $options['ownerPassword'],
             );
         }
 
-        if ($options->watermark !== null && $options->watermark !== '') {
-            $mpdf->SetWatermarkText($options->watermark, $options->watermarkOpacity);
+        if ($options['watermark'] !== null && $options['watermark'] !== '') {
+            $mpdf->SetWatermarkText($options['watermark'], $options['watermarkOpacity']);
             $mpdf->showWatermarkText = true;
         }
 
@@ -116,16 +117,8 @@ final readonly class MpdfTemplateRenderer implements TemplateRenderer
             throw new UnexpectedValueException('mPDF did not return binary string output.');
         }
 
-        return new RenderedTemplateData(
-            content: $content,
-            mimeType: 'application/pdf',
-            renderer: $context->renderer,
-            byteSize: strlen($content),
-            checksum: hash('sha256', $content),
-            subject: $context->subject,
-            suggestedFilename: $context->filename
-                ?? "{$context->template->key}-{$context->locale}.pdf",
-        );
+        return ['subject' => $context->subject, 'suggested_filename' => $context->filename
+                ?? "{$context->template->key}-{$context->locale}.pdf", 'content' => $content, 'mime_type' => 'application/pdf', 'renderer' => $context->renderer, 'byte_size' => strlen($content), 'checksum' => hash('sha256', $content)];
     }
 
     /**

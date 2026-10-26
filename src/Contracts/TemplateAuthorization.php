@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Contracts;
 
-use Nvl\Templates\Data\TemplateActorData;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Enums\TemplateAbility;
 
 /**
@@ -21,7 +22,7 @@ interface TemplateAuthorization
      */
     public function authorize(
         TemplateAbility $ability,
-        TemplateActorData $actor,
+        Authenticatable|SystemActor $actor,
         array $context = [],
     ): void;
 }

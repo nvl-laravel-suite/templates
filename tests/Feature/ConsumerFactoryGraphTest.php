@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
-use Nvl\Content\Data\ContentCompositionSnapshotBlockData;
-use Nvl\Content\Data\ContentCompositionSnapshotData;
-use Nvl\Content\Data\ContentSchemaData;
 use Nvl\Content\Enums\ContentVisibility;
 use Nvl\Templates\Models\Template;
 use Nvl\Templates\Models\TemplateAssignment;
@@ -19,11 +16,9 @@ use Nvl\Templates\Models\TemplateTranslation;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Tests\Fixtures\TestTemplateOwner;
 
-function consumerTemplateSnapshot(): ContentCompositionSnapshotData
+function consumerTemplateSnapshot(): array
 {
-    return new ContentCompositionSnapshotData(TemplateVersion::CONTENT_OWNER_TYPE, (string) Str::uuid(), TemplateVersion::CONTENT_GROUP, [
-        new ContentCompositionSnapshotBlockData((string) Str::uuid(), null, 'main', 'main', 0, (string) Str::uuid(), 'template-copy', new ContentSchemaData([]), null, ContentVisibility::Private, [], [], [], 1, 1),
-    ], hash('sha256', 'explicit immutable fixture'));
+    return ['ownerType' => TemplateVersion::CONTENT_OWNER_TYPE, 'ownerId' => (string) Str::uuid(), 'group' => TemplateVersion::CONTENT_GROUP, 'blocks' => [['placementId' => (string) Str::uuid(), 'parentId' => null, 'key' => 'main', 'region' => 'main', 'sortOrder' => 0, 'blockId' => (string) Str::uuid(), 'definitionKey' => 'template-copy', 'definitionSchema' => ['fields' => []], 'definitionView' => null, 'visibility' => ContentVisibility::Private->value, 'values' => [], 'translations' => [], 'overrides' => [], 'blockRevision' => 1, 'placementRevision' => 1]], 'version' => hash('sha256', 'explicit immutable fixture'), 'tenantId' => null, 'formatVersion' => 1, 'ownershipContext' => null];
 }
 
 it('persists declared parents on ordinary make while leaving the requested child unsaved', function (): void {
@@ -67,8 +62,8 @@ it('persists a supplied published snapshot and an exact assignment render graph 
     $assignment = TemplateAssignment::factory()->forVersion($version)->forOwner($owner)->create(['profile' => 'letter', 'settings' => ['tone' => 'formal']]);
     $render = TemplateRender::factory()->forAssignment($assignment)->create();
     $reloaded = $version->fresh();
-    expect($reloaded->id)->toBe($snapshot->ownerId)->and($reloaded->content_hash)->toBe($snapshot->version)
-        ->and($reloaded->content_snapshot->toArray())->toBe($snapshot->toArray())
+    expect($reloaded->id)->toBe($snapshot['ownerId'])->and($reloaded->content_hash)->toBe($snapshot['version'])
+        ->and($reloaded->content_snapshot)->toBe($snapshot)
         ->and($reloaded->published_at)->not->toBeNull()
         ->and($render->template_id)->toBe($template->id)->and($render->template_version_id)->toBe($version->id)
         ->and($render->template_assignment_id)->toBe($assignment->id)->and($render->profile)->toBe('letter')
@@ -81,8 +76,8 @@ it('persists a supplied published snapshot and an exact assignment render graph 
 
 it('rejects empty or foreign publication snapshots and overridden version identity or hash', function (): void {
     $snapshot = consumerTemplateSnapshot();
-    $empty = new ContentCompositionSnapshotData($snapshot->ownerType, $snapshot->ownerId, $snapshot->group, [], $snapshot->version);
-    $foreign = new ContentCompositionSnapshotData('foreign-owner', $snapshot->ownerId, $snapshot->group, $snapshot->blocks, $snapshot->version);
+    $empty = [...$snapshot, 'blocks' => []];
+    $foreign = [...$snapshot, 'ownerType' => 'foreign-owner'];
     expect(fn () => TemplateVersion::factory()->published($empty))->toThrow(InvalidArgumentException::class);
     expect(fn () => TemplateVersion::factory()->published($foreign))->toThrow(InvalidArgumentException::class);
     $template = Template::factory()->create();

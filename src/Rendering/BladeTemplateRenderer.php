@@ -6,7 +6,6 @@ namespace Nvl\Templates\Rendering;
 
 use Illuminate\Contracts\View\Factory;
 use Nvl\Templates\Contracts\TemplateRenderer;
-use Nvl\Templates\Data\RenderedTemplateData;
 
 /**
  * Renders a source-controlled Blade view with a bounded data context.
@@ -17,22 +16,16 @@ final readonly class BladeTemplateRenderer implements TemplateRenderer
 
     /**
      * Render one template view as UTF-8 HTML.
+     *
+     * @return array{content: string, mime_type: string, renderer: string, byte_size: int, checksum: string, subject: string|null, suggested_filename: string|null}
      */
-    public function render(TemplateRenderContext $context): RenderedTemplateData
+    public function render(TemplateRenderContext $context): array
     {
         $content = $this->views
             ->make($context->view, $context->viewData())
             ->render();
 
-        return new RenderedTemplateData(
-            content: $content,
-            mimeType: 'text/html; charset=UTF-8',
-            renderer: $context->renderer,
-            byteSize: strlen($content),
-            checksum: hash('sha256', $content),
-            subject: $context->subject,
-            suggestedFilename: $context->filename
-                ?? "{$context->template->key}-{$context->locale}.html",
-        );
+        return ['subject' => $context->subject, 'suggested_filename' => $context->filename
+                ?? "{$context->template->key}-{$context->locale}.html", 'content' => $content, 'mime_type' => 'text/html; charset=UTF-8', 'renderer' => $context->renderer, 'byte_size' => strlen($content), 'checksum' => hash('sha256', $content)];
     }
 }

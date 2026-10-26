@@ -74,7 +74,7 @@ final readonly class TemplateCatalogSource
             throw new OwnershipViolation('The central Template is archived.');
         }
         $snapshot = $version->content_snapshot;
-        if ($version->status !== TemplateVersionStatus::Published || $snapshot === null || $snapshot->ownerId !== $version->id || $snapshot->ownerType !== $version->getMorphClass() || $snapshot->group !== TemplateVersion::CONTENT_GROUP || $snapshot->formatVersion !== 3 || $snapshot->tenantId !== null || $snapshot->ownershipContext !== ['mode' => 'central', 'owner' => null] || $version->content_hash !== $snapshot->version) {
+        if ($version->status !== TemplateVersionStatus::Published || $snapshot === null || $snapshot['ownerId'] !== $version->id || $snapshot['ownerType'] !== $version->getMorphClass() || $snapshot['group'] !== TemplateVersion::CONTENT_GROUP || $snapshot['formatVersion'] !== 3 || $snapshot['tenantId'] !== null || $snapshot['ownershipContext'] !== ['mode' => 'central', 'owner' => null] || $version->content_hash !== $snapshot['version']) {
             throw new OwnershipViolation('Central Template publication identity is invalid.');
         }
         $this->integrity->assertValid($snapshot);

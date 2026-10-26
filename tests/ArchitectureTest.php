@@ -10,17 +10,13 @@ it('consumes Content only through its canonical public boundaries', function ():
     $forbidden = [
         'Nvl\\Content\\Actions\\',
         'Nvl\\Content\\Facades\\',
-        'Nvl\\Content\\Models\\',
-        'Nvl\\Content\\Services\\',
         'Nvl\\Content\\Validation\\',
+        'Nvl\\Templates\\Actions\\',
+        'Nvl\\Templates\\Data\\',
+        'Nvl\\Templates\\Tenancy\\',
+        'Spatie\\LaravelData\\',
     ];
     $adoptionImports = [
-        'Actions/AdoptTemplatesAction.php' => [
-            'Nvl\\Content\\Actions\\CreateContentBlockAction',
-            'Nvl\\Content\\Actions\\PublishContentBlockAction',
-            'Nvl\\Content\\Actions\\UpdateContentBlockAction',
-            'Nvl\\Content\\Models\\ContentBlock',
-        ],
         'Services/TemplateAdoptionManifest.php' => [
             'Nvl\\Content\\Services\\ContentDefinitionRegistry',
             'Nvl\\Content\\Services\\ContentLocalePolicy',
@@ -30,10 +26,6 @@ it('consumes Content only through its canonical public boundaries', function ():
         ],
         'Providers/TemplatesServiceProvider.php' => [
             'Nvl\\Content\\Services\\ContentCatalogCopyRegistry',
-        ],
-        'Actions/ImportPlatformTemplateAction.php' => [
-            'Nvl\\Content\\Actions\\ExportContentSnapshotForCopyAction',
-            'Nvl\\Content\\Actions\\ImportContentSnapshotAction',
         ],
     ];
 

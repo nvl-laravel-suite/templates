@@ -6,7 +6,6 @@ namespace Nvl\Templates\Services;
 
 use InvalidArgumentException;
 use Nvl\Support\Contracts\LocaleCatalog;
-use Nvl\Templates\Data\TemplateOptions;
 use Nvl\Templates\Rendering\TemplateRenderContext;
 use Nvl\Templates\Support\TemplatesConfiguration;
 use Nvl\Templates\Template;
@@ -27,9 +26,10 @@ final readonly class TemplateOptionsResolver
      */
     public function resolve(Template $template): TemplateRenderContext
     {
-        $options = $template->options ?? new TemplateOptions;
-        $this->contentGuard->rendererOptions($options->rendererOptions);
-        $renderer = $options->renderer
+        $options = $template->options ?? [];
+        $options += ['renderer' => null, 'locale' => null, 'subject' => null, 'filename' => null, 'pdf' => null, 'rendererOptions' => []];
+        $this->contentGuard->rendererOptions($options['rendererOptions']);
+        $renderer = $options['renderer']
             ?? TemplatesConfiguration::string('nvl-templates.default_renderer', 'blade');
         $this->assertAlias($renderer, 'renderer');
         $view = $template->view !== ''
@@ -37,15 +37,15 @@ final readonly class TemplateOptionsResolver
             : $this->defaultView($renderer);
         $this->assertView($view);
         $locale = $this->locales->resolve(
-            $options->locale
+            $options['locale']
                 ?? config('nvl-templates.default_locale')
                 ?? $this->catalog->default(),
         );
-        $subject = $this->nullableString($options->subject, 'subject', 998, false);
-        $filename = $this->filename($options->filename);
+        $subject = $this->nullableString($options['subject'], 'subject', 998, false);
+        $filename = $this->filename($options['filename']);
 
         if ($template->composition !== null
-            && $this->locales->resolve($template->composition->locale) !== $locale) {
+            && $this->locales->resolve($template->composition['locale']) !== $locale) {
             throw new InvalidArgumentException(
                 'The Content composition locale must match the template locale.',
             );
@@ -58,8 +58,8 @@ final readonly class TemplateOptionsResolver
             locale: $locale,
             subject: $subject,
             filename: $filename,
-            pdf: $options->pdf,
-            rendererOptions: $options->rendererOptions,
+            pdf: $options['pdf'],
+            rendererOptions: $options['rendererOptions'],
         );
     }
 

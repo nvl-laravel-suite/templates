@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Events;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Nvl\Support\Contracts\DomainEvent;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Support\Ownership\Contracts\OwnershipQueuedJob;
 use Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope;
-use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Ownership\TemplatesOwnership;
 
 /**
@@ -21,7 +22,7 @@ final class TemplateChanged implements DomainEvent, OwnershipQueuedJob
     public function __construct(
         public readonly string $templateId,
         public readonly string $operation,
-        public readonly TemplateActorData $actor,
+        public readonly Authenticatable|SystemActor $actor,
         public readonly int $schemaVersion = 1,
     ) {
         $this->ownershipEnvelope = TemplatesOwnership::envelope();

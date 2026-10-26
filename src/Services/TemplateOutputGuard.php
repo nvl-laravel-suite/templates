@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use InvalidArgumentException;
-use Nvl\Templates\Data\RenderedTemplateData;
 use Nvl\Templates\Rendering\TemplateRenderContext;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
@@ -16,13 +15,16 @@ final class TemplateOutputGuard
 {
     /**
      * Verify one renderer result against its context and declared facts.
+     *
+     * @param  array{content: string, mime_type: string, renderer: string, byte_size: int, checksum: string, subject: string|null, suggested_filename: string|null}  $rendered
      */
     public function validate(
         TemplateRenderContext $context,
-        RenderedTemplateData $rendered,
+        array $rendered,
     ): void {
+        $rendered += ['subject' => null, 'suggested_filename' => null];
         $maximum = TemplatesConfiguration::limit('output_bytes', 25_165_824);
-        $actualSize = strlen($rendered->content);
+        $actualSize = strlen($rendered['content']);
 
         if ($actualSize > $maximum) {
             throw new InvalidArgumentException(
@@ -30,14 +32,14 @@ final class TemplateOutputGuard
             );
         }
 
-        if ($rendered->byteSize !== $actualSize
-            || ! hash_equals(hash('sha256', $rendered->content), $rendered->checksum)) {
+        if ($rendered['byte_size'] !== $actualSize
+            || ! hash_equals(hash('sha256', $rendered['content']), $rendered['checksum'])) {
             throw new InvalidArgumentException(
                 'Rendered template size or checksum facts are invalid.',
             );
         }
 
-        if ($rendered->renderer !== $context->renderer) {
+        if ($rendered['renderer'] !== $context->renderer) {
             throw new InvalidArgumentException(
                 'Rendered template driver does not match the requested renderer.',
             );
@@ -45,23 +47,23 @@ final class TemplateOutputGuard
 
         if (preg_match(
             '/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+(?:;\s*charset=[a-z0-9._-]+)?$/Di',
-            $rendered->mimeType,
+            $rendered['mime_type'],
         ) !== 1) {
             throw new InvalidArgumentException('Rendered template MIME type is invalid.');
         }
 
-        if (str_starts_with(mb_strtolower($rendered->mimeType), 'application/pdf')
-            && ! str_starts_with($rendered->content, '%PDF-')) {
+        if (str_starts_with(mb_strtolower($rendered['mime_type']), 'application/pdf')
+            && ! str_starts_with($rendered['content'], '%PDF-')) {
             throw new InvalidArgumentException('PDF renderer output has an invalid signature.');
         }
 
-        if ($rendered->suggestedFilename !== null) {
-            $this->validateFilename($rendered->suggestedFilename);
+        if ($rendered['suggested_filename'] !== null) {
+            $this->validateFilename($rendered['suggested_filename']);
         }
 
-        if ($rendered->subject !== null
-            && (mb_strlen($rendered->subject) > 998
-                || preg_match('/[\\r\\n]/', $rendered->subject) === 1)) {
+        if ($rendered['subject'] !== null
+            && (mb_strlen($rendered['subject']) > 998
+                || preg_match('/[\\r\\n]/', $rendered['subject']) === 1)) {
             throw new InvalidArgumentException('Rendered template subject is invalid.');
         }
     }

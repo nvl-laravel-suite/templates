@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Ownership;
 
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 use Nvl\Content\Contracts\ContentStorage;
-use Nvl\Content\Contracts\ExportContentSnapshotForCopyContract;
-use Nvl\Content\Contracts\ImportContentSnapshotContract;
+use Nvl\Content\Services\ContentReader;
 use Nvl\Media\Contracts\MediaCatalogImport;
 use Nvl\Media\Services\MediaModelRegistry;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Support\Ownership\Exceptions\OwnershipViolation;
 use Nvl\Templates\Contracts\TemplateCatalogAccess;
-use Nvl\Templates\Data\Mutations\ImportPlatformTemplateData;
-use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Enums\TemplateVersionStatus;
 use Nvl\Templates\Models\TemplateOwnerGrant;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Services\CanonicalJson;
+use Nvl\Templates\Services\TemplateContentGuard;
 use Nvl\Templates\Services\TemplateDefinitionRegistry;
 use Nvl\Templates\Services\TemplateModelRegistry;
 
@@ -33,8 +34,7 @@ final readonly class TemplateOwnerCatalog
         private TemplateCatalogAccess $access,
         private TemplateDefinitionRegistry $definitions,
         private CanonicalJson $json,
-        private ExportContentSnapshotForCopyContract $export,
-        private ImportContentSnapshotContract $content,
+        private ContentReader $content,
         private MediaCatalogImport $media,
         private ContentStorage $storage,
     ) {}
@@ -74,8 +74,10 @@ final readonly class TemplateOwnerCatalog
         });
     }
 
-    /** Stage and recheck a granted graph before an atomic independent copy. */
-    public function import(ImportPlatformTemplateData $data, TemplateActorData $actor): TemplateVersion
+    /** Stage and recheck a granted graph before an atomic independent copy.
+     * @param  array{grantId: string, expectedGrantRevision: int, expectedSourceRevision: int, targetKey: string, idempotencyKey: string, mediaGrantIds: array<string,string>}  $data
+     */
+    public function import(array $data, Authenticatable|SystemActor $actor): TemplateVersion
     {
         $this->sources->admit();
         $connection = TemplateModelRegistry::newInstance()->getConnection();
@@ -84,17 +86,17 @@ final readonly class TemplateOwnerCatalog
                 throw new OwnershipViolation('Atomic Template copies require Content and Media on the same actual source.');
             }
         }
-        $grant = TemplateOwnerGrant::query()->whereKey($data->grantId)->first() ?? throw new OwnershipViolation('Template grant is unavailable.');
+        $grant = TemplateOwnerGrant::query()->whereKey($data['grantId'])->first() ?? throw new OwnershipViolation('Template grant is unavailable.');
         $version = $this->sources->granted($grant->template_version_id, TemplateVersion::CONTENT_GROUP, $grant->id);
         $this->assertTuple($grant, $version, $data);
-        $definition = $this->definitions->get($data->targetKey);
-        if ($version->template->key !== $data->targetKey || $version->template->renderer !== $definition->renderer || $this->json->digest($version->template->schema) !== $this->json->digest($definition->schema)) {
+        $definition = $this->definitions->get($data['targetKey']);
+        if ($version->template->key !== $data['targetKey'] || $version->template->renderer !== $definition['renderer'] || $this->json->digest($version->template->schema) !== $this->json->digest($definition['schema'])) {
             throw new OwnershipViolation('Template catalog source does not match its code definition.');
         }
-        $source = $this->export->execute(TemplateVersion::CONTENT_OWNER_TYPE, $version->id, TemplateVersion::CONTENT_GROUP, $grant->id);
-        $sourceIds = $source->mediaIds;
+        $source = $this->content->exportForCopy(TemplateVersion::CONTENT_OWNER_TYPE, $version->id, TemplateVersion::CONTENT_GROUP, $grant->id);
+        $sourceIds = $source['mediaIds'];
         sort($sourceIds);
-        $grantIds = $data->mediaGrantIds;
+        $grantIds = $data['mediaGrantIds'];
         ksort($grantIds);
         if (array_keys($grantIds) !== $sourceIds) {
             throw new OwnershipViolation('Template copies require one exact Media grant map.');
@@ -103,28 +105,28 @@ final readonly class TemplateOwnerCatalog
         $snapshots = [];
         try {
             foreach ($sourceIds as $sourceId) {
-                $snapshot = $this->media->inspect($grantIds[$sourceId]);
-                if ($snapshot->sourceId !== $sourceId) {
+                $snapshot = $this->media->inspect($actor, $grantIds[$sourceId]);
+                if ($snapshot['sourceId'] !== $sourceId) {
                     throw new OwnershipViolation('Media grant belongs to another source.');
                 }
                 $snapshots[$sourceId] = $snapshot;
-                $staged[$sourceId] = $this->media->stage($snapshot);
+                $staged[$sourceId] = $this->media->stage($actor, $snapshot);
             }
 
             return $connection->transaction(function () use ($data, $actor, $grant, $source, $definition, $sourceIds, $snapshots, $staged): TemplateVersion {
-                $version = $this->sources->granted($source->ownerId, $source->group, $grant->id, true);
-                if ($version->template->key !== $data->targetKey || $version->template->renderer !== $definition->renderer || $this->json->digest($version->template->schema) !== $this->json->digest($definition->schema)) {
+                $version = $this->sources->granted($source['ownerId'], $source['group'], $grant->id, true);
+                if ($version->template->key !== $data['targetKey'] || $version->template->renderer !== $definition['renderer'] || $this->json->digest($version->template->schema) !== $this->json->digest($definition['schema'])) {
                     throw new OwnershipViolation('Template code definition changed while staging.');
                 }
                 $locked = TemplateOwnerGrant::query()->whereKey($grant->id)->lockForUpdate()->firstOrFail();
                 $this->assertTuple($locked, $version, $data);
-                if ($this->export->execute($source->ownerAlias, $source->ownerId, $source->group, $source->grantId) != $source) {
+                if ($this->content->exportForCopy($source['ownerAlias'], $source['ownerId'], $source['group'], $source['grantId']) != $source) {
                     throw new OwnershipViolation('Template catalog source changed while staging.');
                 }
-                $map = $data->mediaGrantIds;
+                $map = $data['mediaGrantIds'];
                 ksort($map);
-                $hash = $this->json->digest([$data->grantId, $data->expectedGrantRevision, $data->expectedSourceRevision, $source->sourceHash, $data->targetKey, $map]);
-                $existing = TemplateVersion::query()->where('catalog_import_key', $data->idempotencyKey)->lockForUpdate()->first();
+                $hash = $this->json->digest([$data['grantId'], $data['expectedGrantRevision'], $data['expectedSourceRevision'], $source['sourceHash'], $data['targetKey'], $map]);
+                $existing = TemplateVersion::query()->where('catalog_import_key', $data['idempotencyKey'])->lockForUpdate()->first();
                 if ($existing !== null) {
                     if ($existing->getAttribute('catalog_import_request_hash') !== $hash) {
                         throw new OwnershipViolation('Template import key belongs to another request.');
@@ -132,35 +134,38 @@ final readonly class TemplateOwnerCatalog
 
                     return $existing;
                 }
-                if (TemplateModelRegistry::query()->where('key', $data->targetKey)->exists()) {
+                if (TemplateModelRegistry::query()->where('key', $data['targetKey'])->exists()) {
                     throw new OwnershipViolation('Template target key already exists.');
                 }
-                $template = TemplateModelRegistry::create(['key' => $data->targetKey, 'renderer' => $definition->renderer, 'status' => 'active', 'schema' => $definition->schema, 'metadata' => ['catalog_source_key' => $version->template->key]]);
+                $template = TemplateModelRegistry::create(['key' => $data['targetKey'], 'renderer' => $definition['renderer'], 'status' => 'active', 'schema' => $definition['schema'], 'metadata' => ['catalog_source_key' => $version->template->key]]);
                 $copy = new TemplateVersion;
-                $copy->forceFill(['template_id' => $template->id, 'version' => 1, 'status' => TemplateVersionStatus::Draft, 'metadata' => [], 'catalog_grant_id' => $locked->id, 'catalog_source_version_id' => $source->ownerId, 'catalog_source_revision' => $source->sourceRevision, 'catalog_source_hash' => $source->sourceHash, 'catalog_import_key' => $data->idempotencyKey, 'catalog_import_request_hash' => $hash])->save();
+                $copy->forceFill(['template_id' => $template->id, 'version' => 1, 'status' => TemplateVersionStatus::Draft, 'metadata' => [], 'catalog_grant_id' => $locked->id, 'catalog_source_version_id' => $source['ownerId'], 'catalog_source_revision' => $source['sourceRevision'], 'catalog_source_hash' => $source['sourceHash'], 'catalog_import_key' => $data['idempotencyKey'], 'catalog_import_request_hash' => $hash])->save();
                 $mediaMap = [];
                 foreach ($sourceIds as $sourceId) {
-                    $id = $this->media->persist($snapshots[$sourceId], $staged[$sourceId], $this->mediaKey($data->idempotencyKey, $sourceId))->getKey();
+                    $id = $this->media->persist($actor, $snapshots[$sourceId], $staged[$sourceId], $this->mediaKey($data['idempotencyKey'], $sourceId))->getKey();
                     if (! is_string($id)) {
                         throw new OwnershipViolation('Copied Media identifier is invalid.');
                     }
                     $mediaMap[$sourceId] = $id;
                 }
-                $snapshot = $this->content->execute($copy, $source, $mediaMap, $actor->contentActor());
-                $copy->forceFill(['content_snapshot' => $snapshot, 'content_hash' => $snapshot->version, 'status' => TemplateVersionStatus::Published, 'published_by_type' => $actor->type, 'published_by' => $actor->id, 'published_at' => now()])->save();
+                $snapshot = $this->content->importSnapshot($copy, $source, $mediaMap, $actor);
+                $copy->forceFill(['content_snapshot' => $snapshot, 'content_hash' => $snapshot['version'], 'status' => TemplateVersionStatus::Published, 'published_by_type' => ($actor instanceof Model ? $actor->getMorphClass() : null), 'published_by' => TemplateContentGuard::actorId($actor), 'published_at' => now()])->save();
 
                 return $copy->refresh();
             });
         } finally {
             foreach ($staged as $file) {
-                $this->media->discard($file);
+                $this->media->discard($actor, $file);
             }
         }
     }
 
-    private function assertTuple(TemplateOwnerGrant $grant, TemplateVersion $version, ImportPlatformTemplateData $data): void
+    /** Native Templates operation.
+     * @param  array{grantId: string, expectedGrantRevision: int, expectedSourceRevision: int, targetKey: string, idempotencyKey: string, mediaGrantIds: array<string,string>}  $data
+     */
+    private function assertTuple(TemplateOwnerGrant $grant, TemplateVersion $version, array $data): void
     {
-        if ($grant->id !== $data->grantId || $grant->revision !== $data->expectedGrantRevision || $grant->source_revision !== $data->expectedSourceRevision || $version->revision !== $data->expectedSourceRevision || $grant->revoked_at !== null) {
+        if ($grant->id !== $data['grantId'] || $grant->revision !== $data['expectedGrantRevision'] || $grant->source_revision !== $data['expectedSourceRevision'] || $version->revision !== $data['expectedSourceRevision'] || $grant->revoked_at !== null) {
             throw new OwnershipViolation('Template grant or source revision changed.');
         }
     }

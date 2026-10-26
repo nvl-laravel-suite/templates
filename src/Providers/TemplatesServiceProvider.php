@@ -8,7 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use Nvl\Content\Contracts\ContentOwnerRegistrar;
 use Nvl\Content\Services\ContentCatalogCopyRegistry;
-use Nvl\Data\Services\TypeScriptSourceRegistry;
+use Nvl\Media\Services\MediaReader;
 use Nvl\Ownership\Services\OwnershipAdoptionRegistry;
 use Nvl\Support\Doctor\PackageDoctorContributor;
 use Nvl\Support\Globals\GlobalNames;
@@ -16,64 +16,22 @@ use Nvl\Support\OwnerRegistry;
 use Nvl\Support\Ownership\Contracts\OwnershipIntegratedProvider;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Providers\SupportServiceProvider;
-use Nvl\Support\Providers\TenantServiceProvider;
-use Nvl\Support\Tenancy\Services\TenantResourceRegistry;
 use Nvl\Support\Traits\MergesPackageConfiguration;
 use Nvl\Support\Traits\RegistersNamespacedResources;
-use Nvl\Templates\Actions\AssignTemplateAction;
-use Nvl\Templates\Actions\CreateTemplateAction;
-use Nvl\Templates\Actions\CreateTemplateVersionAction;
-use Nvl\Templates\Actions\GetTemplateAction;
-use Nvl\Templates\Actions\GetTemplateRenderAction;
-use Nvl\Templates\Actions\GrantTemplateToTenantAction;
-use Nvl\Templates\Actions\ImportPlatformTemplateAction;
-use Nvl\Templates\Actions\ListTemplateRendersAction;
-use Nvl\Templates\Actions\ListTemplatesAction;
-use Nvl\Templates\Actions\PublishTemplateVersionAction;
-use Nvl\Templates\Actions\QueueTemplateRenderAction;
-use Nvl\Templates\Actions\RenderStoredTemplateAction;
-use Nvl\Templates\Actions\RenderTemplateAction;
-use Nvl\Templates\Actions\RevokeTemplateTenantGrantAction;
-use Nvl\Templates\Actions\SyncTemplateDefinitionsAction;
-use Nvl\Templates\Actions\UnassignTemplateAction;
-use Nvl\Templates\Actions\UpdateTemplateAction;
-use Nvl\Templates\Actions\UpdateTemplateVersionAction;
 use Nvl\Templates\Console\AdoptTemplatesCommand;
 use Nvl\Templates\Console\PublishTemplateViewsCommand;
 use Nvl\Templates\Console\RecoverTemplateRendersCommand;
 use Nvl\Templates\Console\SyncTemplateDefinitionsCommand;
 use Nvl\Templates\Console\TemplatesDoctorCommand;
-use Nvl\Templates\Contracts\AssignTemplateContract;
-use Nvl\Templates\Contracts\CreateTemplateContract;
-use Nvl\Templates\Contracts\CreateTemplateVersionContract;
-use Nvl\Templates\Contracts\GetTemplateContract;
-use Nvl\Templates\Contracts\GetTemplateRenderContract;
-use Nvl\Templates\Contracts\GrantTemplateToTenantContract;
-use Nvl\Templates\Contracts\ImportPlatformTemplateContract;
-use Nvl\Templates\Contracts\ListTemplateRendersContract;
-use Nvl\Templates\Contracts\ListTemplatesContract;
-use Nvl\Templates\Contracts\PublishTemplateVersionContract;
-use Nvl\Templates\Contracts\QueueTemplateRenderContract;
-use Nvl\Templates\Contracts\RenderStoredTemplateContract;
-use Nvl\Templates\Contracts\RenderTemplateContract;
-use Nvl\Templates\Contracts\RevokeTemplateTenantGrantContract;
-use Nvl\Templates\Contracts\SyncTemplateDefinitionsContract;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Contracts\TemplateCatalogAccess;
 use Nvl\Templates\Contracts\TemplateOwnerResolver;
 use Nvl\Templates\Contracts\TemplatePayloadValidator;
 use Nvl\Templates\Contracts\TemplateRenderer;
-use Nvl\Templates\Contracts\UnassignTemplateContract;
-use Nvl\Templates\Contracts\UpdateTemplateContract;
-use Nvl\Templates\Contracts\UpdateTemplateVersionContract;
-use Nvl\Templates\Data\MediaTemplateAssetData;
-use Nvl\Templates\Data\TemplateDefinitionData;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Ownership\TemplatesAdoptionAdapter as OwnershipTemplatesAdoptionAdapter;
 use Nvl\Templates\Ownership\TemplatesResourceRegistrar as OwnershipTemplatesResourceRegistrar;
-use Nvl\Templates\Pdf\Contracts\PdfServiceInterface;
-use Nvl\Templates\Pdf\PdfService;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Rendering\UnavailablePdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
@@ -89,8 +47,6 @@ use Nvl\Templates\Services\TemplateOwnerRegistry;
 use Nvl\Templates\Services\TemplatePdfDependencyGuard;
 use Nvl\Templates\Services\TemplateRendererRegistry;
 use Nvl\Templates\Services\TemplatesDoctor;
-use Nvl\Templates\Tenancy\TemplatesResourceRegistrar;
-use Nvl\Tenancy\Services\TenantAdoptionRegistry;
 use Nvl\Translatable\Services\TranslationResourceRegistry;
 
 /**
@@ -106,37 +62,13 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
      */
     public function register(): void
     {
-        $this->app->bindIf(AssignTemplateContract::class, AssignTemplateAction::class);
-        $this->app->bindIf(CreateTemplateContract::class, CreateTemplateAction::class);
-        $this->app->bindIf(CreateTemplateVersionContract::class, CreateTemplateVersionAction::class);
-        $this->app->bindIf(GetTemplateContract::class, GetTemplateAction::class);
-        $this->app->bindIf(GetTemplateRenderContract::class, GetTemplateRenderAction::class);
-        $this->app->bindIf(GrantTemplateToTenantContract::class, GrantTemplateToTenantAction::class);
-        $this->app->bindIf(ImportPlatformTemplateContract::class, ImportPlatformTemplateAction::class);
-        $this->app->bindIf(ListTemplateRendersContract::class, ListTemplateRendersAction::class);
-        $this->app->bindIf(ListTemplatesContract::class, ListTemplatesAction::class);
-        $this->app->bindIf(PublishTemplateVersionContract::class, PublishTemplateVersionAction::class);
-        $this->app->bindIf(QueueTemplateRenderContract::class, QueueTemplateRenderAction::class);
-        $this->app->bindIf(RenderStoredTemplateContract::class, RenderStoredTemplateAction::class);
-        $this->app->bindIf(RenderTemplateContract::class, RenderTemplateAction::class);
-        $this->app->bindIf(RevokeTemplateTenantGrantContract::class, RevokeTemplateTenantGrantAction::class);
-        $this->app->bindIf(SyncTemplateDefinitionsContract::class, SyncTemplateDefinitionsAction::class);
-        $this->app->bindIf(UnassignTemplateContract::class, UnassignTemplateAction::class);
-        $this->app->bindIf(UpdateTemplateContract::class, UpdateTemplateAction::class);
-        $this->app->bindIf(UpdateTemplateVersionContract::class, UpdateTemplateVersionAction::class);
 
         $this->app->register(SupportServiceProvider::class);
         PackageDoctorContributor::register($this->app, 'nvl/templates', fn (): array => PackageDoctorContributor::reportChecks($this->app->make(TemplatesDoctor::class)->inspect(), 'nvl:templates:doctor'));
 
-        $this->app->register(TenantServiceProvider::class);
         $this->mergePackageConfiguration(__DIR__.'/../../config/nvl-templates.php', 'templates');
         $this->app->singleton(TemplateModelRegistry::class);
         $this->app->booting(fn () => $this->app->make(TemplateModelRegistry::class)->prepare());
-        $this->app->booted(function (): void {
-            if ($this->app->bound(TenantAdoptionRegistry::class)) {
-                (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class), $this->app->make(TenantAdoptionRegistry::class));
-            }
-        });
         $authorization = config(
             'nvl-templates.authorization.class',
             ConfiguredTemplateAuthorization::class,
@@ -155,11 +87,14 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
             TemplatePayloadValidator::class,
             ConfiguredTemplatePayloadValidator::class,
         );
-        $this->app->bindIf(PdfServiceInterface::class, PdfService::class);
         $assetDriver = config('nvl-templates.assets.driver', 'null');
 
         if (! is_string($assetDriver) || ! in_array($assetDriver, ['null', 'media'], true)) {
             throw new InvalidArgumentException('templates.assets.driver must be null or media.');
+        }
+
+        if ($assetDriver === 'media' && ! class_exists(MediaReader::class)) {
+            throw new InvalidArgumentException('Template Media assets are enabled but nvl/media is unavailable.');
         }
 
         $this->app->singleton(MediaTemplateAssetRegistry::class);
@@ -178,26 +113,24 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
      * Register renderers, views, commands, and publishable package resources.
      */
     public function boot(
-        TypeScriptSourceRegistry $typeScriptSources,
         TranslationResourceRegistry $translationResources,
         TemplateDefinitionRegistry $definitions,
         TemplateRendererRegistry $renderers,
         TemplateOwnerRegistry $owners,
-        ContentOwnerRegistrar $contentOwners,
-        ContentCatalogCopyRegistry $catalogCopies,
     ): void {
-        (new TemplatesResourceRegistrar)->register($this->app->make(TenantResourceRegistry::class));
         $this->app->make(OwnershipTemplatesResourceRegistrar::class)->register($this->app->make(OwnershipResourceRegistry::class));
         if ($this->app->bound(OwnershipAdoptionRegistry::class)) {
             $this->app->make(OwnershipAdoptionRegistry::class)->register('templates', OwnershipTemplatesAdoptionAdapter::class);
         }
+        $this->publishes([
+            __DIR__.'/../../resources/boost/skills' => base_path('.agents/skills'),
+        ], 'nvl-templates-skills');
         $this->app->make(GlobalNames::class)->translations('templates', __DIR__.'/../../lang', $this->app->make('translation.loader'));
         $this->publishes([
             __DIR__.'/../../lang' => lang_path('vendor/nvl-templates'),
         ], 'nvl-templates-translations');
         $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, ['template-version'], package: 'templates');
         $assets = $this->app->make(MediaTemplateAssetRegistry::class);
-        $typeScriptSources->register(__DIR__.'/..', 'nvl/templates');
         $this->registerRenderers($renderers);
         $this->loadViewsFrom(
             __DIR__.'/../../resources/views',
@@ -206,23 +139,31 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
         $this->registerDefinitions($definitions);
         $this->registerOwners($owners);
         $this->registerMediaAssets($assets);
-        $catalogCopies->register(
-            TemplateVersion::CONTENT_OWNER_TYPE,
-            TemplateContentCopyAccess::class,
-        );
-        $registeredContentOwner = $contentOwners->registered(
-            TemplateVersion::CONTENT_OWNER_TYPE,
-        );
-
-        if ($registeredContentOwner === null) {
-            $contentOwners->register(
+        if (config('nvl-templates.integrations.content', false)) {
+            if (! interface_exists(ContentOwnerRegistrar::class)) {
+                throw new InvalidArgumentException('Templates Content integration is enabled but nvl/content is unavailable.');
+            }
+            $contentOwners = $this->app->make(ContentOwnerRegistrar::class);
+            $catalogCopies = $this->app->make(ContentCatalogCopyRegistry::class);
+            $catalogCopies->register(
                 TemplateVersion::CONTENT_OWNER_TYPE,
-                TemplateVersion::class,
+                TemplateContentCopyAccess::class,
             );
-        } elseif ($registeredContentOwner !== TemplateVersion::class) {
-            throw new InvalidArgumentException(
-                'Content owner alias [template-version] must resolve to TemplateVersion.',
+            $registeredContentOwner = $contentOwners->registered(
+                TemplateVersion::CONTENT_OWNER_TYPE,
             );
+
+            if ($registeredContentOwner === null) {
+                $contentOwners->register(
+                    TemplateVersion::CONTENT_OWNER_TYPE,
+                    TemplateVersion::class,
+                    [TemplateVersion::CONTENT_GROUP],
+                );
+            } elseif ($registeredContentOwner !== TemplateVersion::class) {
+                throw new InvalidArgumentException(
+                    'Content owner alias [template-version] must resolve to TemplateVersion.',
+                );
+            }
         }
         if ((bool) config('nvl-templates.migrations.enabled', true)) {
             $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
@@ -236,7 +177,6 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
             displayColumns: ['key', 'renderer', 'status', 'revision'],
             orderColumn: 'updated_at',
         );
-        $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
 
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -257,9 +197,6 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
         $this->publishesMigrations([
             __DIR__.'/../../database/migrations' => database_path('migrations'),
         ], 'templates-migrations');
-        $this->publishes([
-            __DIR__.'/../../resources/boost/skills' => base_path('.agents/skills'),
-        ], 'templates-skills');
     }
 
     private function registerRenderers(TemplateRendererRegistry $registry): void
@@ -338,9 +275,9 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
                 );
             }
 
-            $registry->register(
-                TemplateDefinitionData::from(['key' => $key, ...$definition]),
-            );
+            /** @var array{key: string, renderer: string, view: string, profiles?: list<string>, schema?: array<string, mixed>, rendererOptions?: array<string, mixed>, subjectPath?: string|null, requiredRegions?: list<string>, allowedContentDefinitions?: list<string>} $nativeDefinition */
+            $nativeDefinition = ['key' => $key, ...$definition];
+            $registry->register($nativeDefinition);
         }
     }
 
@@ -425,15 +362,7 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
                 );
             }
 
-            $registry->register(new MediaTemplateAssetData(
-                key: $key,
-                mediaId: $mediaId,
-                scope: $scope,
-                type: $type,
-                variation: $variation,
-                delivery: $delivery,
-                expectedRevision: $expectedRevision,
-            ));
+            $registry->register(['scope' => $scope, 'type' => $type, 'variation' => $variation, 'delivery' => $delivery, 'expectedRevision' => $expectedRevision, 'key' => $key, 'mediaId' => $mediaId]);
         }
     }
 

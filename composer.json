@@ -16,28 +16,25 @@
         "ext-filter": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "laravel/framework": "^12.0 || ^13.0",
-        "nvl/content": "^6.0",
-        "nvl/core": "^6.0.1",
-        "nvl/filterable": "^6.0",
-        "nvl/media": "^6.0",
-        "nvl/translatable": "^6.0",
-        "php": "^8.4",
-        "spatie/laravel-data": "^4.23",
-        "symfony/http-foundation": "^7.0 || ^8.0"
+        "laravel/framework": "^13.0",
+        "nvl/core": "^7.0",
+        "nvl/translatable": "^7.0",
+        "php": "^8.4"
     },
     "require-dev": {
         "larastan/larastan": "^3.10",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "mpdf/mpdf": "^8.3.0",
-        "nvl/ownership": "^6.0.1",
-        "nvl/tenancy": "^6.0",
-        "orchestra/testbench": "^10.0 || ^11.0",
+        "nvl/ownership": "^7.0",
+        "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0",
-        "spatie/typescript-transformer": "^3.3",
-        "symfony/process": "^7.0 || ^8.0"
+        "symfony/process": "^7.0 || ^8.0",
+        "nvl/content": "^7.0",
+        "nvl/media": "^7.0",
+        "nvl/filterable": "^7.0",
+        "spatie/laravel-data": "^4.23"
     },
     "autoload": {
         "psr-4": {
@@ -63,7 +60,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "6.x-dev"
+            "dev-main": "7.x-dev"
         },
         "laravel": {
             "providers": [
@@ -93,7 +90,8 @@
             "/**/.gitattributes",
             "/.gitignore",
             "/**/.gitignore",
-            "/**/.gitkeep"
+            "/**/.gitkeep",
+            ".DS_Store"
         ]
     },
     "minimum-stability": "stable",
@@ -101,13 +99,12 @@
     "suggest": {
         "mpdf/mpdf": "Built-in PDF renderer: composer require mpdf/mpdf:^8.3.0 --with-all-dependencies (requires GD and mbstring).",
         "nvl/ownership": "Adds optional model-declared ownership, isolation, adoption and captured worker contexts.",
-        "nvl/tenancy": "Temporary legacy tenancy bridge for existing tenant installations; native ownership does not require it.",
-        "spatie/typescript-transformer": "Consume the declared TypeScript attributes and metadata (^3.3); Core retains the runtime transformation engine."
+        "nvl/content": "Optional stored-template composition and publication integration.",
+        "nvl/media": "Optional private render output and asset integration."
     },
     "conflict": {
         "mpdf/mpdf": "<8.3.0 || >=9.0",
-        "nvl/ownership": "<6.0.1 || >=7.0",
-        "nvl/tenancy": "<6.0 || >=7.0"
+        "nvl/ownership": "<7.0 || >=8.0"
     },
     "homepage": "https://github.com/nvl-laravel-suite/templates",
     "authors": [

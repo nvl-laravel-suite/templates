@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Nvl\Templates\Tests\Fixtures\Data;
+
+use Nvl\Templates\Tests\Fixtures\ConsumerSupport\DataTransform;
+use Spatie\LaravelData\Data;
+
+/**
+ * Immutable renderer output suitable for responses, mail bodies, or Media ingestion.
+ *
+ * @api
+ */
+final class RenderedTemplateData extends Data
+{
+    use DataTransform;
+
+    public function __construct(
+        public readonly string $content,
+        public readonly string $mimeType,
+        public readonly string $renderer,
+        public readonly int $byteSize,
+        public readonly string $checksum,
+        public readonly ?string $subject = null,
+        public readonly ?string $suggestedFilename = null,
+    ) {}
+}

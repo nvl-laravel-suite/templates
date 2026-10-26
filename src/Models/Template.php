@@ -27,7 +27,6 @@ use Nvl\Translatable\Translatable as HasTranslations;
  *
  * @property string|null $owner_scope_key
  * @property string $id
- * @property string|null $tenant_id
  * @property string $ownership_key
  * @property string $key
  * @property string $renderer
@@ -70,7 +69,6 @@ class Template extends Model implements Ownable, TranslatableModel
     /** @var list<string> */
     protected $fillable = [
         'key',
-        'tenant_id',
         'ownership_key',
         'renderer',
         'status',
@@ -91,7 +89,7 @@ class Template extends Model implements Ownable, TranslatableModel
             foreignKey: 'template_id',
             fields: ['title', 'description'],
             mutationPolicy: TranslationMutationPolicy::OwningServiceOnly,
-            ownershipResource: 'templates.templates',
+            ownershipResource: static::ownershipDefinition()->strategy === 'unscoped' ? null : 'templates.templates',
         );
     }
 

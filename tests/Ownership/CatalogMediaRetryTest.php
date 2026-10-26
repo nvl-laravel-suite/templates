@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Storage;
 use Nvl\Content\Enums\ContentVisibility;
 use Nvl\Media\Contracts\MediaCatalogAccess;
@@ -9,9 +9,8 @@ use Nvl\Media\Enums\MediaType;
 use Nvl\Media\Ownership\MediaOwnerCatalog;
 use Nvl\Media\Services\MediaModelRegistry;
 use Nvl\Ownership\Services\OwnershipRunner;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Contracts\TemplateCatalogAccess;
-use Nvl\Templates\Data\Mutations\ImportPlatformTemplateData;
-use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Ownership\TemplateOwnerCatalog;
 use Nvl\Templates\Tests\Fixtures\MediaRetryTemplateOwnershipTestCase;
 use Nvl\Templates\Tests\Fixtures\OwnershipActor;
@@ -29,9 +28,9 @@ it('discards every unconsumed physical Media stage on successful idempotent impo
     });
     app()->bind(MediaCatalogAccess::class, fn () => new class implements MediaCatalogAccess
     {
-        public function assertCanGrant(string $id, int $revision): void {}
+        public function assertCanGrant(Authenticatable|SystemActor $actor, string $id, int $revision): void {}
 
-        public function assertCanRevoke(string $id): void {}
+        public function assertCanRevoke(Authenticatable|SystemActor $actor, string $id): void {}
     });
     $runner = app(OwnershipRunner::class);
     $actor = OwnershipActor::firstOrFail();
@@ -42,16 +41,16 @@ it('discards every unconsumed physical Media stage on successful idempotent impo
         return [$media, OwnershipTemplateScenario::version(values: ['logo' => $media->id], visibility: ContentVisibility::Private)];
     });
     $runner->run(OwnershipCompany::findOrFail(7), $actor, function () use ($media, $source): void {
-        $mediaGrant = app(MediaOwnerCatalog::class)->grant($media->id, $media->revision);
+        $mediaGrant = app(MediaOwnerCatalog::class)->grant(SystemActor::Background, $media->id, $media->revision);
         $catalog = app(TemplateOwnerCatalog::class);
         $grant = $catalog->grant($source->id, $source->revision);
-        $data = new ImportPlatformTemplateData($grant->id, $grant->revision, $source->revision, 'welcome', 'physical-retry', [$media->id => $mediaGrant->id]);
-        $copy = $catalog->import($data, TemplateActorData::system());
+        $data = ['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotencyKey' => 'physical-retry', 'mediaGrantIds' => [$media->id => $mediaGrant->id]];
+        $copy = $catalog->import($data, SystemActor::Background);
         $files = Storage::disk('public')->allFiles();
         sort($files);
         expect($files)->toHaveCount(2);
         for ($retry = 0; $retry < 3; $retry++) {
-            expect($catalog->import($data, TemplateActorData::system())->id)->toBe($copy->id);
+            expect($catalog->import($data, SystemActor::Background)->id)->toBe($copy->id);
             $after = Storage::disk('public')->allFiles();
             sort($after);
             expect($after)->toBe($files)->and(MediaModelRegistry::query()->count())->toBe(1);

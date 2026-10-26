@@ -10,6 +10,7 @@ use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 
 /** Complete runtime defaults; publication sections are declared in ../resources/config/sections.json. */
 return [
+    'integrations' => ['content' => false],
     'ownership' => ['owner_resources' => []],
     'models' => ['template' => Template::class],
     'connection' => null,
@@ -34,21 +35,6 @@ return [
 
     'authorization' => [
         'class' => ConfiguredTemplateAuthorization::class,
-    ],
-
-    'routes' => [
-        'management' => [
-            'enabled' => false,
-            'prefix' => 'nvl/api/v1/templates',
-            'name' => 'nvl.templates.management.',
-            'middleware' => ['api', 'auth', 'throttle:60,1'],
-        ],
-        'render' => [
-            'enabled' => false,
-            'prefix' => 'nvl/api/v1/templates/render',
-            'name' => 'nvl.templates.render.',
-            'middleware' => ['api', 'auth', 'throttle:60,1'],
-        ],
     ],
 
     /*
@@ -121,7 +107,7 @@ return [
         'recovery_batch_size' => 100,
         'store_payload' => true,
         'output' => [
-            'persist' => true,
+            'persist' => false,
             'disk' => 'local',
             'filename_prefix' => 'template-render',
             'allowed_local_roots' => [storage_path()],

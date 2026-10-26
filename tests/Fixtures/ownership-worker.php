@@ -3,23 +3,22 @@
 declare(strict_types=1);
 use Illuminate\Contracts\Console\Kernel;
 use Nvl\Content\Providers\ContentServiceProvider;
-use Nvl\Data\Providers\DataServiceProvider;
 use Nvl\Filterable\Providers\FilterableServiceProvider;
 use Nvl\Media\Providers\MediaServiceProvider;
 use Nvl\Ownership\Providers\OwnershipServiceProvider;
 use Nvl\Ownership\Services\OwnershipRunner;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Support\Ownership\Contracts\OwnershipContext;
 use Nvl\Support\Providers\LocaleServiceProvider;
 use Nvl\Support\Providers\SupportServiceProvider;
-use Nvl\Templates\Actions\CreateTemplateVersionAction;
-use Nvl\Templates\Data\Mutations\CreateTemplateVersionData;
-use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Providers\TemplatesServiceProvider;
+use Nvl\Templates\Services\TemplateLifecycle;
 use Nvl\Templates\Tests\Fixtures\OwnershipActor;
 use Nvl\Templates\Tests\Fixtures\OwnershipCompany;
 use Nvl\Templates\Tests\Fixtures\OwnershipWorkerProvider;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\Foundation\Application;
+use Spatie\LaravelData\LaravelDataServiceProvider as DataServiceProvider;
 
 require dirname(__DIR__, 5).'/vendor/autoload.php';
 $source = json_decode($argv[1], true, flags: JSON_THROW_ON_ERROR);
@@ -58,7 +57,7 @@ if (($options['mode'] ?? 'queue') === 'version') {
             throw new RuntimeException('Template race barrier timed out.');
         }usleep(10000);
     }
-    $version = $app->make(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), fn () => $app->make(CreateTemplateVersionAction::class)->execute($options['template'], CreateTemplateVersionData::from(['metadata' => []]), TemplateActorData::system()));
+    $version = $app->make(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), fn () => $app->make(TemplateLifecycle::class)->createVersion($options['template'], ['metadata' => []], SystemActor::Background));
     fwrite(STDOUT, (string) $version->version);
 } else {
     $status = $kernel->call('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--sleep' => 0, '--tries' => 1, '--timeout' => 10, '--force' => true, '--no-interaction' => true]);

@@ -6,11 +6,8 @@ namespace Nvl\Templates\Services;
 
 use Illuminate\Contracts\View\Factory;
 use InvalidArgumentException;
-use Nvl\Templates\Data\PdfMargins;
-use Nvl\Templates\Data\PdfOptions;
 use Nvl\Templates\Enums\PdfOrientation;
 use Nvl\Templates\Enums\PdfPageSize;
-use Nvl\Templates\Rendering\ResolvedPdfOptions;
 use Nvl\Templates\Rendering\TemplateRenderContext;
 
 /**
@@ -25,8 +22,10 @@ final readonly class PdfOptionsResolver
 
     /**
      * Resolve the complete mPDF option set for one render.
+     *
+     * @return array{pageSize: PdfPageSize, orientation: PdfOrientation, margins: array{left: float, right: float, top: float, bottom: float, header: float, footer: float}, defaultFont: string, defaultFontSize: float, dpi: int, imageDpi: int, imageQuality: int, showImageErrors: bool, temporaryDirectory: string|null, title: string|null, author: string, creator: string, subject: string|null, keywords: string, headerView: string|null, headerHtml: string|null, headerData: array<string, mixed>, footerView: string|null, footerHtml: string|null, footerData: array<string, mixed>, watermark: string|null, watermarkOpacity: float, compress: bool, pdfa: bool, pdfaAuto: bool, protectionPermissions: list<string>, userPassword: string|null, ownerPassword: string|null}
      */
-    public function resolve(TemplateRenderContext $context): ResolvedPdfOptions
+    public function resolve(TemplateRenderContext $context): array
     {
         $configured = config('nvl-templates.pdf.defaults', []);
 
@@ -66,21 +65,22 @@ final readonly class PdfOptionsResolver
             );
         }
 
-        $options = $context->pdf ?? new PdfOptions;
-        $margins = $this->margins($options->margins, $configured['margins'] ?? []);
+        $options = $context->pdf ?? [];
+        $options += ['pageSize' => null, 'orientation' => null, 'margins' => null, 'defaultFont' => null, 'defaultFontSize' => null, 'dpi' => null, 'imageDpi' => null, 'imageQuality' => null, 'showImageErrors' => null, 'temporaryDirectory' => null, 'title' => null, 'author' => null, 'creator' => null, 'subject' => null, 'keywords' => null, 'headerView' => null, 'headerHtml' => null, 'headerData' => [], 'footerView' => null, 'footerHtml' => null, 'footerData' => [], 'watermark' => null, 'watermarkOpacity' => null, 'compress' => null, 'pdfa' => null, 'pdfaAuto' => null, 'protectionPermissions' => [], 'userPassword' => null, 'ownerPassword' => null];
+        $margins = $this->margins($options['margins'], $configured['margins'] ?? []);
         $headerView = $this->view(
-            $options->headerView ?? ($configured['header_view'] ?? null),
+            $options['headerView'] ?? ($configured['header_view'] ?? null),
             'header_view',
         );
         $footerView = $this->view(
-            $options->footerView ?? ($configured['footer_view'] ?? null),
+            $options['footerView'] ?? ($configured['footer_view'] ?? null),
             'footer_view',
         );
-        $this->contentGuard->rendererOptions($options->headerData);
-        $this->contentGuard->rendererOptions($options->footerData);
-        $pdfa = $this->boolean($options->pdfa, $configured['pdfa'] ?? false, 'pdfa');
+        $this->contentGuard->rendererOptions($options['headerData']);
+        $this->contentGuard->rendererOptions($options['footerData']);
+        $pdfa = $this->boolean($options['pdfa'], $configured['pdfa'] ?? false, 'pdfa');
         $pdfaAuto = $this->boolean(
-            $options->pdfaAuto,
+            $options['pdfaAuto'],
             $configured['pdfa_auto'] ?? false,
             'pdfa_auto',
         );
@@ -90,7 +90,7 @@ final readonly class PdfOptionsResolver
         }
 
         $showImageErrors = $this->boolean(
-            $options->showImageErrors,
+            $options['showImageErrors'],
             $configured['show_image_errors'] ?? false,
             'show_image_errors',
         );
@@ -103,112 +103,82 @@ final readonly class PdfOptionsResolver
             );
         }
 
-        return new ResolvedPdfOptions(
-            pageSize: $this->pageSize(
-                $options->pageSize ?? ($configured['page_size'] ?? PdfPageSize::A4->value),
-            ),
-            orientation: $this->orientation(
-                $options->orientation
-                    ?? ($configured['orientation'] ?? PdfOrientation::Portrait->value),
-            ),
-            margins: $margins,
-            defaultFont: $this->font(
-                $options->defaultFont ?? ($configured['default_font'] ?? 'dejavusans'),
-            ),
-            defaultFontSize: $this->number(
-                $options->defaultFontSize ?? ($configured['default_font_size'] ?? 10),
-                'default_font_size',
-                6,
-                72,
-            ),
-            dpi: $this->integer($options->dpi ?? ($configured['dpi'] ?? 96), 'dpi', 72, 300),
-            imageDpi: $this->integer(
-                $options->imageDpi ?? ($configured['image_dpi'] ?? 96),
-                'image_dpi',
-                72,
-                600,
-            ),
-            imageQuality: $this->integer(
-                $options->imageQuality ?? ($configured['image_quality'] ?? 85),
-                'image_quality',
-                1,
-                100,
-            ),
-            showImageErrors: $showImageErrors,
-            temporaryDirectory: $this->nullableString(
-                $options->temporaryDirectory,
-                'temporary_directory',
-                4_096,
-            ),
-            title: $this->nullableString(
-                $options->title ?? ($configured['title'] ?? null),
-                'title',
-                512,
-            ),
-            author: $this->string(
-                $options->author ?? ($configured['author'] ?? ''),
-                'author',
-                512,
-            ),
-            creator: $this->string(
-                $options->creator ?? ($configured['creator'] ?? 'NVL Templates'),
-                'creator',
-                512,
-            ),
-            subject: $this->nullableString(
-                $options->subject ?? ($configured['subject'] ?? null),
-                'subject',
-                998,
-            ),
-            keywords: $this->string(
-                $options->keywords ?? ($configured['keywords'] ?? ''),
-                'keywords',
-                2_000,
-            ),
-            headerView: $headerView,
-            headerHtml: $this->nullableString(
-                $options->headerHtml,
-                'header_html',
-                262_144,
-            ),
-            headerData: $options->headerData,
-            footerView: $footerView,
-            footerHtml: $this->nullableString(
-                $options->footerHtml,
-                'footer_html',
-                262_144,
-            ),
-            footerData: $options->footerData,
-            watermark: $this->nullableString(
-                $options->watermark ?? ($configured['watermark'] ?? null),
-                'watermark',
-                255,
-            ),
-            watermarkOpacity: $this->number(
-                $options->watermarkOpacity ?? ($configured['watermark_opacity'] ?? 0.1),
-                'watermark_opacity',
-                0,
-                1,
-            ),
-            compress: $this->boolean(
-                $options->compress,
-                $configured['compress'] ?? true,
-                'compress',
-            ),
-            pdfa: $pdfa,
-            pdfaAuto: $pdfaAuto,
-            protectionPermissions: $this->permissions($options->protectionPermissions),
-            userPassword: $this->nullableString(
-                $options->userPassword,
-                'user_password',
-                255,
-            ),
-            ownerPassword: $this->nullableString(
-                $options->ownerPassword,
-                'owner_password',
-                255,
-            ),
-        );
+        return ['pageSize' => $this->pageSize(
+            $options['pageSize'] ?? ($configured['page_size'] ?? PdfPageSize::A4->value),
+        ), 'orientation' => $this->orientation(
+            $options['orientation']
+                ?? ($configured['orientation'] ?? PdfOrientation::Portrait->value),
+        ), 'margins' => $margins, 'defaultFont' => $this->font(
+            $options['defaultFont'] ?? ($configured['default_font'] ?? 'dejavusans'),
+        ), 'defaultFontSize' => $this->number(
+            $options['defaultFontSize'] ?? ($configured['default_font_size'] ?? 10),
+            'default_font_size',
+            6,
+            72,
+        ), 'dpi' => $this->integer($options['dpi'] ?? ($configured['dpi'] ?? 96), 'dpi', 72, 300), 'imageDpi' => $this->integer(
+            $options['imageDpi'] ?? ($configured['image_dpi'] ?? 96),
+            'image_dpi',
+            72,
+            600,
+        ), 'imageQuality' => $this->integer(
+            $options['imageQuality'] ?? ($configured['image_quality'] ?? 85),
+            'image_quality',
+            1,
+            100,
+        ), 'showImageErrors' => $showImageErrors, 'temporaryDirectory' => $this->nullableString(
+            $options['temporaryDirectory'],
+            'temporary_directory',
+            4_096,
+        ), 'title' => $this->nullableString(
+            $options['title'] ?? ($configured['title'] ?? null),
+            'title',
+            512,
+        ), 'author' => $this->string(
+            $options['author'] ?? ($configured['author'] ?? ''),
+            'author',
+            512,
+        ), 'creator' => $this->string(
+            $options['creator'] ?? ($configured['creator'] ?? 'NVL Templates'),
+            'creator',
+            512,
+        ), 'subject' => $this->nullableString(
+            $options['subject'] ?? ($configured['subject'] ?? null),
+            'subject',
+            998,
+        ), 'keywords' => $this->string(
+            $options['keywords'] ?? ($configured['keywords'] ?? ''),
+            'keywords',
+            2_000,
+        ), 'headerView' => $headerView, 'headerHtml' => $this->nullableString(
+            $options['headerHtml'],
+            'header_html',
+            262_144,
+        ), 'headerData' => $options['headerData'], 'footerView' => $footerView, 'footerHtml' => $this->nullableString(
+            $options['footerHtml'],
+            'footer_html',
+            262_144,
+        ), 'footerData' => $options['footerData'], 'watermark' => $this->nullableString(
+            $options['watermark'] ?? ($configured['watermark'] ?? null),
+            'watermark',
+            255,
+        ), 'watermarkOpacity' => $this->number(
+            $options['watermarkOpacity'] ?? ($configured['watermark_opacity'] ?? 0.1),
+            'watermark_opacity',
+            0,
+            1,
+        ), 'compress' => $this->boolean(
+            $options['compress'],
+            $configured['compress'] ?? true,
+            'compress',
+        ), 'pdfa' => $pdfa, 'pdfaAuto' => $pdfaAuto, 'protectionPermissions' => $this->permissions($options['protectionPermissions']), 'userPassword' => $this->nullableString(
+            $options['userPassword'],
+            'user_password',
+            255,
+        ), 'ownerPassword' => $this->nullableString(
+            $options['ownerPassword'],
+            'owner_password',
+            255,
+        )];
     }
 
     private function pageSize(mixed $value): PdfPageSize
@@ -240,10 +210,13 @@ final readonly class PdfOptionsResolver
     }
 
     /**
+     * @param  array{left?: float|null, right?: float|null, top?: float|null, bottom?: float|null, header?: float|null, footer?: float|null}|null  $overrides
      * @return array{left: float, right: float, top: float, bottom: float, header: float, footer: float}
      */
-    private function margins(?PdfMargins $overrides, mixed $configured): array
+    private function margins(?array $overrides, mixed $configured): array
     {
+        $overrides ??= [];
+        $overrides += ['left' => null, 'right' => null, 'top' => null, 'bottom' => null, 'header' => null, 'footer' => null];
         if (! is_array($configured)) {
             throw new InvalidArgumentException('templates.pdf.defaults.margins must be an array.');
         }
@@ -260,12 +233,12 @@ final readonly class PdfOptionsResolver
         }
 
         return [
-            'left' => $this->number(($overrides === null ? null : $overrides->left) ?? ($configured['left'] ?? 15), 'margins.left', 0, 100),
-            'right' => $this->number(($overrides === null ? null : $overrides->right) ?? ($configured['right'] ?? 15), 'margins.right', 0, 100),
-            'top' => $this->number(($overrides === null ? null : $overrides->top) ?? ($configured['top'] ?? 16), 'margins.top', 0, 100),
-            'bottom' => $this->number(($overrides === null ? null : $overrides->bottom) ?? ($configured['bottom'] ?? 16), 'margins.bottom', 0, 100),
-            'header' => $this->number(($overrides === null ? null : $overrides->header) ?? ($configured['header'] ?? 8), 'margins.header', 0, 100),
-            'footer' => $this->number(($overrides === null ? null : $overrides->footer) ?? ($configured['footer'] ?? 8), 'margins.footer', 0, 100),
+            'left' => $this->number(($overrides['left']) ?? ($configured['left'] ?? 15), 'margins.left', 0, 100),
+            'right' => $this->number(($overrides['right']) ?? ($configured['right'] ?? 15), 'margins.right', 0, 100),
+            'top' => $this->number(($overrides['top']) ?? ($configured['top'] ?? 16), 'margins.top', 0, 100),
+            'bottom' => $this->number(($overrides['bottom']) ?? ($configured['bottom'] ?? 16), 'margins.bottom', 0, 100),
+            'header' => $this->number(($overrides['header']) ?? ($configured['header'] ?? 8), 'margins.header', 0, 100),
+            'footer' => $this->number(($overrides['footer']) ?? ($configured['footer'] ?? 8), 'margins.footer', 0, 100),
         ];
     }
 

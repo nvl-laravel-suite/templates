@@ -8,17 +8,24 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Nvl\Content\Providers\ContentServiceProvider;
-use Nvl\Data\Providers\DataServiceProvider;
 use Nvl\Filterable\Providers\FilterableServiceProvider;
+use Nvl\Media\Contracts\MediaAuthorization;
 use Nvl\Media\Providers\MediaServiceProvider;
+use Nvl\Media\Services\MediaAccessService;
 use Nvl\Support\Providers\LocaleServiceProvider;
+use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Providers\TemplatesServiceProvider;
 use Nvl\Templates\Rendering\BladeTemplateRenderer;
 use Nvl\Templates\Rendering\MpdfTemplateRenderer;
+use Nvl\Templates\Tests\Fixtures\AllowMediaAuthorization;
+use Nvl\Templates\Tests\Fixtures\AllowTemplateAuthorization;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Pdf\Contracts\PdfServiceInterface;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Pdf\PdfService;
 use Nvl\Templates\Tests\Fixtures\TestTemplateOwnerResolver;
 use Nvl\Templates\Tests\Fixtures\TestTemplateRenderer;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\LaravelData\LaravelDataServiceProvider as DataServiceProvider;
 
 /**
  * Boots Templates and only its declared runtime dependencies.
@@ -47,9 +54,13 @@ abstract class TestCase extends Orchestra
     {
         $app['config']->set([
             'cache.default' => 'array',
+            'nvl-templates.integrations.content' => true,
+            'nvl-templates.rendering.output.persist' => true,
+            'nvl-templates.authorization.class' => AllowTemplateAuthorization::class,
             'filesystems.default' => 'public',
             'nvl-media.disk' => 'public',
             'nvl-media.routes.assets_enabled' => false,
+            'nvl-content.media.enabled' => true,
             'nvl-content.authorization.callback' => static fn (): bool => true,
             'nvl-content.locales.available' => ['en', 'bg'],
             'nvl-translatable.locales' => ['en', 'bg'],
@@ -138,6 +149,10 @@ abstract class TestCase extends Orchestra
     protected function setUp(): void
     {
         parent::setUp();
+        $this->app->forgetInstance(MediaAccessService::class);
+        $this->app->bind(PdfServiceInterface::class, PdfService::class);
+        $this->app->bind(MediaAuthorization::class, AllowMediaAuthorization::class);
+        $this->app->bind(TemplateAuthorization::class, AllowTemplateAuthorization::class);
 
         $this->app['view']->addNamespace(
             'template-tests',

@@ -9,10 +9,12 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use Nvl\Media\Contracts\MediaAuthorization;
 use Nvl\Ownership\Contracts\OwnerAccess;
 use Nvl\Support\Ownership\Exceptions\OwnershipViolation;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Ownership\ValueObjects\OwnershipResourceDefinition;
+use Nvl\Templates\Contracts\TemplateAuthorization;
 
 /** Reconstructs the exact producer graph in an independent native worker. */
 final class OwnershipWorkerProvider extends ServiceProvider
@@ -24,6 +26,8 @@ final class OwnershipWorkerProvider extends ServiceProvider
 
     public function register(): void
     {
+        $this->app->bind(TemplateAuthorization::class, AllowTemplateAuthorization::class);
+        $this->app->bind(MediaAuthorization::class, AllowMediaAuthorization::class);
         $this->app->make(Repository::class)->set([
             'database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
             'nvl-core.owners' => [OwnershipCompany::class, OwnershipActor::class],
@@ -40,7 +44,8 @@ final class OwnershipWorkerProvider extends ServiceProvider
             'nvl-templates.ownership.owner_resources' => ['member' => 'fixture.template-hosts'],
             'nvl-templates.models.template' => OwnershipTemplate::class,
             'nvl-templates.migrations.enabled' => false,
-            'nvl-templates.authorization.callback' => static fn (): bool => true,
+            'nvl-templates.integrations.content' => true,
+            'nvl-templates.authorization.class' => AllowTemplateAuthorization::class,
             'nvl-templates.owners' => ['member' => OwnershipTemplateOwnerResolver::class],
             'nvl-templates.renderers' => ['test' => TestTemplateRenderer::class],
             'nvl-templates.definitions' => ['welcome' => ['renderer' => 'test', 'view' => 'template-tests::core', 'profiles' => ['default'], 'schema' => ['name' => ['type' => 'string']], 'required_regions' => ['main'], 'allowed_content_definitions' => ['copy']]],

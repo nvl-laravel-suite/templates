@@ -7,7 +7,7 @@ namespace Nvl\Templates\Console;
 use Illuminate\Console\Command;
 use InvalidArgumentException;
 use JsonException;
-use Nvl\Templates\Actions\AdoptTemplatesAction;
+use Nvl\Templates\Services\TemplateImporter;
 
 /**
  * Plans, prepares, and applies a restart-safe Templates/Content adoption manifest.
@@ -24,7 +24,7 @@ final class AdoptTemplatesCommand extends Command
     /** @var string */
     protected $description = 'Plan or apply staged adoption into NVL Templates, Content, and Media';
 
-    public function handle(AdoptTemplatesAction $adopt): int
+    public function handle(TemplateImporter $adopt): int
     {
         $format = $this->option('format');
 
@@ -79,7 +79,7 @@ final class AdoptTemplatesCommand extends Command
         }
 
         /** @var array<array-key, mixed> $decoded */
-        $result = $adopt->execute(
+        $result = $adopt->adopt(
             $decoded,
             prepare: (bool) $this->option('prepare'),
             apply: (bool) $this->option('apply'),

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Tests;
 
-use Nvl\Content\Data\ContentCompositionSnapshotData;
 use Nvl\Content\Services\ContentSnapshotIntegrity;
 use Nvl\Ownership\Services\OwnerIdentityResolver;
 use Nvl\Ownership\ValueObjects\OwnershipMapping;
@@ -23,10 +22,10 @@ abstract class OwnershipAdoptionTestCase extends OwnershipTestCase
         $c = $template->getConnection();
         $id = '10000000-0000-4000-8000-000000000001';
         $c->table($template->getTable())->insert(['id' => $id, 'key' => 'welcome', 'renderer' => 'test', 'status' => 'active', 'schema' => '{}', 'revision' => 1, 'company_id' => 7]);
-        $snapshot = new ContentCompositionSnapshotData((new TemplateVersion)->getMorphClass(), $this->legacyVersionId, TemplateVersion::CONTENT_GROUP, [], 'pending');
+        $snapshot = ['ownerType' => (new TemplateVersion)->getMorphClass(), 'ownerId' => $this->legacyVersionId, 'group' => TemplateVersion::CONTENT_GROUP, 'blocks' => [], 'version' => 'pending', 'tenantId' => null, 'formatVersion' => 1, 'ownershipContext' => null];
         $hash = app(ContentSnapshotIntegrity::class)->digest($snapshot);
-        $snapshot = new ContentCompositionSnapshotData($snapshot->ownerType, $snapshot->ownerId, $snapshot->group, [], $hash);
-        $c->table((new TemplateVersion)->getTable())->insert(['id' => $this->legacyVersionId, 'template_id' => $id, 'version' => 1, 'status' => 'published', 'revision' => 1, 'content_snapshot' => json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR), 'content_hash' => $hash]);
+        $snapshot['version'] = $hash;
+        $c->table((new TemplateVersion)->getTable())->insert(['id' => $this->legacyVersionId, 'template_id' => $id, 'version' => 1, 'status' => 'published', 'revision' => 1, 'content_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR), 'content_hash' => $hash]);
         $owner = app(OwnerIdentityResolver::class)->reference(OwnershipCompany::findOrFail(7));
 
         return [new OwnershipMapping('templates.templates', $id, $owner), new OwnershipMapping('templates.versions', $this->legacyVersionId, $owner)];

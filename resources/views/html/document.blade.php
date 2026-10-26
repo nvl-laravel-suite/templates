@@ -8,7 +8,7 @@
 <body>
     <main>
         @forelse($regions['main'] ?? $blocks as $block)
-            <x-nvl-content::block :block="$block" />
+            @include($block['view'], ['block' => $block])
         @empty
             {{ $data['content'] ?? '' }}
         @endforelse

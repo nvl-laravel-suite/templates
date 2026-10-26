@@ -15,6 +15,7 @@ use Nvl\Support\Ownership\Traits\HasOwnership;
 use Nvl\Support\Ownership\ValueObjects\OwnershipDefinition;
 use Nvl\Templates\Database\Factories\TemplateOwnerGrantFactory;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
+use Nvl\Templates\Ownership\TemplatesOwnership;
 
 /**
  * Recipient-owned revocable capability to copy one central immutable version.
@@ -55,7 +56,7 @@ final class TemplateOwnerGrant extends Model implements Ownable
     /** Capture this capability's recipient independently from its central source. */
     public static function ownershipDefinition(): OwnershipDefinition
     {
-        return OwnershipDefinition::captured();
+        return TemplatesOwnership::declared() ? OwnershipDefinition::captured() : OwnershipDefinition::unscoped();
     }
 
     /** Resolve the configured native capability table. */

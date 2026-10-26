@@ -18,14 +18,10 @@ use Nvl\Support\Ownership\Contracts\OwnershipQueueContext;
 use Nvl\Support\Ownership\Contracts\OwnershipQueuedJob;
 use Nvl\Support\Ownership\Enums\OwnershipContextMode;
 use Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope;
-use Nvl\Support\Tenancy\Contracts\TenantQueuedJob;
-use Nvl\Support\Tenancy\Enums\TenantContextMode;
-use Nvl\Support\Tenancy\ValueObjects\TenantContextSnapshot;
-use Nvl\Support\Tenancy\ValueObjects\TenantJobEnvelope;
-use Nvl\Templates\Actions\ProcessTemplateRenderAction;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Ownership\TemplatesOwnership;
+use Nvl\Templates\Services\TemplateRenderer;
 use Nvl\Templates\Services\TemplateRenderFailure;
 use Nvl\Templates\Support\TemplateRenderOverlapLock;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -35,7 +31,7 @@ use Throwable;
  * Idempotent queue boundary for persisted template renders.
  */
 #[FailOnTimeout]
-final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntilProcessing, ShouldQueue, TenantQueuedJob
+final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Queueable;
 
@@ -53,12 +49,8 @@ final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntil
     public function __construct(
         public readonly string $renderId,
         public readonly int $dispatchGeneration = 0,
-        ?TenantJobEnvelope $envelope = null,
         ?OwnershipJobEnvelope $ownershipEnvelope = null,
     ) {
-        $this->envelope = $envelope ?? new TenantJobEnvelope(
-            new TenantContextSnapshot(config('nvl-tenancy.enabled') === true ? TenantContextMode::Unresolved : TenantContextMode::Disabled),
-        );
         $this->ownershipEnvelope = $ownershipEnvelope ?? TemplatesOwnership::envelope();
         $this->processingToken = (string) Str::uuid();
         $this->onConnection(PackageOptions::queueConnection('templates'));
@@ -85,8 +77,6 @@ final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntil
         return $this->ownershipEnvelope;
     }
 
-    private readonly TenantJobEnvelope $envelope;
-
     /**
      * Return the persisted render identifier used by Laravel's dispatch lock.
      */
@@ -98,9 +88,7 @@ final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntil
             return app(OwnershipQueueContext::class)->run($this->ownershipEnvelope, fn (): string => $this->ownershipEnvelope->key($identity));
         }
 
-        return $this->envelope->context->mode === TenantContextMode::Disabled
-            ? $identity
-            : hash('sha256', serialize($this->envelope->context)).':'.$identity;
+        return $identity;
     }
 
     /** Return the inherited store used by Laravel's unique-job dispatch lock. */
@@ -110,10 +98,6 @@ final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntil
     }
 
     /** Return the producer context captured before native queue dispatch. */
-    public function tenantJobEnvelope(): TenantJobEnvelope
-    {
-        return $this->envelope;
-    }
 
     /**
      * @return list<int>
@@ -158,9 +142,9 @@ final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntil
     /**
      * Process the durable render under this job's stable lease token.
      */
-    public function handle(ProcessTemplateRenderAction $action): void
+    public function handle(TemplateRenderer $action): void
     {
-        $action->execute(
+        $action->process(
             $this->renderId,
             $this->processingToken,
             $this->dispatchGeneration,
@@ -199,12 +183,6 @@ final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntil
             ->whereKey($this->renderId)
             ->where('dispatch_generation', $this->dispatchGeneration)
             ->where('status', '!=', TemplateRenderStatus::Completed->value);
-
-        if ($this->envelope->context->mode === TenantContextMode::Tenant) {
-            $query->where('tenant_id', $this->envelope->context->tenantId?->value);
-        } elseif ($this->envelope->context->mode === TenantContextMode::Platform) {
-            $query->whereNull('tenant_id');
-        }
 
         $query
             ->where(function (Builder $query): void {

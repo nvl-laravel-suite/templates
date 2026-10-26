@@ -5,36 +5,28 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
-use Nvl\Content\Contracts\ExportContentSnapshotForCopyContract;
-use Nvl\Content\Data\ContentSnapshotCopyData;
-use Nvl\Filterable\Data\FilterSet;
 use Nvl\Ownership\Services\OwnershipRunner;
 use Nvl\Ownership\Services\OwnershipWriter;
 use Nvl\Ownership\ValueObjects\OwnershipAssignment;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Support\Ownership\Contracts\OwnershipQueuedJob;
 use Nvl\Support\Ownership\Exceptions\OwnershipViolation;
-use Nvl\Templates\Actions\AssignTemplateAction;
-use Nvl\Templates\Actions\ImportPlatformTemplateAction;
-use Nvl\Templates\Actions\ListTemplatesAction;
-use Nvl\Templates\Actions\ProcessTemplateRenderAction;
-use Nvl\Templates\Actions\QueueTemplateRenderAction;
 use Nvl\Templates\Contracts\TemplateCatalogAccess;
-use Nvl\Templates\Data\Mutations\AssignTemplateData;
-use Nvl\Templates\Data\Mutations\ImportPlatformTemplateData;
-use Nvl\Templates\Data\Mutations\RenderTemplateData;
-use Nvl\Templates\Data\TemplateActorData;
 use Nvl\Templates\Jobs\RenderTemplateJob;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateOwnerGrant;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Ownership\TemplateOwnerCatalog;
+use Nvl\Templates\Services\TemplateAssignments;
 use Nvl\Templates\Services\TemplateModelRegistry;
+use Nvl\Templates\Services\TemplateReader;
+use Nvl\Templates\Services\TemplateRenderer;
 use Nvl\Templates\Tests\Fixtures\OwnershipActor;
 use Nvl\Templates\Tests\Fixtures\OwnershipCompany;
 use Nvl\Templates\Tests\Fixtures\OwnershipTemplateHost;
 use Nvl\Templates\Tests\Fixtures\OwnershipTemplateScenario;
 use Nvl\Templates\Tests\OwnershipTestCase;
-use Nvl\Translatable\Services\TranslationWriter;
+use Nvl\Translatable\Services\RelatedTranslationStore;
 
 uses(OwnershipTestCase::class);
 it('publishes a native snapshot and processes an isolated durable render', function (): void {
@@ -42,8 +34,8 @@ it('publishes a native snapshot and processes an isolated durable render', funct
     config(['nvl-templates.rendering.output.persist' => false]);
     app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): void {
         $version = OwnershipTemplateScenario::version();
-        expect($version->content_snapshot?->formatVersion)->toBe(3);
-        $render = app(QueueTemplateRenderAction::class)->execute($version->template, new RenderTemplateData('en', ['name' => 'Ada'], idempotencyKey: 'one'), TemplateActorData::system());
+        expect($version->content_snapshot['formatVersion'])->toBe(3);
+        $render = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'one', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], SystemActor::Background);
         $job = null;
         Queue::assertPushed(RenderTemplateJob::class, function (RenderTemplateJob $item) use (&$job): bool {
             $job = $item;
@@ -51,7 +43,7 @@ it('publishes a native snapshot and processes an isolated durable render', funct
             return true;
         });
         expect($job)->toBeInstanceOf(OwnershipQueuedJob::class);
-        expect(app(ProcessTemplateRenderAction::class)->execute($render)->status->value)->toBe('completed');
+        expect(app(TemplateRenderer::class)->process($render)->status->value)->toBe('completed');
         expect(fn () => $render->refresh()->forceFill(['template_version_id' => (string) Str::uuid()])->saveQuietly())->toThrow(OwnershipViolation::class);
     });
 });
@@ -111,12 +103,12 @@ it('copies only an exact granted central version and denies revoked grants while
         $catalog = app(TemplateOwnerCatalog::class);
         $grant = $catalog->grant($source->id, $source->revision);
         expect(TemplateOwnerGrant::factory()->forVersion($source)->make())->toBeInstanceOf(TemplateOwnerGrant::class);
-        $request = new ImportPlatformTemplateData($grant->id, $grant->revision, $source->revision, 'welcome', 'owned-copy', []);
-        $copy = app(ImportPlatformTemplateAction::class)->execute($request, TemplateActorData::system());
-        expect($copy->id)->not->toBe($source->id)->and($copy->content_snapshot?->formatVersion)->toBe(3)->and($copy->content_snapshot?->ownerId)->toBe($copy->id);
-        expect(app(ImportPlatformTemplateAction::class)->execute($request, TemplateActorData::system())->id)->toBe($copy->id);
+        $request = ['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotencyKey' => 'owned-copy', 'mediaGrantIds' => []];
+        $copy = app(TemplateOwnerCatalog::class)->import($request, SystemActor::Background);
+        expect($copy->id)->not->toBe($source->id)->and($copy->content_snapshot['formatVersion'])->toBe(3)->and($copy->content_snapshot['ownerId'])->toBe($copy->id);
+        expect(app(TemplateOwnerCatalog::class)->import($request, SystemActor::Background)->id)->toBe($copy->id);
         $catalog->revoke($grant->id, $grant->revision);
-        expect(fn () => app(ImportPlatformTemplateAction::class)->execute($request, TemplateActorData::system()))->toThrow(OwnershipViolation::class);
+        expect(fn () => app(TemplateOwnerCatalog::class)->import($request, SystemActor::Background))->toThrow(OwnershipViolation::class);
         expect(TemplateVersion::query()->findOrFail($copy->id)->content_hash)->toBe($copy->content_hash);
     });
 });
@@ -127,8 +119,8 @@ it('protects published snapshots against raw writes and permits terminal payload
         $version = OwnershipTemplateScenario::version();
         $c = $version->getConnection();
         expect(fn () => $c->transaction(fn () => $c->table($version->getTable())->where('id', $version->id)->update(['content_hash' => str_repeat('0', 64)])))->toThrow(QueryException::class);
-        $render = app(QueueTemplateRenderAction::class)->execute($version->template, new RenderTemplateData('en', ['name' => 'Ada'], idempotencyKey: 'erase'), TemplateActorData::system());
-        expect(app(ProcessTemplateRenderAction::class)->execute($render)->payload)->toBeNull();
+        $render = app(TemplateRenderer::class)->queue($version->template, ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => 'erase', 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], SystemActor::Background);
+        expect(app(TemplateRenderer::class)->process($render)->payload)->toBeNull();
     });
 });
 it('reassigns an owner profile without changing the authority of an existing durable render', function (): void {
@@ -143,12 +135,12 @@ it('reassigns an owner profile without changing the authority of an existing dur
 
             return $host;
         });
-        $actor = TemplateActorData::system();
-        $assign = app(AssignTemplateAction::class);
-        $row = $assign->execute($first->template, AssignTemplateData::from(['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $first->id, 'expectedRevision' => 0]), $actor);
-        $render = app(QueueTemplateRenderAction::class)->execute($first->template, new RenderTemplateData('en', ['name' => 'Ada'], ownerType: 'member', ownerId: $host->id), $actor);
-        $replacement = $assign->execute($other->template, AssignTemplateData::from(['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $other->id, 'expectedRevision' => $row->revision]), $actor);
-        expect($replacement->template_id)->toBe($other->template_id)->and(app(ProcessTemplateRenderAction::class)->execute($render)->template_version_id)->toBe($first->id);
+        $actor = SystemActor::Background;
+        $assign = app(TemplateAssignments::class);
+        $row = $assign->assign($first->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $first->id, 'expectedRevision' => 0], $actor);
+        $render = app(TemplateRenderer::class)->queue($first->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'versionId' => null, 'idempotencyKey' => null, 'download' => false, 'locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
+        $replacement = $assign->assign($other->template, ['ownerType' => 'member', 'ownerId' => $host->id, 'profile' => 'default', 'settings' => [], 'versionId' => $other->id, 'expectedRevision' => $row->revision], $actor);
+        expect($replacement->template_id)->toBe($other->template_id)->and(app(TemplateRenderer::class)->process($render)->template_version_id)->toBe($first->id);
     });
 });
 
@@ -156,14 +148,15 @@ it('keeps native paginated Template reads bounded for one and twenty five roots'
     app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): void {
         for ($i = 0; $i < 25; $i++) {
             $template = TemplateModelRegistry::create(['key' => 'bounded-'.$i, 'renderer' => 'test', 'status' => 'active', 'schema' => []]);
-            app(TranslationWriter::class)->replace($template, ['en' => ['title' => 'Title '.$i]]);
+            $template->getConnection()->transaction(fn () => app(RelatedTranslationStore::class)->upsert($template, $template->translationDefinition(), 'en', ['title' => 'Title '.$i]));
         }
         $measure = function (int $size): int {
             DB::enableQueryLog();
             DB::flushQueryLog();
-            $page = app(ListTemplatesAction::class)->execute(new FilterSet, TemplateActorData::system(), $size);
+            $page = app(TemplateReader::class)->paginate([], SystemActor::Background, $size);
             $log = DB::getQueryLog();
             $count = count($log);
+            expect($count)->toBeGreaterThan(0);
             DB::disableQueryLog();
             expect($page->items())->toHaveCount($size)->and($page->total())->toBe(25);
 
@@ -185,25 +178,16 @@ it('rechecks the locked code definition after catalog content is staged', functi
     });
     $runner->run(OwnershipCompany::findOrFail(7), $actor, function () use ($source, $runner, $actor): void {
         $grant = app(TemplateOwnerCatalog::class)->grant($source->id, $source->revision);
-        $real = app(ExportContentSnapshotForCopyContract::class);
-        app()->instance(ExportContentSnapshotForCopyContract::class, new class($real, $runner, $actor, $source->template_id) implements ExportContentSnapshotForCopyContract
-        {
-            private bool $changed = false;
-
-            public function __construct(private ExportContentSnapshotForCopyContract $real, private OwnershipRunner $runner, private OwnershipActor $actor, private string $id) {}
-
-            public function execute(string $ownerAlias, string $ownerId, string $group, string $grantId): ContentSnapshotCopyData
-            {
-                $copy = $this->real->execute($ownerAlias, $ownerId, $group, $grantId);
-                if (! $this->changed) {
-                    $this->changed = true;
-                    $this->runner->central('templates-maintain', $this->actor, fn () => TemplateModelRegistry::query()->findOrFail($this->id)->forceFill(['renderer' => 'changed'])->save());
-                }
-
-                return $copy;
+        $changed = false;
+        $reads = 0;
+        $table = TemplateModelRegistry::newInstance()->getTable();
+        DB::listen(function ($query) use (&$changed, &$reads, $table, $runner, $actor, $source): void {
+            if (! $changed && str_contains($query->sql, 'select') && str_contains($query->sql, 'from "'.$table.'"') && ++$reads === 2) {
+                $changed = true;
+                $runner->central('templates-maintain', $actor, fn () => TemplateModelRegistry::query()->findOrFail($source->template_id)->forceFill(['renderer' => 'changed'])->save());
             }
         });
-        expect(fn () => app(ImportPlatformTemplateAction::class)->execute(new ImportPlatformTemplateData($grant->id, $grant->revision, $source->revision, 'welcome', 'stale-definition', []), TemplateActorData::system()))->toThrow(OwnershipViolation::class);
+        expect(fn () => app(TemplateOwnerCatalog::class)->import(['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotencyKey' => 'stale-definition', 'mediaGrantIds' => []], SystemActor::Background))->toThrow(OwnershipViolation::class);
         expect(TemplateModelRegistry::query()->count())->toBe(0);
     });
 });

@@ -10,11 +10,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Nvl\Content\Actions\SyncContentDefinitionsAction;
-use Nvl\Content\Data\ContentActorData;
 use Nvl\Content\Models\ContentBlock;
 use Nvl\Content\Providers\ContentServiceProvider;
-use Nvl\Data\Providers\DataServiceProvider;
+use Nvl\Content\Services\ContentDefinitions;
+use Nvl\Media\Contracts\MediaAuthorization;
 use Nvl\Media\Providers\MediaServiceProvider;
 use Nvl\Ownership\Contracts\CentralAccess;
 use Nvl\Ownership\Contracts\OwnerAccess;
@@ -25,13 +24,17 @@ use Nvl\Ownership\Services\OwnershipAdoptionRegistry;
 use Nvl\Ownership\Services\OwnershipRunner;
 use Nvl\Ownership\ValueObjects\OwnershipMapping;
 use Nvl\Ownership\ValueObjects\OwnershipOperation;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Ownership\Services\OwnershipStorageTables;
 use Nvl\Support\Ownership\ValueObjects\OwnershipResourceDefinition;
 use Nvl\Support\Providers\LocaleServiceProvider;
 use Nvl\Support\Providers\SupportServiceProvider;
+use Nvl\Templates\Contracts\TemplateAuthorization;
 use Nvl\Templates\Providers\TemplatesServiceProvider;
 use Nvl\Templates\Services\TemplateModelRegistry;
+use Nvl\Templates\Tests\Fixtures\AllowMediaAuthorization;
+use Nvl\Templates\Tests\Fixtures\AllowTemplateAuthorization;
 use Nvl\Templates\Tests\Fixtures\OwnershipActor;
 use Nvl\Templates\Tests\Fixtures\OwnershipCompany;
 use Nvl\Templates\Tests\Fixtures\OwnershipContentBlock;
@@ -43,6 +46,7 @@ use Nvl\Templates\Tests\Fixtures\OwnershipTemplateOwnerResolver;
 use Nvl\Templates\Tests\Fixtures\TestTemplateRenderer;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\TestCase;
+use Spatie\LaravelData\LaravelDataServiceProvider as DataServiceProvider;
 
 /** Exercises committed ownership and audit behavior without NVL Tenancy or Auth providers. */
 abstract class OwnershipTestCase extends TestCase
@@ -78,6 +82,7 @@ abstract class OwnershipTestCase extends TestCase
             'nvl-tenancy.enabled' => false,
             'nvl-content.models.block' => $this->blockClass(),
             'nvl-content.ownership.owner_resources' => ['fixture.template-hosts', 'templates.versions'],
+            'nvl-content.media.enabled' => true,
             'nvl-content.authorization.callback' => static fn (): bool => true,
             'nvl-content.locales.available' => ['en', 'bg'],
             'nvl-content.locales.required_on_publish' => ['en'],
@@ -86,7 +91,8 @@ abstract class OwnershipTestCase extends TestCase
             'nvl-templates.ownership.owner_resources' => ['member' => 'fixture.template-hosts'],
             'nvl-templates.models.template' => OwnershipTemplate::class,
             'nvl-templates.migrations.enabled' => false,
-            'nvl-templates.authorization.callback' => static fn (): bool => true,
+            'nvl-templates.integrations.content' => true,
+            'nvl-templates.authorization.class' => AllowTemplateAuthorization::class,
             'nvl-templates.owners' => ['member' => OwnershipTemplateOwnerResolver::class],
             'nvl-templates.renderers' => ['test' => TestTemplateRenderer::class],
             'nvl-templates.definitions' => ['welcome' => ['renderer' => 'test', 'view' => 'template-tests::core', 'profiles' => ['default'], 'schema' => ['name' => ['type' => 'string']], 'required_regions' => ['main'], 'allowed_content_definitions' => ['copy']]],
@@ -115,6 +121,8 @@ abstract class OwnershipTestCase extends TestCase
     {
         $this->originalMorphMap = Relation::morphMap();
         parent::setUp();
+        $this->app->bind(TemplateAuthorization::class, AllowTemplateAuthorization::class);
+        $this->app->bind(MediaAuthorization::class, AllowMediaAuthorization::class);
         $this->app['view']->addNamespace('template-tests', __DIR__.'/Fixtures/views');
         $connection = TemplateModelRegistry::newInstance()->getConnection();
         $schema = $connection->getSchemaBuilder();
@@ -210,7 +218,7 @@ abstract class OwnershipTestCase extends TestCase
             }
         });
         $this->adoptOwnership();
-        $this->app->make(OwnershipRunner::class)->central('content-definitions', OwnershipActor::firstOrFail(), fn () => $this->app->make(SyncContentDefinitionsAction::class)->execute(ContentActorData::system()));
+        $this->app->make(OwnershipRunner::class)->central('content-definitions', OwnershipActor::firstOrFail(), fn () => $this->app->make(ContentDefinitions::class)->sync(SystemActor::Background));
     }
 
     /** Activate this fixture graph after its source tables and host policies exist. */

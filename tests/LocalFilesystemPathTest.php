@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Filesystem\Filesystem;
 use Nvl\Templates\Services\SafeFilesystemPathResolver;
 use Nvl\Templates\Support\LocalFilesystemPath;
-use Nvl\Templates\Support\PdfConfig\EngineConfig;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\PdfConfig\EngineConfig;
 
 it('normalizes a local Windows path without changing its drive', function (string $path, string $normalized): void {
     if (DIRECTORY_SEPARATOR !== '\\') {
@@ -291,7 +291,7 @@ it('passes the native temporary directory spelling through fluent PDF options', 
         : '/safe templates/nested/work';
     $options = (new EngineConfig)->setTempDir($path)->toPdfOptions();
 
-    expect($options->temporaryDirectory)->toBe($path);
+    expect($options['temporaryDirectory'])->toBe($path);
 });
 
 it('refuses unsafe temporary directory spellings in the public fluent adapter', function (string $path): void {

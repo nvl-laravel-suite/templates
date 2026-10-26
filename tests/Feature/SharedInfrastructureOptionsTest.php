@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Cache;
 use Nvl\Templates\Jobs\RenderTemplateJob;
-use Nvl\Templates\Support\TemplatesRouteConfiguration;
+use Nvl\Templates\Tests\Fixtures\Compatibility\Support\TemplatesRouteConfiguration;
 
 it('inherits Core queues when creating a render job', function (): void {
     config([

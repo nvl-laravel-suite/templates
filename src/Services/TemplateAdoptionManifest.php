@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Nvl\Templates\Services;
 
 use InvalidArgumentException;
-use Nvl\Content\Data\ContentActorData;
 use Nvl\Content\Enums\ContentVisibility;
 use Nvl\Content\Services\ContentDefinitionRegistry;
 use Nvl\Content\Services\ContentLocalePolicy;
@@ -15,7 +14,7 @@ use Nvl\Content\Validation\ContentValueValidator;
 use Nvl\Media\Enums\MediaLifecycleStatus;
 use Nvl\Media\Models\Media;
 use Nvl\Media\Services\MediaModelRegistry;
-use Nvl\Templates\Data\MediaTemplateAssetData;
+use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Enums\TemplateStatus;
 
 /**
@@ -23,7 +22,7 @@ use Nvl\Templates\Enums\TemplateStatus;
  *
  * @phpstan-type TemplateItem array{legacy_key: string, key: string, status: TemplateStatus, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
  * @phpstan-type ContentItem array{legacy_identity: string, identity: string, definition: string, key: string, scope: string, scopeKey: string, visibility: ContentVisibility, values: array<string, mixed>, translations: array<string, array<string, mixed>>, metadata: array<string, mixed>, publish: bool}
- * @phpstan-type AssetItem array{legacy_alias: string, key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null, asset: MediaTemplateAssetData}
+ * @phpstan-type AssetItem array{legacy_alias: string, key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null, asset: array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expectedRevision: int|null}}
  * @phpstan-type NormalizedManifest array{staging_connection: string, staging_tables: list<string>, legacy_asset_count: int, templates: list<TemplateItem>, content: list<ContentItem>, assets: list<AssetItem>}
  */
 final readonly class TemplateAdoptionManifest
@@ -219,10 +218,10 @@ final readonly class TemplateAdoptionManifest
         $contentDefinition = $this->contentDefinitions->get($definition);
         $this->contentScopes->assert($scope, $scopeKey, $contentDefinition);
         $validated = $this->contentValues->validate(
-            $contentDefinition->schema->toSchema(),
-            $this->contentPatch->merge($contentDefinition->defaults, $values),
+            $contentDefinition['schema'],
+            $this->contentPatch->merge($contentDefinition['defaults'], $values),
             $translations,
-            ContentActorData::system(),
+            SystemActor::Background,
             $visibility,
             publishing: $publish,
         );
@@ -287,15 +286,7 @@ final readonly class TemplateAdoptionManifest
             );
         }
 
-        $asset = new MediaTemplateAssetData(
-            key: $key,
-            mediaId: $mediaId,
-            scope: $scope,
-            type: $type,
-            variation: $variation,
-            delivery: $delivery,
-            expectedRevision: $expectedRevision,
-        );
+        $asset = ['scope' => $scope, 'type' => $type, 'variation' => $variation, 'delivery' => $delivery, 'expectedRevision' => $expectedRevision, 'key' => $key, 'mediaId' => $mediaId];
         $this->assets->validate($asset);
 
         if ($variation !== '') {

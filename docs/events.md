@@ -20,7 +20,7 @@ Use Nvl\Support\Events\DomainEventDispatcher::dispatch($event, $writerConnection
 
 ## Payload security and no-op behavior
 
-Template/version/render and actor identifiers only; no rendered output, definition payload or assigned model.
+TemplateChanged includes the explicit native actor; do not serialize it as a public response. Render facts omit rendered output, definition payload and assigned models.
 
 Existing assignment/version/render guards govern publication. Completed render describes its persisted record, not durable listener execution.
 
@@ -28,96 +28,18 @@ Actor/owner identifiers do not grant access. Listeners must preserve the capture
 
 ## Canonical events
 
-| Event | Schema version | Trigger |
-| --- | --- | --- |
-| [TemplateChanged](#templatechanged) | 1 | Template aggregate/assignment/version changed. |
-| [TemplateRendered](#templaterendered) | 1 | Persisted render completed. |
+The event constructors and PHPDoc define the current payload types and shapes:
 
-### TemplateChanged
+- [TemplateChanged](../src/Events/TemplateChanged.php)
+- [TemplateRendered](../src/Events/TemplateRendered.php)
 
-`Nvl\Templates\Events\TemplateChanged` · [source](../src/Events/TemplateChanged.php) · event schema `1`.
-
-Template aggregate/assignment/version changed.
-
-Constructor parameters, in native order:
-
-| Parameter | Native PHP type | Visibility | Default | Collection shape |
-| --- | --- | --- | --- | --- |
-| `$templateId` | `string` | public | `required` | — |
-| `$operation` | `string` | public | `required` | — |
-| `$actor` | `Nvl\Templates\Data\TemplateActorData` | public | `required` | — |
-| `$schemaVersion` | `int` | public | `1` | — |
-
-Public payload fields:
-
-| Field | Native PHP type | Collection shape |
-| --- | --- | --- |
-| `$templateId` | `string` | — |
-| `$operation` | `string` | — |
-| `$actor` | `Nvl\Templates\Data\TemplateActorData` | — |
-| `$schemaVersion` | `int` | — |
-
-Producers and exact scheduling connection expressions (variables are resolved in the linked source):
-
-| Producer | Source connection |
-| --- | --- |
-| [Actions/AssignTemplateAction.php](../src/Actions/AssignTemplateAction.php) | `$template->getConnection()` |
-| [Actions/CreateTemplateAction.php](../src/Actions/CreateTemplateAction.php) | `$template->getConnection()` |
-| [Actions/CreateTemplateVersionAction.php](../src/Actions/CreateTemplateVersionAction.php) | `$template->getConnection()` |
-| [Actions/PublishTemplateVersionAction.php](../src/Actions/PublishTemplateVersionAction.php) | `$version->getConnection()` |
-| [Actions/UnassignTemplateAction.php](../src/Actions/UnassignTemplateAction.php) | `$assignment->getConnection()` |
-| [Actions/UpdateTemplateAction.php](../src/Actions/UpdateTemplateAction.php) | `$template->getConnection()` |
-| [Actions/UpdateTemplateVersionAction.php](../src/Actions/UpdateTemplateVersionAction.php) | `$version->getConnection()` |
-
-### TemplateRendered
-
-`Nvl\Templates\Events\TemplateRendered` · [source](../src/Events/TemplateRendered.php) · event schema `1`.
-
-Persisted render completed.
-
-Constructor parameters, in native order:
-
-| Parameter | Native PHP type | Visibility | Default | Collection shape |
-| --- | --- | --- | --- | --- |
-| `$renderId` | `string` | public | `required` | — |
-| `$templateId` | `string` | public | `required` | — |
-| `$versionId` | `string` | public | `required` | — |
-| `$schemaVersion` | `int` | public | `1` | — |
-
-Public payload fields:
-
-| Field | Native PHP type | Collection shape |
-| --- | --- | --- |
-| `$renderId` | `string` | — |
-| `$templateId` | `string` | — |
-| `$versionId` | `string` | — |
-| `$schemaVersion` | `int` | — |
-
-Producers and exact scheduling connection expressions (variables are resolved in the linked source):
-
-| Producer | Source connection |
-| --- | --- |
-| [Actions/ProcessTemplateRenderAction.php](../src/Actions/ProcessTemplateRenderAction.php) | `$render->getConnection()` |
-
-## Referenced payload types
-
-Native event field types are listed above; nested declared fields and backed enum values follow. Private captured envelopes are included because serialized/queued objects retain them. Dates use `Carbon\CarbonImmutable`. Spatie Data serialization can also carry its protected transformation metadata; immutable serialized payload graphs are checked by the C4 contract suite.
-
-### TemplateActorData
-
-`Nvl\Templates\Data\TemplateActorData` · [source](../src/Data/TemplateActorData.php).
-
-| Declared public field | Native PHP type | Collection shape |
-| --- | --- | --- |
-| `$type` | `?string` | — |
-| `$id` | `?string` | — |
-| `$system` | `bool` | — |
+`TemplateChanged` carries an explicit `Authenticatable|SystemActor`; `TemplateRendered` identifies the render, template and version. The consumer owns presentation and serialization.
 
 ## Deferred acceptance checks
 
-Final testing must compare catalog types/defaults/aliases with actual classes, recursively inspect producer payloads, and prove source outer commit, nested rollback, unrelated connection independence and retry behavior without an uncommitted test-harness transaction. Where applicable it must cover legacy exact/cached/queued listeners, canonical fakes and wildcard delivery, tenant capture, package no-op guards and observational failure containment. This document does not report those checks as passing.
+Final testing must compare catalog types/defaults/aliases with actual classes, recursively inspect producer payloads, and prove source outer commit, nested rollback, unrelated connection independence and retry behavior without an uncommitted test-harness transaction. Where applicable it must cover cached/queued listeners, canonical fakes, ownership capture, package no-op guards and observational failure containment. This document does not report those checks as passing.
 
 ## Consumer event assertions
 
-Use the canonical event class listed in the catalog for `Event::fake([...])` and `Event::assertDispatched(...)`. Laravel fake filters compare the emitted class name; an old alias import does not rename that canonical object. Legacy exact listeners are bridged at delivery time through Laravel’s native dispatcher. Keep compatibility listener tests on their exact legacy name, and migrate suffix-specific wildcards to canonical names.
+Use the canonical event class for `Event::fake([...])` and `Event::assertDispatched(...)`. Laravel fake filters compare the emitted class name. Update listeners and fakes to the current source event class; old aliases are not a Light compatibility API.
 
