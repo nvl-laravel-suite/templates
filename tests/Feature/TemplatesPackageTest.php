@@ -400,7 +400,7 @@ it('keeps localized template list queries independent of result size', function 
             $actor,
             100,
         );
-        $protectedQueries = static fn (): array => array_values(array_filter(DB::getQueryLog(), static fn (array $query): bool => str_contains($query['query'], '"nvl_templates_')));
+        $protectedQueries = static fn (): array => array_values(array_filter(DB::getQueryLog(), static fn (array $query): bool => preg_match('/^select .* from ["`]?nvl_templates_/i', $query['query']) === 1));
         $queryCount = count($protectedQueries());
         expect($queryCount)->toBeGreaterThan(0);
 
