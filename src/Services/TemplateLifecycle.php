@@ -40,7 +40,7 @@ final readonly class TemplateLifecycle
     {
         $data = app(TemplateContentGuard::class)->createTemplate($data);
         $data += ['status' => TemplateStatus::Active, 'metadata' => [], 'translations' => []];
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(TemplateAbility::Create, $actor, ['key' => $data['key']]);
         $definition = $this->definitions->get($data['key']);
         $this->guard->metadata($data['metadata']);
@@ -80,7 +80,7 @@ final readonly class TemplateLifecycle
         $data = app(TemplateContentGuard::class)->updateTemplate($data);
         $data += ['metadata' => [], 'translations' => []];
         $templateId = $template instanceof Template ? $template->id : $template;
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Update,
             $actor,
@@ -130,7 +130,7 @@ final readonly class TemplateLifecycle
         $data = app(TemplateContentGuard::class)->createVersion($data);
         $data += ['metadata' => []];
         $templateId = $template instanceof Template ? $template->id : $template;
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Update,
             $actor,
@@ -168,7 +168,7 @@ final readonly class TemplateLifecycle
         $data = app(TemplateContentGuard::class)->updateVersion($data);
         $data += ['metadata' => []];
         $versionId = $version instanceof TemplateVersion ? $version->id : $version;
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Update,
             $actor,
@@ -215,7 +215,7 @@ final readonly class TemplateLifecycle
             throw new InvalidArgumentException('Publishing stored template Content requires the enabled Content integration.');
         }
         $versionId = $version instanceof TemplateVersion ? $version->id : $version;
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Publish,
             $actor,
@@ -333,7 +333,7 @@ final readonly class TemplateLifecycle
     /** Delete the admitted template and its dependent versions in the source transaction. */
     public function delete(Template|string $template, Authenticatable|SystemActor $actor): void
     {
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $id = $template instanceof Template ? $template->id : $template;
         TemplateModelRegistry::newInstance()->getConnection()->transaction(function () use ($id, $actor): void {
             $model = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')->lockForUpdate()->findOrFail($id);

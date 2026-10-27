@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use JsonException;
+use Nvl\Support\Auth\CanonicalActorResolver;
 use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Support\TemplatesConfiguration;
@@ -23,14 +24,19 @@ use Nvl\Translatable\Rules\SupportedLocaleMapRule;
  */
 final class TemplateContentGuard
 {
-    public function actor(Authenticatable|SystemActor $actor): void
+    public function __construct(private readonly CanonicalActorResolver $actors) {}
+
+    /** Supply current canonical actor attributes before the host template policy. */
+    public function actor(Authenticatable|SystemActor $actor): Authenticatable|SystemActor
     {
         if ($actor instanceof SystemActor) {
-            return;
+            return $actor;
         }
-        if (! $actor instanceof Model || ! $actor->exists || $actor->getKey() === null || $actor->getRawOriginal($actor->getKeyName()) !== $actor->getKey() || ! $actor->newQuery()->whereKey($actor->getKey())->exists()) {
+        if (! $actor instanceof Model) {
             throw new AuthorizationException('Templates requires a persisted actor.');
         }
+
+        return $this->actors->resolve($actor);
     }
 
     /** Resolve the persisted actor identity without coercing objects or arrays. */

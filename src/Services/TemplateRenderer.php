@@ -51,7 +51,7 @@ final readonly class TemplateRenderer
     public function render(RenderableTemplate|Template|string $template, array $context, array $options, Authenticatable|SystemActor $actor): array
     {
         if ($template instanceof RenderableTemplate) {
-            app(TemplateContentGuard::class)->actor($actor);
+            $actor = app(TemplateContentGuard::class)->actor($actor);
             $this->authorization->authorize(TemplateAbility::Render, $actor, ['template' => $template->key]);
             /** @var array{renderer?: string|null, locale?: string|null, subject?: string|null, filename?: string|null, pdf?: array{pageSize?: PdfPageSize|null, orientation?: PdfOrientation|null, margins?: array{left?: float|null, right?: float|null, top?: float|null, bottom?: float|null, header?: float|null, footer?: float|null}|null, defaultFont?: string|null, defaultFontSize?: float|null, dpi?: int|null, imageDpi?: int|null, imageQuality?: int|null, showImageErrors?: bool|null, temporaryDirectory?: string|null, title?: string|null, author?: string|null, creator?: string|null, subject?: string|null, keywords?: string|null, headerView?: string|null, headerHtml?: string|null, headerData?: array<string, mixed>, footerView?: string|null, footerHtml?: string|null, footerData?: array<string, mixed>, watermark?: string|null, watermarkOpacity?: float|null, compress?: bool|null, pdfa?: bool|null, pdfaAuto?: bool|null, protectionPermissions?: list<string>, userPassword?: string|null, ownerPassword?: string|null}|null, rendererOptions?: array<string, mixed>} $codeOptions */
             $codeOptions = [...($template->options ?? []), ...$options];
@@ -99,7 +99,7 @@ final readonly class TemplateRenderer
                     static fn ($query) => $query->where('key', $template),
                 )
                 ->firstOrFail();
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Render,
             $actor,
@@ -138,7 +138,7 @@ final readonly class TemplateRenderer
                     static fn ($query) => $query->where('key', $template),
                 )
                 ->firstOrFail();
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Render,
             $actor,
@@ -457,7 +457,7 @@ final readonly class TemplateRenderer
      */
     public function recover(Authenticatable|SystemActor $actor): Collection
     {
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(TemplateAbility::Render, $actor, ['recovery' => true]);
 
         return TemplateModelRegistry::newInstance()->getConnection()

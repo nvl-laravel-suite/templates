@@ -36,7 +36,7 @@ final readonly class TemplateReader
                 'assignments',
             ])
             ->findOrFail($templateId);
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::View,
             $actor,
@@ -57,7 +57,7 @@ final readonly class TemplateReader
         Authenticatable|SystemActor $actor,
         ?int $perPage = null,
     ): LengthAwarePaginator {
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(TemplateAbility::List, $actor);
         $query = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
             ->with('translations');
@@ -95,7 +95,7 @@ final readonly class TemplateReader
         $renderId = $render instanceof TemplateRender ? $render->id : $render;
         $model = $this->boundary->query(TemplateRender::query(), 'templates.renders')
             ->findOrFail($renderId);
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::View,
             $actor,
@@ -138,7 +138,7 @@ final readonly class TemplateReader
         Authenticatable|SystemActor $actor,
         ?int $perPage = null,
     ): LengthAwarePaginator {
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::View,
             $actor,

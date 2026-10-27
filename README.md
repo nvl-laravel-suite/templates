@@ -1,12 +1,14 @@
 # NVL Templates
 
 Reusable template definitions, versions, assignments and rendering for PHP 8.4 and Laravel 13. Native services own validation, authorization, version integrity, ownership, transactions, leases, output bounds and durable recovery.
+Eloquent actors are reloaded from their class-defined canonical storage before template policies inspect them. Dirty keys, altered storage, detached actors and unavailable rows reject; caller attributes and loaded relations do not carry policy privileges. These entry points retain their persisted Eloquent-actor requirement; the host policy still decides access. Explicit system actors remain subject to that policy.
+
 
 Consumers own data objects, Actions, controllers, routes, view models and download responses. Use native models, enums and documented arrays; no package DTO or fluent compatibility layer is required.
 
 ## Services
 
-- `TemplateDefinitions`: sync registered definitions with an explicit actor and optional dry run.
+- `TemplateDefinitions`: sync registered definitions with an explicit actor and optional dry run. Authorization receives `TemplateAbility::Update` with `operation: synchronize_definitions` and the exact validated `definitions` registry snapshot. That same snapshot is persisted after admission; source synchronization grants do not imply stored-template management authority.
 - `TemplateLifecycle`: create/update/delete templates, create/update/publish versions.
 - `TemplateAssignments`: assign/unassign admitted owners.
 - `TemplateReader`: authorized template/version and render-record reads, pagination and render history.

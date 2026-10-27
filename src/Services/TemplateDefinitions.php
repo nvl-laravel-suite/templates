@@ -28,13 +28,16 @@ final readonly class TemplateDefinitions
      */
     public function sync(Authenticatable|SystemActor $actor, bool $dryRun = false): Collection
     {
-        app(TemplateContentGuard::class)->actor($actor);
-        $this->authorization->authorize(TemplateAbility::Update, $actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
+        $registered = $this->definitions->all();
+        $this->authorization->authorize(TemplateAbility::Update, $actor, [
+            'operation' => 'synchronize_definitions',
+            'definitions' => $registered,
+        ]);
 
         return TemplateModelRegistry::newInstance()->getConnection()
-            ->transaction(function () use ($dryRun): Collection {
+            ->transaction(function () use ($dryRun, $registered): Collection {
                 $canonicalJson = new CanonicalJson;
-                $registered = $this->definitions->all();
                 $registeredKeys = array_keys($registered);
                 $stored = TemplateModelRegistry::query()
                     ->lockForUpdate()

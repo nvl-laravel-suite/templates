@@ -41,7 +41,7 @@ final readonly class TemplateAssignments
         $data = app(TemplateContentGuard::class)->assign($data);
         $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expected_revision' => 0];
         $templateId = $template instanceof Template ? $template->id : $template;
-        app(TemplateContentGuard::class)->actor($actor);
+        $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Assign,
             $actor,
@@ -157,7 +157,7 @@ final readonly class TemplateAssignments
                 $assignment = $this->boundary->query(TemplateAssignment::query(), 'templates.assignments')
                     ->lockForUpdate()
                     ->findOrFail($assignmentId);
-                app(TemplateContentGuard::class)->actor($actor);
+                $actor = app(TemplateContentGuard::class)->actor($actor);
                 $this->authorization->authorize(
                     TemplateAbility::Assign,
                     $actor,
