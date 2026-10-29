@@ -55,7 +55,7 @@ final class OwnershipWorkerProvider extends ServiceProvider
             'nvl-comments.moderation.new_status' => 'approved',
             'nvl-comments.mutation_lock.enabled' => false,
             'nvl-content.migrations.enabled' => false,
-            'nvl-media.deduplication_lock.store' => 'array',
+            'nvl-media.locks.deduplication.store' => 'array',
             'nvl-media.routes.api_enabled' => false,
             'auth.providers.users.model' => OwnershipActor::class,
         ]);
@@ -64,7 +64,7 @@ final class OwnershipWorkerProvider extends ServiceProvider
         $this->app->make(Repository::class)->set([
             'database.connections.sqlite' => self::$source,
             'app.key' => 'base64:'.base64_encode(str_repeat('k', 32)),
-            'queue.default' => 'database', 'nvl-templates.rendering.connection' => 'database',
+            'queue.default' => 'database', 'nvl-templates.queue.connection' => 'database',
             'queue.connections.database.connection' => 'sqlite',
             'queue.failed' => ['driver' => 'database-uuids', 'database' => 'sqlite', 'table' => 'failed_jobs'],
             'cache.default' => 'database', 'cache.stores.database.connection' => 'sqlite', 'cache.stores.database.lock_connection' => 'sqlite',

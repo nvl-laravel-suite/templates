@@ -65,7 +65,7 @@ if (class_exists(AssetFetcher::class)) {
             }
 
             $maximum = TemplatesConfiguration::positiveInteger(
-                'nvl-templates.compatibility.assets.maximum_bytes',
+                'nvl-templates.assets.maximum_bytes',
                 5_242_880,
             );
 

@@ -895,7 +895,7 @@ it('resolves revision-aware class-template aliases through NVL Media', function 
     );
     $absolutePath = Storage::disk('public')->path($path);
     config()->set(
-        'nvl-templates.compatibility.assets.allowed_local_roots',
+        'nvl-templates.assets.allowed_local_roots',
         [dirname($absolutePath, 3)],
     );
     $registry = app(MediaTemplateAssetRegistry::class);
@@ -1569,7 +1569,7 @@ it('checks relative PDF resources against local roots at the file read boundary'
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     ));
     File::copy($allowed.'/logo.png', $outside.'/private.png');
-    config()->set('nvl-templates.compatibility.assets.allowed_local_roots', [$allowed]);
+    config()->set('nvl-templates.assets.allowed_local_roots', [$allowed]);
     $workingDirectory = getcwd();
     chdir($root);
 
@@ -1610,7 +1610,7 @@ it('guards nested PDF image reads after the source HTML has passed validation', 
     File::put($allowed.'/image.svg', '<svg xmlns="http://www.w3.org/2000/svg" '
         .'xmlns:xlink="http://www.w3.org/1999/xlink" width="10" height="10">'
         .'<image width="10" height="10" xlink:href="'.$outside.'/private.png"/></svg>');
-    config()->set('nvl-templates.compatibility.assets.allowed_local_roots', [$allowed]);
+    config()->set('nvl-templates.assets.allowed_local_roots', [$allowed]);
 
     try {
         expect(fn () => app(PdfService::class)->renderHtml(
@@ -1630,7 +1630,7 @@ it('enforces PDF remote asset policy at the actual nested fetch boundary', funct
         .'xmlns:xlink="http://www.w3.org/1999/xlink" width="10" height="10">'
         .'<image width="10" height="10" xlink:href="https://forbidden.example.test/private.png"/></svg>');
     config()->set([
-        'nvl-templates.compatibility.assets.allowed_local_roots' => [$root],
+        'nvl-templates.assets.allowed_local_roots' => [$root],
         'nvl-templates.pdf.remote_assets.enabled' => true,
         'nvl-templates.pdf.remote_assets.allowed_hosts' => ['allowed.example.test'],
     ]);
@@ -1667,7 +1667,7 @@ it('fetches allowed PDF assets with bounded bodies and no redirects', function (
     );
     expect($rendered->getContent())->toContain('/Subtype /Image');
 
-    config()->set('nvl-templates.compatibility.assets.maximum_bytes', 4);
+    config()->set('nvl-templates.assets.maximum_bytes', 4);
     $fetcher = app(PdfAssetFetcher::class);
     expect(fn () => $fetcher->fetchDataFromPath('https://allowed.example.test/oversized'))
         ->toThrow(TemplateResolutionException::class, 'byte limit')

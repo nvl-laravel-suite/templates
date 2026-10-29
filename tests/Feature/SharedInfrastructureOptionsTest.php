@@ -9,8 +9,6 @@ use Nvl\Templates\Tests\Fixtures\Compatibility\Support\TemplatesRouteConfigurati
 it('inherits Core queues when creating a render job', function (): void {
     config([
         'nvl-templates.queue' => ['connection' => null, 'name' => null],
-        'nvl-templates.rendering.connection' => null,
-        'nvl-templates.rendering.queue' => null,
         'nvl-core.queue' => ['connection' => 'shared-jobs', 'name' => 'shared-renders'],
     ]);
     $job = new RenderTemplateJob('render-id');

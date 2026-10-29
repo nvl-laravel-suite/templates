@@ -29,3 +29,5 @@ Bind host `TemplateAuthorization` policy. Background identities require explicit
 The deprecated Tenancy bridge, package HTTP layer, passive display carriers and forwarding/fluent PDF helpers are removed. Consumers own their presentation and filesystem/download wrappers. Choose one migration owner and preserve populated rendering and ownership facts during adoption.
 
 See [events](docs/events.md), [upgrading](UPGRADING.md), [security](SECURITY.md) and [contributing](CONTRIBUTING.md).
+
+Shared [service contracts, model extensions and composition](https://github.com/nvl-laravel-suite/laravel-suite/blob/main/docs/consumer-api.md) apply alongside the package-specific rules above.

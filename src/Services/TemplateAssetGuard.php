@@ -67,7 +67,7 @@ final class TemplateAssetGuard
 
         $size = filesize($resolved);
         $maximum = TemplatesConfiguration::positiveInteger(
-            'nvl-templates.compatibility.assets.maximum_bytes',
+            'nvl-templates.assets.maximum_bytes',
             5_242_880,
         );
 
@@ -108,7 +108,7 @@ final class TemplateAssetGuard
         $this->imageMimeType($declaredMimeType);
         $bytes = base64_decode(str_replace(["\r", "\n"], '', $matches[2]), true);
         $maximum = TemplatesConfiguration::positiveInteger(
-            'nvl-templates.compatibility.assets.maximum_inline_bytes',
+            'nvl-templates.assets.maximum_inline_bytes',
             2_097_152,
         );
 
@@ -179,7 +179,7 @@ final class TemplateAssetGuard
     private function withinAllowedRoot(string $path): bool
     {
         $roots = config(
-            'nvl-templates.compatibility.assets.allowed_local_roots',
+            'nvl-templates.assets.allowed_local_roots',
             [resource_path(), storage_path('app')],
         );
 

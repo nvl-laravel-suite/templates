@@ -18,10 +18,10 @@ return [
     'tables' => [
         'owner_grants' => TemplatesTables::OwnerGrants,
         'templates' => TemplatesTables::Templates,
-        'templates_i18n' => TemplatesTables::I18n,
-        'template_versions' => TemplatesTables::Versions,
-        'template_assignments' => TemplatesTables::Assignments,
-        'template_renders' => TemplatesTables::Renders,
+        'i18n' => TemplatesTables::I18n,
+        'versions' => TemplatesTables::Versions,
+        'assignments' => TemplatesTables::Assignments,
+        'renders' => TemplatesTables::Renders,
     ],
 
     'migrations' => [
@@ -96,8 +96,6 @@ return [
     ],
 
     'rendering' => [
-        'queue' => null,
-        'connection' => null,
         'tries' => 3,
         'timeout' => 60,
         'lease_seconds' => 75,
@@ -114,14 +112,6 @@ return [
         ],
     ],
 
-    'compatibility' => [
-        'assets' => [
-            'allowed_local_roots' => [resource_path(), storage_path('app')],
-            'maximum_bytes' => 5_242_880,
-            'maximum_inline_bytes' => 2_097_152,
-        ],
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Class-template asset aliases
@@ -132,6 +122,9 @@ return [
     |
     */
     'assets' => [
+        'allowed_local_roots' => [resource_path(), storage_path('app')],
+        'maximum_bytes' => 5_242_880,
+        'maximum_inline_bytes' => 2_097_152,
         'driver' => 'null',
         'media' => [
             'aliases' => [],
@@ -194,4 +187,5 @@ return [
             'pdfa_auto' => false,
         ],
     ],
+    'queue' => ['connection' => null, 'name' => null],
 ];

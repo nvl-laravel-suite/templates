@@ -129,7 +129,7 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
         $this->publishes([
             __DIR__.'/../../lang' => lang_path('vendor/nvl-templates'),
         ], 'nvl-templates-translations');
-        $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, ['template-version'], package: 'templates');
+        $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, package: 'templates');
         $assets = $this->app->make(MediaTemplateAssetRegistry::class);
         $this->registerRenderers($renderers);
         $this->loadViewsFrom(
@@ -190,13 +190,13 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
 
         $this->publishes([
             __DIR__.'/../../config/nvl-templates.php' => config_path('nvl-templates.php'),
-        ], 'templates-config');
+        ], 'nvl-templates-config');
         $this->publishes([
             __DIR__.'/../../resources/views' => $this->publishedViewPath(),
-        ], 'templates-views');
+        ], 'nvl-templates-views');
         $this->publishesMigrations([
             __DIR__.'/../../database/migrations' => database_path('migrations'),
-        ], 'templates-migrations');
+        ], 'nvl-templates-migrations');
     }
 
     private function registerRenderers(TemplateRendererRegistry $registry): void

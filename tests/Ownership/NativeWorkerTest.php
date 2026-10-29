@@ -50,7 +50,7 @@ it('runs captured Template workers with private Media outputs and races version 
         $t->string('owner');
         $t->integer('expiration');
     });
-    config(['app.key' => 'base64:'.base64_encode(str_repeat('k', 32)), 'nvl-templates.rendering.connection' => 'database', 'queue.default' => 'database', 'queue.connections.database.connection' => 'sqlite', 'queue.failed' => ['driver' => 'database-uuids', 'database' => 'sqlite', 'table' => 'failed_jobs'], 'cache.default' => 'database', 'cache.stores.database.connection' => 'sqlite', 'cache.stores.database.lock_connection' => 'sqlite', 'cache.stores.database.table' => 'cache', 'cache.stores.database.lock_table' => 'cache_locks']);
+    config(['app.key' => 'base64:'.base64_encode(str_repeat('k', 32)), 'nvl-templates.queue.connection' => 'database', 'queue.default' => 'database', 'queue.connections.database.connection' => 'sqlite', 'queue.failed' => ['driver' => 'database-uuids', 'database' => 'sqlite', 'table' => 'failed_jobs'], 'cache.default' => 'database', 'cache.stores.database.connection' => 'sqlite', 'cache.stores.database.lock_connection' => 'sqlite', 'cache.stores.database.table' => 'cache', 'cache.stores.database.lock_table' => 'cache_locks']);
     app()->forgetInstance('encrypter');
     $runner = app(OwnershipRunner::class);
     $actor = OwnershipActor::firstOrFail();

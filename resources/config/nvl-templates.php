@@ -12,7 +12,7 @@ return [
     'ownership' => ['owner_resources' => []],
     'models' => ['template' => Template::class],
     'connection' => null,
-    'tables' => ['owner_grants' => TemplatesTables::OwnerGrants, 'templates' => TemplatesTables::Templates, 'templates_i18n' => TemplatesTables::I18n, 'template_versions' => TemplatesTables::Versions, 'template_assignments' => TemplatesTables::Assignments, 'template_renders' => TemplatesTables::Renders],
+    'tables' => ['owner_grants' => TemplatesTables::OwnerGrants, 'templates' => TemplatesTables::Templates, 'i18n' => TemplatesTables::I18n, 'versions' => TemplatesTables::Versions, 'assignments' => TemplatesTables::Assignments, 'renders' => TemplatesTables::Renders],
     'migrations' => ['enabled' => true],
     'authorization' => ['class' => ConfiguredTemplateAuthorization::class],
     /*
@@ -38,7 +38,6 @@ return [
     'default_renderer' => 'blade',
     'default_locale' => null,
     'renderers' => ['blade' => BladeTemplateRenderer::class, 'pdf' => MpdfTemplateRenderer::class],
-    'rendering' => ['connection' => null],
     /*
     |--------------------------------------------------------------------------
     | Bundled PDF renderer
@@ -49,4 +48,5 @@ return [
     |
     */
     'pdf' => ['remote_assets' => ['enabled' => false], 'data_images' => ['enabled' => true]],
+    'queue' => ['connection' => null],
 ];
