@@ -257,12 +257,14 @@ final class TemplateContentGuard
      */
     public function createTemplate(array $data): array
     {
+        $this->assertInputKeys($data, ['key', 'status', 'metadata', 'translations']);
         $data += ['status' => TemplateStatus::Active, 'metadata' => [], 'translations' => []];
         $rules = [
             'key' => ['required', 'string', 'max:191', 'regex:/^[a-z0-9][a-z0-9._-]*$/'],
             'status' => ['required', Rule::enum(TemplateStatus::class)],
             'metadata' => ['array'],
             'translations' => ['array', new SupportedLocaleMapRule],
+            'translations.*' => ['array:title,description'],
             'translations.*.title' => ['required', 'string', 'max:255'],
             'translations.*.description' => ['nullable', 'string'],
         ];
@@ -279,16 +281,17 @@ final class TemplateContentGuard
 
     /** Native Templates operation.
      * @param  array<string,mixed>  $data
-     * @return array{status: TemplateStatus, expected_revision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
+     * @return array{status: TemplateStatus, expected_revision: int, metadata?: array<string, mixed>, translations?: array<string, array<string, mixed>>}
      */
     public function updateTemplate(array $data): array
     {
-        $data += ['metadata' => [], 'translations' => []];
+        $this->assertInputKeys($data, ['status', 'expected_revision', 'metadata', 'translations']);
         $rules = [
             'status' => ['required', Rule::enum(TemplateStatus::class)],
             'expected_revision' => ['required', 'integer', 'min:1'],
             'metadata' => ['array'],
             'translations' => ['array', new SupportedLocaleMapRule],
+            'translations.*' => ['array:title,description'],
             'translations.*.title' => ['required', 'string', 'max:255'],
             'translations.*.description' => ['nullable', 'string'],
         ];
@@ -300,7 +303,7 @@ final class TemplateContentGuard
         }
         $data['expected_revision'] = is_int($data['expected_revision']) ? $data['expected_revision'] : (int) (is_string($data['expected_revision']) ? $data['expected_revision'] : 0);
 
-        /** @var array{status: TemplateStatus, expected_revision: int, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>} $data */
+        /** @var array{status: TemplateStatus, expected_revision: int, metadata?: array<string, mixed>, translations?: array<string, array<string, mixed>>} $data */
         return $data;
     }
 
@@ -310,6 +313,7 @@ final class TemplateContentGuard
      */
     public function createVersion(array $data): array
     {
+        $this->assertInputKeys($data, ['metadata']);
         $data += ['metadata' => []];
         $rules = [
             'metadata' => ['array'],
@@ -323,11 +327,11 @@ final class TemplateContentGuard
 
     /** Native Templates operation.
      * @param  array<string,mixed>  $data
-     * @return array{expected_revision: int, metadata: array<string, mixed>}
+     * @return array{expected_revision: int, metadata?: array<string, mixed>}
      */
     public function updateVersion(array $data): array
     {
-        $data += ['metadata' => []];
+        $this->assertInputKeys($data, ['expected_revision', 'metadata']);
         $rules = [
             'expected_revision' => ['required', 'integer', 'min:1'],
             'metadata' => ['array'],
@@ -337,7 +341,7 @@ final class TemplateContentGuard
 
         $data['expected_revision'] = is_int($data['expected_revision']) ? $data['expected_revision'] : (int) (is_string($data['expected_revision']) ? $data['expected_revision'] : 0);
 
-        /** @var array{expected_revision: int, metadata: array<string, mixed>} $data */
+        /** @var array{expected_revision: int, metadata?: array<string, mixed>} $data */
         return $data;
     }
 
@@ -347,6 +351,7 @@ final class TemplateContentGuard
      */
     public function assign(array $data): array
     {
+        $this->assertInputKeys($data, ['ownerType', 'ownerId', 'profile', 'versionId', 'settings', 'expected_revision']);
         $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expected_revision' => 0];
         $rules = [
             'ownerType' => ['required', 'string', 'max:100'],
@@ -371,6 +376,7 @@ final class TemplateContentGuard
      */
     public function render(array $data): array
     {
+        $this->assertInputKeys($data, ['locale', 'payload', 'ownerType', 'ownerId', 'profile', 'versionId', 'idempotency_key', 'download']);
         $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         $rules = [
             'locale' => ['required', 'string', 'max:35'],
@@ -389,5 +395,14 @@ final class TemplateContentGuard
 
         /** @var array{locale: string, payload: array<string, mixed>, ownerType: string|null, ownerId: string|null, profile: string, versionId: string|null, idempotency_key: string|null, download: bool} $data */
         return $data;
+    }
+
+    /** Reject unsupported and protected fields before any native operation uses the payload.
+     * @param  array<string, mixed>  $data
+     * @param  list<string>  $keys
+     */
+    private function assertInputKeys(array $data, array $keys): void
+    {
+        Validator::make(['input' => $data], ['input' => ['array:'.implode(',', $keys)]])->validate();
     }
 }

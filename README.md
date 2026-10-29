@@ -14,6 +14,8 @@ Consumers own data objects, Actions, controllers, routes, view models and downlo
 - `TemplateReader`: authorized template/version and render-record reads, pagination and render history.
 - `TemplateRenderer`: render bounded output, queue a `TemplateRender` model and recover durable jobs.
 
+Native payloads reject unknown or protected fields, including extra localized copy fields. Template and draft updates preserve omitted metadata and translations. Explicit `[]` clears metadata and clears translations in replacement mode.
+
 ```php
 use Nvl\Templates\Services\TemplateRenderer;
 

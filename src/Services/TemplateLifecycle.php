@@ -69,7 +69,10 @@ final readonly class TemplateLifecycle
     /**
      * Update one stored template using its exact optimistic revision.
      *
-     * @param  array<string,mixed>  $data
+     * Omitted metadata and translations remain unchanged. Explicit empty arrays clear
+     * metadata and, in replacement mode, translations.
+     *
+     * @param  array{status: TemplateStatus|string, expected_revision: int|string, metadata?: array<string, mixed>, translations?: array<string, array{title: string, description?: string|null}>}  $data
      */
     public function update(
         Template|string $template,
@@ -78,7 +81,6 @@ final readonly class TemplateLifecycle
         TranslationSyncMode $translationMode = TranslationSyncMode::Replace,
     ): Template {
         $data = app(TemplateContentGuard::class)->updateTemplate($data);
-        $data += ['metadata' => [], 'translations' => []];
         $templateId = $template instanceof Template ? $template->id : $template;
         $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
@@ -86,7 +88,9 @@ final readonly class TemplateLifecycle
             $actor,
             ['template_id' => $templateId],
         );
-        $this->guard->metadata($data['metadata']);
+        if (array_key_exists('metadata', $data)) {
+            $this->guard->metadata($data['metadata']);
+        }
 
         return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use (
@@ -103,15 +107,18 @@ final readonly class TemplateLifecycle
                     throw StaleTemplateException::forResource('template', $template->id);
                 }
 
-                $template->fill([
-                    'status' => $data['status'],
-                    'metadata' => $data['metadata'],
-                ])->save();
-                foreach ($data['translations'] as $locale => $attributes) {
-                    $this->translations->upsert($template, $template->translationDefinition(), $locale, $attributes);
+                $attributes = ['status' => $data['status']];
+                if (array_key_exists('metadata', $data)) {
+                    $attributes['metadata'] = $data['metadata'];
                 }
-                if ($translationMode === TranslationSyncMode::Replace) {
-                    $this->translations->deleteExcept($template, $template->translationDefinition(), array_keys($data['translations']));
+                $template->fill($attributes)->save();
+                if (array_key_exists('translations', $data)) {
+                    foreach ($data['translations'] as $locale => $attributes) {
+                        $this->translations->upsert($template, $template->translationDefinition(), $locale, $attributes);
+                    }
+                    if ($translationMode === TranslationSyncMode::Replace) {
+                        $this->translations->deleteExcept($template, $template->translationDefinition(), array_keys($data['translations']));
+                    }
                 }
                 $this->domainEvents->dispatch(new TemplateChanged($template->id, 'updated', $actor), $template->getConnection());
 
@@ -158,7 +165,9 @@ final readonly class TemplateLifecycle
     }
 
     /** Update draft metadata while rejecting stale or immutable publications.
-     * @param  array<string,mixed>  $data
+     * Omitted metadata remains unchanged; an explicit empty array clears it.
+     *
+     * @param  array{expected_revision: int|string, metadata?: array<string, mixed>}  $data
      */
     public function updateVersion(
         TemplateVersion|string $version,
@@ -166,7 +175,6 @@ final readonly class TemplateLifecycle
         Authenticatable|SystemActor $actor,
     ): TemplateVersion {
         $data = app(TemplateContentGuard::class)->updateVersion($data);
-        $data += ['metadata' => []];
         $versionId = $version instanceof TemplateVersion ? $version->id : $version;
         $actor = app(TemplateContentGuard::class)->actor($actor);
         $this->authorization->authorize(
@@ -174,7 +182,9 @@ final readonly class TemplateLifecycle
             $actor,
             ['version_id' => $versionId],
         );
-        $this->guard->metadata($data['metadata']);
+        if (array_key_exists('metadata', $data)) {
+            $this->guard->metadata($data['metadata']);
+        }
 
         return TemplateModelRegistry::newInstance()->getConnection()
             ->transaction(function () use ($actor, $data, $versionId): TemplateVersion {
@@ -192,11 +202,14 @@ final readonly class TemplateLifecycle
                     );
                 }
 
-                $version->fill([
-                    'metadata' => $data['metadata'],
+                $attributes = [
                     'content_snapshot' => null,
                     'content_hash' => null,
-                ])->save();
+                ];
+                if (array_key_exists('metadata', $data)) {
+                    $attributes['metadata'] = $data['metadata'];
+                }
+                $version->fill($attributes)->save();
                 $this->domainEvents->dispatch(new TemplateChanged($version->template_id, 'version_updated', $actor), $version->getConnection());
 
                 return $version->refresh();
