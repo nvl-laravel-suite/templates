@@ -27,7 +27,7 @@ use Nvl\Templates\Models\Template;
  */
 final readonly class TemplateImporter
 {
-    public function __construct(private TemplateLifecycle $createTemplate, private TemplateLifecycle $updateTemplate, private ContentBlocks $blocks, private TemplateAdoptionManifest $manifests, private TemplateAdoptionSchema $schemas, private MediaTemplateAssetRegistry $assets, private ContentStorage $storage) {}
+    public function __construct(private TemplateLifecycle $templates, private TemplateAdoptionManifest $manifests, private TemplateAdoptionSchema $schemas, private MediaTemplateAssetRegistry $assets) {}
 
     /**
      * @param  array<array-key, mixed>  $manifest
@@ -42,6 +42,8 @@ final readonly class TemplateImporter
         $inventory = $this->schemas->inventory(
             $normalized['staging_connection'],
             $normalized['staging_tables'],
+            includeContent: $normalized['content'] !== [],
+            includeMedia: $normalized['assets'] !== [],
         );
         $preparedIndexes = $prepare
             ? $this->schemas->prepare(
@@ -97,12 +99,12 @@ final readonly class TemplateImporter
             $template = TemplateModelRegistry::query()->with('translations')->where('key', $item['key'])->first();
 
             if (! $template instanceof Template) {
-                $this->createTemplate->create(['status' => $item['status'], 'metadata' => $item['metadata'], 'translations' => $item['translations'], 'key' => $item['key']], $actor);
+                $this->templates->create(['status' => $item['status'], 'metadata' => $item['metadata'], 'translations' => $item['translations'], 'key' => $item['key']], $actor);
                 $operation = 'created';
             } elseif ($this->templateMatches($template, $item)) {
                 $operation = 'unchanged';
             } else {
-                $this->updateTemplate->update($template, ['metadata' => $item['metadata'], 'translations' => $item['translations'], 'status' => $item['status'], 'expected_revision' => $template->revision], $actor);
+                $this->templates->update($template, ['metadata' => $item['metadata'], 'translations' => $item['translations'], 'status' => $item['status'], 'expected_revision' => $template->revision], $actor);
                 $operation = 'updated';
             }
 
@@ -122,7 +124,7 @@ final readonly class TemplateImporter
         $actor = SystemActor::Background;
 
         foreach ($content as $item) {
-            $block = $this->storage->blocks()
+            $block = app(ContentStorage::class)->blocks()
                 ->with(['definition', 'translations'])
                 ->where('scope', $item['scope'])
                 ->where('scope_key', $item['scopeKey'])
@@ -130,7 +132,7 @@ final readonly class TemplateImporter
                 ->first();
 
             if (! $block instanceof ContentBlock) {
-                $block = $this->blocks->create([
+                $block = app(ContentBlocks::class)->create([
                     'definition' => $item['definition'],
                     'key' => $item['key'],
                     'scope' => $item['scope'],
@@ -154,7 +156,7 @@ final readonly class TemplateImporter
                     );
                 }
 
-                $block = $this->blocks->update($block, [
+                $block = app(ContentBlocks::class)->update($block, [
                     'expected_revision' => $block->revision,
                     'mode' => ContentMutationMode::Replace,
                     'visibility' => $item['visibility'],
@@ -166,7 +168,7 @@ final readonly class TemplateImporter
             }
 
             if ($item['publish'] && $block->status !== ContentStatus::Published) {
-                $this->blocks->publish($block, $block->revision, $actor);
+                app(ContentBlocks::class)->publish($block, $block->revision, $actor);
             }
 
             $operations[] = ['key' => $item['identity'], 'operation' => $operation];
@@ -189,7 +191,7 @@ final readonly class TemplateImporter
             if ($existing === null) {
                 $this->assets->register($item['asset']);
                 $operation = 'created';
-            } elseif ($existing == $item['asset']) {
+            } elseif ($this->jsonValuesMatch($existing, $item['asset'])) {
                 $operation = 'unchanged';
             } else {
                 throw new InvalidArgumentException(
@@ -243,14 +245,14 @@ final readonly class TemplateImporter
         if ($resource === 'assets') {
             return count(array_filter(
                 $normalized['assets'],
-                fn (array $item): bool => $this->assets->get($item['key']) == $item['asset'],
+                fn (array $item): bool => $this->jsonValuesMatch($this->assets->get($item['key']), $item['asset']),
             ));
         }
 
         $matched = 0;
 
         foreach ($normalized['content'] as $item) {
-            $matched += $this->storage->blocks()
+            $matched += app(ContentStorage::class)->blocks()
                 ->where('scope', $item['scope'])
                 ->where('scope_key', $item['scopeKey'])
                 ->where('key', $item['key'])
@@ -300,9 +302,20 @@ final readonly class TemplateImporter
      */
     private function templateMatches(Template $template, array $expected): bool
     {
+        $currentTranslations = $this->modelTranslations($template, ['title', 'description']);
+        $expectedTranslations = $expected['translations'];
+
+        foreach ($expectedTranslations as $locale => $attributes) {
+            if (! array_key_exists('description', $attributes)) {
+                unset($currentTranslations[$locale]['description']);
+            } elseif ($attributes['description'] === null) {
+                unset($expectedTranslations[$locale]['description']);
+            }
+        }
+
         return $template->status === $expected['status']
-            && (is_array($template->metadata) ? $template->metadata : []) == $expected['metadata']
-            && $this->modelTranslations($template, ['title', 'description']) == $expected['translations'];
+            && $this->jsonValuesMatch(is_array($template->metadata) ? $template->metadata : [], $expected['metadata'])
+            && $this->jsonValuesMatch($currentTranslations, $expectedTranslations);
     }
 
     /**
@@ -311,10 +324,21 @@ final readonly class TemplateImporter
     private function contentMatches(ContentBlock $block, array $expected): bool
     {
         return $block->visibility === $expected['visibility']
-            && (is_array($block['values']) ? $block['values'] : []) == $expected['values']
-            && (is_array($block['metadata']) ? $block['metadata'] : []) == $expected['metadata']
-            && $this->modelTranslations($block, ['values']) == $expected['translations']
+            && $this->jsonValuesMatch(is_array($block['values']) ? $block['values'] : [], $expected['values'])
+            && $this->jsonValuesMatch(is_array($block['metadata']) ? $block['metadata'] : [], $expected['metadata'])
+            && $this->jsonValuesMatch(
+                $this->modelTranslations($block, ['values']),
+                array_map(static fn (array $values): array => ['values' => $values], $expected['translations']),
+            )
             && ($block->status === ContentStatus::Published) === $expected['publish'];
+    }
+
+    /** Compare JSON types and values independently of associative key order. */
+    private function jsonValuesMatch(mixed $actual, mixed $expected): bool
+    {
+        $json = app(CanonicalJson::class);
+
+        return $json->digest($actual) === $json->digest($expected);
     }
 
     /**

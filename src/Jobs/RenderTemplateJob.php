@@ -157,7 +157,10 @@ final class RenderTemplateJob implements OwnershipQueuedJob, ShouldBeUniqueUntil
     public function failed(?Throwable $exception): void
     {
         if (TemplatesOwnership::declared()) {
-            app(TemplateRenderFailure::class)->fail($this->renderId, $this->dispatchGeneration, $this->processingToken, $exception);
+            app(OwnershipQueueContext::class)->run(
+                $this->ownershipEnvelope,
+                fn () => app(TemplateRenderFailure::class)->fail($this->renderId, $this->dispatchGeneration, $this->processingToken, $exception),
+            );
 
             return;
         }

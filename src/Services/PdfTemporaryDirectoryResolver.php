@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
+use Closure;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
+use Nvl\Support\Ownership\Exceptions\OwnershipViolation;
 use Nvl\Templates\Ownership\TemplatesOwnership;
 use Nvl\Templates\Support\TemplatesConfiguration;
 
@@ -21,6 +24,7 @@ final readonly class PdfTemporaryDirectoryResolver
     public function __construct(
         private SafeFilesystemPathResolver $paths,
         private OwnershipBoundary $ownershipBoundary,
+        private Filesystem $files,
     ) {}
 
     /**
@@ -32,7 +36,7 @@ final readonly class PdfTemporaryDirectoryResolver
             $this->validatedPath(false);
 
             return true;
-        } catch (InvalidArgumentException) {
+        } catch (InvalidArgumentException|OwnershipViolation) {
             return false;
         }
     }
@@ -43,6 +47,27 @@ final readonly class PdfTemporaryDirectoryResolver
     public function resolve(?string $path = null): string
     {
         return $this->validatedPath(true, $path);
+    }
+
+    /**
+     * Keep the owned workspace private to one render and remove it on every exit.
+     *
+     * @template TResult
+     *
+     * @param  Closure(string): TResult  $render
+     * @return TResult
+     */
+    public function withDirectory(Closure $render, ?string $path = null): mixed
+    {
+        $isolated = TemplatesOwnership::declared();
+        $directory = $this->resolve($path);
+        try {
+            return $render($directory);
+        } finally {
+            if ($isolated) {
+                $this->files->deleteDirectory($directory);
+            }
+        }
     }
 
     private function validatedPath(bool $create, ?string $override = null): string

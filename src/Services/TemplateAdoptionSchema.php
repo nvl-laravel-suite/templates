@@ -26,7 +26,7 @@ final class TemplateAdoptionSchema
      * @param  list<string>  $stagingTables
      * @return SchemaInventory
      */
-    public function inventory(string $connection, array $stagingTables): array
+    public function inventory(string $connection, array $stagingTables, bool $includeContent = false, bool $includeMedia = false): array
     {
         $stagingSchema = Schema::connection($connection);
         $staging = [];
@@ -43,7 +43,7 @@ final class TemplateAdoptionSchema
         return [
             'driver' => $stagingSchema->getConnection()->getDriverName(),
             'staging' => $staging,
-            'canonical' => $this->canonicalInventory(),
+            'canonical' => $this->canonicalInventory($includeContent, $includeMedia),
         ];
     }
 
@@ -133,7 +133,7 @@ final class TemplateAdoptionSchema
     /**
      * @return array<string, CanonicalTable>
      */
-    private function canonicalInventory(): array
+    private function canonicalInventory(bool $includeContent, bool $includeMedia): array
     {
         $default = config('database.default');
 
@@ -142,12 +142,7 @@ final class TemplateAdoptionSchema
         }
 
         $templateConnection = TemplatesConfiguration::connection() ?? $default;
-        $contentConnection = ContentConfiguration::connection() ?? $default;
         $templates = Schema::connection($templateConnection);
-        $content = Schema::connection($contentConnection);
-        $mediaModel = MediaModelRegistry::newInstance();
-        $mediaConnection = $mediaModel->getConnectionName() ?? $default;
-        $media = Schema::connection($mediaConnection);
         $inventory = [];
 
         foreach ([
@@ -163,17 +158,25 @@ final class TemplateAdoptionSchema
             ];
         }
 
-        foreach (['definitions', 'blocks', 'blocks_i18n'] as $alias) {
-            $inventory["content.{$alias}"] = [
-                'connection' => $contentConnection,
-                'exists' => $content->hasTable(ContentConfiguration::table($alias)),
-            ];
+        if ($includeContent) {
+            $contentConnection = ContentConfiguration::connection() ?? $default;
+            $content = Schema::connection($contentConnection);
+            foreach (['definitions', 'blocks', 'blocks_i18n'] as $alias) {
+                $inventory["content.{$alias}"] = [
+                    'connection' => $contentConnection,
+                    'exists' => $content->hasTable(ContentConfiguration::table($alias)),
+                ];
+            }
         }
 
-        $inventory['media.media'] = [
-            'connection' => $mediaConnection,
-            'exists' => $media->hasTable($mediaModel->getTable()),
-        ];
+        if ($includeMedia) {
+            $mediaModel = MediaModelRegistry::newInstance();
+            $mediaConnection = $mediaModel->getConnectionName() ?? $default;
+            $inventory['media.media'] = [
+                'connection' => $mediaConnection,
+                'exists' => Schema::connection($mediaConnection)->hasTable($mediaModel->getTable()),
+            ];
+        }
 
         return $inventory;
     }

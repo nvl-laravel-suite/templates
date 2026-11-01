@@ -125,6 +125,7 @@ final readonly class TemplateRenderer
         array $data,
         Authenticatable|SystemActor $actor,
     ): TemplateRender {
+        $this->assertDurableOutput();
         $data = app(TemplateContentGuard::class)->render($data);
         $data += ['ownerType' => null, 'ownerId' => null, 'profile' => 'default', 'versionId' => null, 'idempotency_key' => null, 'download' => false];
         $model = $template instanceof Template
@@ -375,16 +376,12 @@ final readonly class TemplateRenderer
                 );
                 $this->outputGuard->validateFilename($fileName);
 
-                if ((bool) config('nvl-templates.rendering.output.persist', true)) {
-                    $disk = TemplatesConfiguration::string(
-                        'nvl-templates.rendering.output.disk',
-                        'local',
-                    );
-                    if (! class_exists(MediaUploader::class)) {
-                        throw new TemplateResolutionException('Persisting template output requires nvl/media.');
-                    }
-                    app(MediaTemplateAssetResolver::class)->storeOutput($render, $result, $fileName, $disk, SystemActor::Background);
-                }
+                $this->assertDurableOutput();
+                $disk = TemplatesConfiguration::string(
+                    'nvl-templates.rendering.output.disk',
+                    'local',
+                );
+                app(MediaTemplateAssetResolver::class)->storeOutput($render, $result, $fileName, $disk, SystemActor::Background);
 
                 $render->fill([
                     'status' => TemplateRenderStatus::Completed,
@@ -436,6 +433,21 @@ final readonly class TemplateRenderer
                     'failed_at' => now('UTC'),
                 ])->save();
             });
+    }
+
+    /** Reject queued work whose output could not survive its worker process. */
+    private function assertDurableOutput(): void
+    {
+        if (config('nvl-templates.rendering.output.persist', false) !== true) {
+            throw new TemplateResolutionException('Queued template rendering requires rendering.output.persist = true and the optional nvl/media output integration.');
+        }
+        if (! class_exists(MediaUploader::class)) {
+            throw new TemplateResolutionException('Persisting queued template output requires nvl/media.');
+        }
+        $disk = config('nvl-templates.rendering.output.disk');
+        if (! is_string($disk) || $disk === '' || ! is_array(config("filesystems.disks.{$disk}"))) {
+            throw new TemplateResolutionException('Queued template rendering requires a configured output disk.');
+        }
     }
 
     private function assertLeaseOwner(

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Nvl\Ownership\Services\OwnershipRunner;
@@ -15,8 +16,10 @@ use Nvl\Templates\Contracts\TemplateCatalogAccess;
 use Nvl\Templates\Jobs\RenderTemplateJob;
 use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateOwnerGrant;
+use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Ownership\TemplateOwnerCatalog;
+use Nvl\Templates\Services\PdfTemporaryDirectoryResolver;
 use Nvl\Templates\Services\TemplateAssignments;
 use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateReader;
@@ -31,7 +34,7 @@ use Nvl\Translatable\Services\RelatedTranslationStore;
 uses(OwnershipTestCase::class);
 it('publishes a native snapshot and processes an isolated durable render', function (): void {
     Queue::fake();
-    config(['nvl-templates.rendering.output.persist' => false]);
+    config(['nvl-templates.rendering.output.persist' => true]);
     app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): void {
         $version = OwnershipTemplateScenario::version();
         expect($version->content_snapshot['formatVersion'])->toBe(3);
@@ -114,7 +117,7 @@ it('copies only an exact granted central version and denies revoked grants while
 });
 it('protects published snapshots against raw writes and permits terminal payload erasure', function (): void {
     Queue::fake();
-    config(['nvl-templates.rendering.output.persist' => false, 'nvl-templates.rendering.store_payload' => false]);
+    config(['nvl-templates.rendering.output.persist' => true, 'nvl-templates.rendering.store_payload' => false]);
     app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): void {
         $version = OwnershipTemplateScenario::version();
         $c = $version->getConnection();
@@ -125,7 +128,7 @@ it('protects published snapshots against raw writes and permits terminal payload
 });
 it('reassigns an owner profile without changing the authority of an existing durable render', function (): void {
     Queue::fake();
-    config(['nvl-templates.rendering.output.persist' => false]);
+    config(['nvl-templates.rendering.output.persist' => true]);
     app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): void {
         $first = OwnershipTemplateScenario::version();
         $other = OwnershipTemplateScenario::version('other');
@@ -180,15 +183,17 @@ it('rechecks the locked code definition after catalog content is staged', functi
         $grant = app(TemplateOwnerCatalog::class)->grant($source->id, $source->revision);
         $changed = false;
         $reads = 0;
-        $table = TemplateModelRegistry::newInstance()->getTable();
+        $model = TemplateModelRegistry::newInstance();
+        $table = $model->getConnection()->getQueryGrammar()->wrapTable($model->getTable());
         DB::listen(function ($query) use (&$changed, &$reads, $table, $runner, $actor, $source): void {
-            if (! $changed && str_contains($query->sql, 'select') && str_contains($query->sql, 'from "'.$table.'"') && ++$reads === 2) {
+            if (! $changed && str_contains($query->sql, 'select') && str_contains($query->sql, 'from '.$table) && ++$reads === 2) {
                 $changed = true;
                 $runner->central('templates-maintain', $actor, fn () => TemplateModelRegistry::query()->findOrFail($source->template_id)->forceFill(['renderer' => 'changed'])->save());
             }
         });
         expect(fn () => app(TemplateOwnerCatalog::class)->import(['grantId' => $grant->id, 'expectedGrantRevision' => $grant->revision, 'expectedSourceRevision' => $source->revision, 'targetKey' => 'welcome', 'idempotency_key' => 'stale-definition', 'mediaGrantIds' => []], SystemActor::Background))->toThrow(OwnershipViolation::class);
-        expect(TemplateModelRegistry::query()->count())->toBe(0);
+        expect($changed)->toBeTrue()
+            ->and(TemplateModelRegistry::query()->count())->toBe(0);
     });
 });
 
@@ -207,3 +212,50 @@ it('never returns a published or retired version to draft through quiet or raw w
         expect($version->refresh()->status->value)->toBe($status);
     });
 })->with(['published', 'retired'])->with(['quiet', 'raw']);
+
+it('restores captured owner admission for terminal queue failures and erases private inputs', function (): void {
+    Queue::fake();
+    config(['nvl-templates.rendering.output.persist' => true, 'nvl-templates.rendering.store_payload' => false]);
+    $runner = app(OwnershipRunner::class);
+    $job = $runner->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function (): RenderTemplateJob {
+        $version = OwnershipTemplateScenario::version();
+        $render = app(TemplateRenderer::class)->queue($version->template, ['locale' => 'en', 'payload' => ['name' => 'Private']], SystemActor::Background);
+
+        return new RenderTemplateJob($render->id, $render->dispatch_generation);
+    });
+    $job->failed(new RuntimeException('Terminal worker failure.'));
+    $runner->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function () use ($job): void {
+        $render = TemplateRender::query()->findOrFail($job->renderId);
+        expect($render->status->value)->toBe('failed')->and($render->payload)->toBeNull()->and($render->settings)->toBeNull();
+    });
+    expect(fn () => TemplateRender::query()->count())->toThrow(OwnershipViolation::class);
+});
+
+it('reports missing PDF owner admission and removes isolated workspaces after success and failure', function (): void {
+    $root = storage_path('framework/testing/template-workspaces-'.Str::uuid());
+    config(['nvl-templates.pdf.temp_path' => $root]);
+    $directories = app(PdfTemporaryDirectoryResolver::class);
+    expect($directories->isSafe())->toBeFalse()->and(is_dir($root))->toBeFalse();
+    try {
+        app(OwnershipRunner::class)->run(OwnershipCompany::findOrFail(7), OwnershipActor::firstOrFail(), function () use ($directories, $root): void {
+            expect($directories->isSafe())->toBeTrue()->and(is_dir($root))->toBeFalse();
+            $successPath = $directories->withDirectory(function (string $directory): string {
+                file_put_contents($directory.'/font-cache', 'temporary');
+
+                return $directory;
+            });
+            expect(is_dir($successPath))->toBeFalse();
+            $failedPath = null;
+            expect(function () use ($directories, &$failedPath): void {
+                $directories->withDirectory(function (string $directory) use (&$failedPath): never {
+                    $failedPath = $directory;
+                    file_put_contents($directory.'/partial', 'temporary');
+                    throw new RuntimeException('Renderer failed.');
+                });
+            })->toThrow(RuntimeException::class, 'Renderer failed.');
+            expect($failedPath)->toBeString()->and(is_dir($failedPath))->toBeFalse();
+        });
+    } finally {
+        File::deleteDirectory($root);
+    }
+});

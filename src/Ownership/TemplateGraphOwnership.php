@@ -21,7 +21,7 @@ use Nvl\Templates\Services\TemplateOwnerRegistry;
 final readonly class TemplateGraphOwnership
 {
     /** Retain the canonical services and immutable inputs for this workflow. */
-    public function __construct(private TemplateOwnerRegistry $owners, private ContentStorage $contentStorage) {}
+    public function __construct(private TemplateOwnerRegistry $owners) {}
 
     /** Validate immutable content and secondary graph edges inside the source lease. */
     public function assertWrite(Model $model): void
@@ -29,8 +29,13 @@ final readonly class TemplateGraphOwnership
         if (! TemplatesOwnership::declared()) {
             return;
         }
-        if (! $this->contentStorage->owned() || MediaModelRegistry::modelClass()::ownershipDefinition()->strategy === 'unscoped') {
-            throw new OwnershipViolation('Owned Templates require owned Content and Media resources.');
+        if (config('nvl-templates.integrations.content', false)
+            && (! interface_exists(ContentStorage::class) || ! app(ContentStorage::class)->owned())) {
+            throw new OwnershipViolation('Owned Templates Content integration requires owned Content resources.');
+        }
+        if ((config('nvl-templates.assets.driver') === 'media' || config('nvl-templates.rendering.output.persist', false))
+            && (! class_exists(MediaModelRegistry::class) || MediaModelRegistry::modelClass()::ownershipDefinition()->strategy === 'unscoped')) {
+            throw new OwnershipViolation('Owned Templates Media integration requires owned Media resources.');
         }
         if ($model instanceof TemplateVersion && $model->exists) {
             $row = $model->getConnection()->table($model->getTable())->where('id', $model->getRawOriginal('id'))->first();

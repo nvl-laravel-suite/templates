@@ -157,6 +157,10 @@ final readonly class StoredTemplateRenderResolver
             );
         }
 
+        if (! config('nvl-templates.integrations.content', false) || ! class_exists(ContentSnapshotService::class)) {
+            throw new TemplateResolutionException('Rendering stored template Content requires the enabled Content integration.');
+        }
+
         $composition = app(ContentSnapshotService::class)->render(
             $snapshot,
             $locale,

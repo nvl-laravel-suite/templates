@@ -23,7 +23,7 @@ final readonly class TemplateRenderFailure
             if ($render === null || $render->dispatch_generation !== $generation || $render->status === TemplateRenderStatus::Completed || ($render->status === TemplateRenderStatus::Processing && $render->processing_token !== $token)) {
                 return;
             }
-            $render->fill(['status' => TemplateRenderStatus::Failed, 'processing_token' => null, 'lease_expires_at' => null, 'failure' => mb_substr($error?->getMessage() ?? 'Template render job failed.', 0, 4000), 'failed_at' => now()])->save();
+            $render->fill(['status' => TemplateRenderStatus::Failed, 'processing_token' => null, 'lease_expires_at' => null, 'failure' => mb_substr($error?->getMessage() ?? 'Template render job failed.', 0, 4000), 'failed_at' => now(), 'payload' => config('nvl-templates.rendering.store_payload', true) ? $render->payload : null, 'settings' => config('nvl-templates.rendering.store_payload', true) ? $render->settings : null])->save();
         });
     }
 }

@@ -22,7 +22,7 @@ use Nvl\Templates\Services\TemplateRenderer;
 $output = app(TemplateRenderer::class)->render($template, $context, $options, $actor);
 ```
 
-The render result contains content bytes, MIME type, renderer, byte size, checksum, optional subject and suggested filename. Consumers choose HTTP delivery or persistence. PDF bytes are binary; do not automatically JSON-serialize them. Use the documented PHPDoc for accepted context/options and model fields.
+The render result contains content bytes, MIME type, renderer, byte size, checksum, optional subject and suggested filename. Consumers choose HTTP delivery or persistence for synchronous results. Queued rendering requires `nvl/media`, `nvl-templates.rendering.output.persist = true`, and a configured output disk before reserving or dispatching a render. Queued output is stored in the private render Media slot; disabling persistence rejects new requests and fails in-flight renders instead of discarding their output. PDF bytes are binary; do not automatically JSON-serialize them. Use the documented PHPDoc for accepted context/options and model fields.
 
 Blade-only rendering works without Content, Media or mPDF. Enable integrations explicitly and retain their existing HTML, URL, asset, output and authorization guards. Base models do not inherit interfaces from optional packages. Optional Content registration supplies explicit permitted groups; optional Media output uses the native private-file lifecycle.
 
@@ -33,3 +33,5 @@ The deprecated Tenancy bridge, package HTTP layer, passive display carriers and 
 See [events](docs/events.md), [upgrading](UPGRADING.md), [security](SECURITY.md) and [contributing](CONTRIBUTING.md).
 
 Shared [service contracts, model extensions and composition](https://github.com/nvl-laravel-suite/laravel-suite/blob/main/docs/consumer-api.md) apply alongside the package-specific rules above.
+
+Stored template publication and rendering require the enabled Content integration (`nvl-templates.integrations.content = true`). The default Blade pipeline, template records, localized metadata, draft versions, and template-only adoption remain available without Content or Media. Adoption manifests with Content records require Content; manifests with Media assets require Media. Owned PDF rendering uses an isolated workspace removed after success or failure. Doctor inspects paths without creating a workspace and reports missing owner admission as a failed path check.

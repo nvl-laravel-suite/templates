@@ -60,6 +60,7 @@ abstract class TestCase extends Orchestra
             'filesystems.default' => 'public',
             'nvl-media.disk' => 'public',
             'nvl-media.routes.assets_enabled' => false,
+            'nvl-media.delivery.disks.public.public' => ['mode' => 'direct', 'allowed' => ['direct']],
             'nvl-content.media.enabled' => true,
             'nvl-content.authorization.callback' => static fn (): bool => true,
             'nvl-content.locales.available' => ['en', 'bg'],

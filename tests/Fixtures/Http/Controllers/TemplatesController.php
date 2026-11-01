@@ -104,9 +104,10 @@ final class TemplatesController extends Controller
         TemplateActorFactory $actors,
         TemplateLifecycle $action,
     ): JsonResponse {
+        $data = UpdateTemplateData::validateAndCreate($request->all());
         $template = $action->update(
             $template,
-            UpdateTemplateData::validateAndCreate($request->all())->toArray(),
+            ['expected_revision' => $data->expectedRevision, 'status' => $data->status, 'metadata' => $data->metadata, 'translations' => $data->translations],
             $actors->fromRequest($request),
         );
 
@@ -156,9 +157,10 @@ final class TemplatesController extends Controller
         TemplateActorFactory $actors,
         TemplateLifecycle $action,
     ): JsonResponse {
+        $data = UpdateTemplateVersionData::validateAndCreate($request->all());
         $version = $action->updateVersion(
             $version,
-            UpdateTemplateVersionData::validateAndCreate($request->all())->toArray(),
+            ['expected_revision' => $data->expectedRevision, 'metadata' => $data->metadata],
             $actors->fromRequest($request),
         );
 

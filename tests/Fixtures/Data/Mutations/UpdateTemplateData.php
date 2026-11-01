@@ -26,7 +26,7 @@ final class UpdateTemplateData extends Data
 
     /**
      * @param  array<string, mixed>  $metadata
-     * @param  array<string, array<string, mixed>>  $translations
+     * @param  array<string, array{title: string, description?: string|null}>  $translations
      */
     public function __construct(
         public readonly TemplateStatus $status,

@@ -42,3 +42,18 @@ it('renders actual PDF bytes through a native absolute temporary directory witho
         File::deleteDirectory($base);
     }
 });
+
+it('retains a supplied shared workspace and its cache after rendering callbacks exit', function (): void {
+    $root = storage_path('framework/testing/template-shared-workspace-'.str()->uuid());
+    File::ensureDirectoryExists($root);
+    File::put($root.'/keep', 'shared cache');
+    config(['nvl-templates.pdf.temp_path' => $root]);
+    try {
+        $directories = app(PdfTemporaryDirectoryResolver::class);
+        expect($directories->withDirectory(fn (string $directory): string => $directory))->toBe(realpath($root));
+        expect(fn () => $directories->withDirectory(static fn (string $directory) => throw new RuntimeException('Failed render.')))->toThrow(RuntimeException::class);
+        expect(File::get($root.'/keep'))->toBe('shared cache');
+    } finally {
+        File::deleteDirectory($root);
+    }
+});

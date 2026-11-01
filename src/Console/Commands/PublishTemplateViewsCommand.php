@@ -81,7 +81,7 @@ final class PublishTemplateViewsCommand extends Command
         $copied = 0;
 
         foreach ($iterator as $file) {
-            if (! $file instanceof SplFileInfo || ! $file->isFile() || $file->isLink()) {
+            if (! $file instanceof SplFileInfo || ! $file->isFile() || $file->isLink() || ! str_ends_with($file->getFilename(), '.blade.php')) {
                 continue;
             }
 

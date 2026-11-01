@@ -5,6 +5,16 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Align NVL peers and consumer contracts on the coordinated 7.x line. Review [UPGRADING.md](UPGRADING.md) for adoption and application-owned integration requirements.
+
+### Fixed
+
+- Normalize adoption locale keys and reject canonical duplicates before writing. Reapplying null or omitted descriptions preserves unchanged revisions and events.
+- Compare adoption JSON without numeric-string coercion, and reconcile localized Content against its stored translation projection.
+- Remove the obsolete render `media` property declaration; stored outputs are read through the optional Media reader's private `output` slot.
+
 ## [6.1.0] - 2026-10-23
 
 <!-- NVL GENERATED CHANGES START -->

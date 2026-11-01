@@ -10,6 +10,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -40,11 +41,13 @@ use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Enums\TemplateRenderStatus;
 use Nvl\Templates\Enums\TemplateStatus;
 use Nvl\Templates\Enums\TemplateVersionStatus;
+use Nvl\Templates\Events\TemplateChanged;
 use Nvl\Templates\Exceptions\StaleTemplateException;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
 use Nvl\Templates\Exceptions\TemplatesException;
 use Nvl\Templates\Jobs\RenderTemplateJob;
 use Nvl\Templates\Models\Template;
+use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateVersion;
 use Nvl\Templates\Providers\TemplatesServiceProvider;
 use Nvl\Templates\Services\CanonicalJson;
@@ -727,7 +730,7 @@ it('authorizes every caller-selected stored render scope', function (): void {
 it('uses canonical render requests and processes queued output idempotently', function (): void {
     Queue::fake();
     config()->set([
-        'nvl-templates.rendering.output.persist' => false,
+        'nvl-templates.rendering.output.persist' => true,
         'nvl-templates.rendering.store_payload' => false,
     ]);
     $actor = SystemActor::Background;
@@ -786,7 +789,7 @@ it('uses canonical render requests and processes queued output idempotently', fu
 
 it('applies durable render job policies and records processing failures', function (): void {
     Queue::fake();
-    config()->set('nvl-templates.rendering.output.persist', false);
+    config()->set('nvl-templates.rendering.output.persist', true);
     $actor = SystemActor::Background;
     $template = app(TemplateLifecycle::class)->create(
         ['status' => TemplateStatus::Active, 'metadata' => [], 'translations' => ['en' => ['title' => 'Welcome']], 'key' => 'welcome'],
@@ -1065,6 +1068,135 @@ it('plans prepares applies and reconciles an idempotent staged adoption manifest
     }
 });
 
+it('stores adoption translations under canonical locale keys', function (): void {
+    app(TemplateImporter::class)->adopt([
+        'version' => 1,
+        'legacy_asset_count' => 0,
+        'templates' => [[
+            'legacy_key' => 'legacy-welcome',
+            'key' => 'welcome',
+            'translations' => ['EN' => ['title' => 'Canonical welcome']],
+        ]],
+    ], apply: true);
+
+    $template = Template::query()->where('key', 'welcome')->firstOrFail();
+
+    expect($template->translations->pluck('locale')->all())->toBe(['en'])
+        ->and($template->getTranslation('en')?->getAttribute('title'))->toBe('Canonical welcome');
+});
+
+it('rejects duplicate canonical adoption locales before writing', function (): void {
+    $manifest = [
+        'version' => 1,
+        'legacy_asset_count' => 0,
+        'templates' => [[
+            'legacy_key' => 'legacy-welcome',
+            'key' => 'welcome',
+            'translations' => ['en' => ['title' => 'First'], 'EN' => ['title' => 'Second']],
+        ]],
+    ];
+
+    expect(fn () => app(TemplateImporter::class)->adopt($manifest, apply: true))
+        ->toThrow(InvalidArgumentException::class, 'duplicate locale [en]')
+        ->and(Template::query()->count())->toBe(0);
+});
+
+it('reapplies adoption descriptions without spurious revisions or events', function (bool $clearDescription): void {
+    $manifest = [
+        'version' => 1,
+        'legacy_asset_count' => 0,
+        'templates' => [[
+            'legacy_key' => 'legacy-welcome',
+            'key' => 'welcome',
+            'translations' => ['en' => ['title' => 'Welcome', 'description' => 'Existing description']],
+        ]],
+    ];
+    $importer = app(TemplateImporter::class);
+    $importer->adopt($manifest, apply: true);
+    $template = Template::query()->where('key', 'welcome')->firstOrFail();
+    $initialRevision = $template->revision;
+
+    if ($clearDescription) {
+        $manifest['templates'][0]['translations']['en']['description'] = null;
+    } else {
+        unset($manifest['templates'][0]['translations']['en']['description']);
+    }
+
+    $result = $importer->adopt($manifest, apply: true);
+    $template->refresh();
+    $revision = $template->revision;
+
+    expect($result['operations']['templates'][0]['operation'])->toBe($clearDescription ? 'updated' : 'unchanged')
+        ->and($revision)->toBe($initialRevision + ($clearDescription ? 1 : 0))
+        ->and($template->getTranslation('en')?->getAttribute('description'))->toBe($clearDescription ? null : 'Existing description');
+
+    Event::fake([TemplateChanged::class]);
+    $reapplied = $importer->adopt($manifest, apply: true);
+
+    expect($reapplied['operations']['templates'][0]['operation'])->toBe('unchanged')
+        ->and($template->refresh()->revision)->toBe($revision);
+    Event::assertNotDispatched(TemplateChanged::class);
+})->with(['explicit null' => true, 'omitted description' => false]);
+
+it('adopts changed numeric text without coercing translation values', function (string $field): void {
+    $manifest = ['version' => 1, 'legacy_asset_count' => 0, 'templates' => [[
+        'legacy_key' => 'legacy-welcome', 'key' => 'welcome',
+        'translations' => ['en' => ['title' => 'Welcome', $field => '01']],
+    ]]];
+    $importer = app(TemplateImporter::class);
+    $importer->adopt($manifest, apply: true);
+    $manifest['templates'][0]['translations']['en'][$field] = '1';
+    $result = $importer->adopt($manifest, apply: true);
+
+    expect($result['operations']['templates'][0]['operation'])->toBe('updated')
+        ->and(Template::query()->where('key', 'welcome')->firstOrFail()->getTranslation('en')?->getAttribute($field))->toBe('1')
+        ->and($importer->adopt($manifest, apply: true)['operations']['templates'][0]['operation'])->toBe('unchanged');
+})->with(['title', 'description']);
+
+it('preserves JSON value types while ignoring metadata key order during adoption', function (): void {
+    $manifest = ['version' => 1, 'legacy_asset_count' => 0, 'templates' => [[
+        'legacy_key' => 'legacy-welcome', 'key' => 'welcome',
+        'metadata' => ['number' => '1', 'nested' => ['b' => true, 'a' => '01']],
+        'translations' => ['en' => ['title' => 'Welcome']],
+    ]]];
+    $importer = app(TemplateImporter::class);
+    $importer->adopt($manifest, apply: true);
+    $manifest['templates'][0]['metadata'] = ['nested' => ['a' => '01', 'b' => true], 'number' => 1];
+
+    expect($importer->adopt($manifest, apply: true)['operations']['templates'][0]['operation'])->toBe('updated')
+        ->and(Template::query()->where('key', 'welcome')->firstOrFail()->metadata['number'])->toBe(1);
+    $manifest['templates'][0]['metadata'] = ['number' => 1, 'nested' => ['b' => true, 'a' => '01']];
+    expect($importer->adopt($manifest, apply: true)['operations']['templates'][0]['operation'])->toBe('unchanged');
+});
+
+it('adopts changed numeric localized Content text without coercion', function (): void {
+    $manifest = ['version' => 1, 'legacy_asset_count' => 0, 'content' => [[
+        'legacy_key' => 'legacy-copy', 'legacy_scope' => 'legacy-global', 'legacy_scope_key' => 'legacy',
+        'definition' => 'template-copy', 'key' => 'adopted-copy', 'scope' => 'global', 'scope_key' => '*',
+        'translations' => ['en' => ['text' => '01']],
+    ]]];
+    $importer = app(TemplateImporter::class);
+    $importer->adopt($manifest, apply: true);
+    $manifest['content'][0]['translations']['en']['text'] = '1';
+
+    expect($importer->adopt($manifest, apply: true)['operations']['content'][0]['operation'])->toBe('updated')
+        ->and(ContentBlock::query()->where('key', 'adopted-copy')->firstOrFail()->getTranslation('en')?->getAttribute('values')['text'])->toBe('1')
+        ->and($importer->adopt($manifest, apply: true)['operations']['content'][0]['operation'])->toBe('unchanged');
+});
+
+it('rejects existing Media aliases with differently spelled numeric scopes', function (): void {
+    $media = Media::factory()->create(['status' => MediaLifecycleStatus::Available]);
+    $assets = app(MediaTemplateAssetRegistry::class);
+    $assets->register(['key' => 'numeric-scope', 'mediaId' => $media->id, 'scope' => '01']);
+    $manifest = ['version' => 1, 'legacy_asset_count' => 1, 'assets' => [[
+        'legacy_alias' => 'legacy-logo', 'key' => 'numeric-scope', 'media_id' => $media->id, 'scope' => '1',
+    ]]];
+
+    expect(fn () => app(TemplateImporter::class)->adopt($manifest, apply: true))
+        ->toThrow(InvalidArgumentException::class, 'already registered differently')
+        ->and($assets->get('numeric-scope')['scope'])->toBe('01');
+});
+
 it('rejects malformed adoption manifests before mutating consumer data', function (): void {
     $manifests = app(TemplateAdoptionManifest::class);
     $valid = [
@@ -1337,7 +1469,7 @@ it('rejects ancestor symlink escapes and inline SVG assets', function (): void {
 
 it('snapshots queued assignment settings and recovers expired render leases', function (): void {
     Queue::fake();
-    config()->set('nvl-templates.rendering.output.persist', false);
+    config()->set('nvl-templates.rendering.output.persist', true);
     $actor = SystemActor::Background;
     $owner = TestTemplateOwner::query()->create(['name' => 'Ada']);
     $template = app(TemplateLifecycle::class)->create(
@@ -1799,7 +1931,7 @@ it('renders native host mapped TemplateVersion snapshots for immediate and durab
     Relation::morphMap(['host-template-version' => TemplateVersion::class] + $hostMap, false);
     try {
         Queue::fake();
-        config()->set('nvl-templates.rendering.output.persist', false);
+        config()->set('nvl-templates.rendering.output.persist', true);
         $actor = SystemActor::Background;
         $template = app(TemplateLifecycle::class)->create(['status' => TemplateStatus::Active, 'metadata' => [], 'translations' => ['en' => ['title' => 'Welcome']], 'key' => 'welcome'], $actor);
         [$version] = createComposedTemplateVersion($template, $actor, [], ['en' => ['text' => 'Native', 'subject' => 'Host identity']]);
@@ -1842,4 +1974,25 @@ it('persists verified queued output through the optional private Media adapter',
     $media = app(MediaReader::class)->slots($actor, $completed, ['output'])['output'];
     expect($media)->toHaveCount(1)->and($media[0]->is_public)->toBeFalse()
         ->and(Storage::disk($media[0]->disk)->get($media[0]->buildPath()))->toBe('Private:Ada');
+});
+
+it('rejects queue requests before reserving a render when durable output is disabled', function (): void {
+    Queue::fake();
+    config()->set('nvl-templates.rendering.output.persist', false);
+    expect(fn () => app(TemplateRenderer::class)->queue('missing-template', ['locale' => 'en', 'payload' => []], SystemActor::Background))
+        ->toThrow(TemplateResolutionException::class, 'rendering.output.persist');
+    expect(TemplateRender::query()->count())->toBe(0);
+    Queue::assertNothingPushed();
+});
+
+it('fails an existing queued render instead of discarding output after persistence is disabled', function (): void {
+    Queue::fake();
+    $actor = SystemActor::Background;
+    $template = app(TemplateLifecycle::class)->create(['key' => 'welcome'], $actor);
+    [$version] = createComposedTemplateVersion($template, $actor, [], ['en' => ['text' => 'Retain me']]);
+    app(TemplateLifecycle::class)->publishVersion($version, $version->revision, $actor);
+    $render = app(TemplateRenderer::class)->queue($template, ['locale' => 'en', 'payload' => ['name' => 'Ada']], $actor);
+    config()->set('nvl-templates.rendering.output.persist', false);
+    expect(fn () => app(TemplateRenderer::class)->process($render))->toThrow(TemplateResolutionException::class, 'rendering.output.persist');
+    expect($render->refresh()->status)->toBe(TemplateRenderStatus::Failed);
 });

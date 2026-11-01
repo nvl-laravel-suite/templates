@@ -40,85 +40,86 @@ final readonly class MpdfTemplateRenderer implements TemplateRenderer
             ->render();
         $this->htmlGuard->validate($html);
         $options = $this->optionsResolver->resolve($context);
-        $mpdf = new Mpdf([
-            'tempDir' => $this->temporaryDirectories->resolve(
-                $options['temporaryDirectory'],
-            ),
-            'format' => $options['pageSize']->value,
-            'orientation' => $options['orientation']->mpdfValue(),
-            'margin_left' => $options['margins']['left'],
-            'margin_right' => $options['margins']['right'],
-            'margin_top' => $options['margins']['top'],
-            'margin_bottom' => $options['margins']['bottom'],
-            'margin_header' => $options['margins']['header'],
-            'margin_footer' => $options['margins']['footer'],
-            'default_font' => $options['defaultFont'],
-            'default_font_size' => $options['defaultFontSize'],
-            'dpi' => $options['dpi'],
-            'img_dpi' => $options['imageDpi'],
-            'jpgQuality' => $options['imageQuality'],
-            'showImageErrors' => $options['showImageErrors'],
-            'PDFA' => $options['pdfa'],
-            'PDFAauto' => $options['pdfaAuto'],
-            'allowAnnotationFiles' => false,
-            'curlAllowUnsafeSslRequests' => false,
-        ], new SimpleContainer(['assetFetcher' => $this->assets]));
-        $mpdf->SetCompression($options['compress']);
-        $mpdf->SetTitle($options['title'] ?? $context->subject ?? $context->template->key);
-        $mpdf->SetAuthor($options['author']);
-        $mpdf->SetCreator($options['creator']);
-        $mpdf->SetSubject($options['subject'] ?? $context->subject ?? '');
 
-        if ($options['keywords'] !== '') {
-            $mpdf->SetKeywords($options['keywords']);
-        }
+        return $this->temporaryDirectories->withDirectory(function (string $temporaryDirectory) use ($options, $context, $html): array {
+            $mpdf = new Mpdf([
+                'tempDir' => $temporaryDirectory,
+                'format' => $options['pageSize']->value,
+                'orientation' => $options['orientation']->mpdfValue(),
+                'margin_left' => $options['margins']['left'],
+                'margin_right' => $options['margins']['right'],
+                'margin_top' => $options['margins']['top'],
+                'margin_bottom' => $options['margins']['bottom'],
+                'margin_header' => $options['margins']['header'],
+                'margin_footer' => $options['margins']['footer'],
+                'default_font' => $options['defaultFont'],
+                'default_font_size' => $options['defaultFontSize'],
+                'dpi' => $options['dpi'],
+                'img_dpi' => $options['imageDpi'],
+                'jpgQuality' => $options['imageQuality'],
+                'showImageErrors' => $options['showImageErrors'],
+                'PDFA' => $options['pdfa'],
+                'PDFAauto' => $options['pdfaAuto'],
+                'allowAnnotationFiles' => false,
+                'curlAllowUnsafeSslRequests' => false,
+            ], new SimpleContainer(['assetFetcher' => $this->assets]));
+            $mpdf->SetCompression($options['compress']);
+            $mpdf->SetTitle($options['title'] ?? $context->subject ?? $context->template->key);
+            $mpdf->SetAuthor($options['author']);
+            $mpdf->SetCreator($options['creator']);
+            $mpdf->SetSubject($options['subject'] ?? $context->subject ?? '');
 
-        if ($options['headerView'] !== null) {
-            $mpdf->SetHTMLHeader($this->renderPartial(
-                $options['headerView'],
-                $options['headerData'],
-                $context,
-            ));
-        } elseif ($options['headerHtml'] !== null) {
-            $this->htmlGuard->validate($options['headerHtml']);
-            $mpdf->SetHTMLHeader($options['headerHtml']);
-        }
+            if ($options['keywords'] !== '') {
+                $mpdf->SetKeywords($options['keywords']);
+            }
 
-        if ($options['footerView'] !== null) {
-            $mpdf->SetHTMLFooter($this->renderPartial(
-                $options['footerView'],
-                $options['footerData'],
-                $context,
-            ));
-        } elseif ($options['footerHtml'] !== null) {
-            $this->htmlGuard->validate($options['footerHtml']);
-            $mpdf->SetHTMLFooter($options['footerHtml']);
-        }
+            if ($options['headerView'] !== null) {
+                $mpdf->SetHTMLHeader($this->renderPartial(
+                    $options['headerView'],
+                    $options['headerData'],
+                    $context,
+                ));
+            } elseif ($options['headerHtml'] !== null) {
+                $this->htmlGuard->validate($options['headerHtml']);
+                $mpdf->SetHTMLHeader($options['headerHtml']);
+            }
 
-        if ($options['protectionPermissions'] !== []
-            || $options['userPassword'] !== null
-            || $options['ownerPassword'] !== null) {
-            $mpdf->SetProtection(
-                $options['protectionPermissions'],
-                $options['userPassword'] ?? '',
-                $options['ownerPassword'],
-            );
-        }
+            if ($options['footerView'] !== null) {
+                $mpdf->SetHTMLFooter($this->renderPartial(
+                    $options['footerView'],
+                    $options['footerData'],
+                    $context,
+                ));
+            } elseif ($options['footerHtml'] !== null) {
+                $this->htmlGuard->validate($options['footerHtml']);
+                $mpdf->SetHTMLFooter($options['footerHtml']);
+            }
 
-        if ($options['watermark'] !== null && $options['watermark'] !== '') {
-            $mpdf->SetWatermarkText($options['watermark'], $options['watermarkOpacity']);
-            $mpdf->showWatermarkText = true;
-        }
+            if ($options['protectionPermissions'] !== []
+                || $options['userPassword'] !== null
+                || $options['ownerPassword'] !== null) {
+                $mpdf->SetProtection(
+                    $options['protectionPermissions'],
+                    $options['userPassword'] ?? '',
+                    $options['ownerPassword'],
+                );
+            }
 
-        $mpdf->WriteHTML($html);
-        $content = $mpdf->OutputBinaryData();
+            if ($options['watermark'] !== null && $options['watermark'] !== '') {
+                $mpdf->SetWatermarkText($options['watermark'], $options['watermarkOpacity']);
+                $mpdf->showWatermarkText = true;
+            }
 
-        if (! is_string($content)) {
-            throw new UnexpectedValueException('mPDF did not return binary string output.');
-        }
+            $mpdf->WriteHTML($html);
+            $content = $mpdf->OutputBinaryData();
 
-        return ['subject' => $context->subject, 'suggested_filename' => $context->filename
-                ?? "{$context->template->key}-{$context->locale}.pdf", 'content' => $content, 'mime_type' => 'application/pdf', 'renderer' => $context->renderer, 'byte_size' => strlen($content), 'checksum' => hash('sha256', $content)];
+            if (! is_string($content)) {
+                throw new UnexpectedValueException('mPDF did not return binary string output.');
+            }
+
+            return ['subject' => $context->subject, 'suggested_filename' => $context->filename
+                        ?? "{$context->template->key}-{$context->locale}.pdf", 'content' => $content, 'mime_type' => 'application/pdf', 'renderer' => $context->renderer, 'byte_size' => strlen($content), 'checksum' => hash('sha256', $content)];
+        }, $options['temporaryDirectory']);
     }
 
     /**

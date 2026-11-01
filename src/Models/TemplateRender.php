@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Models;
 
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Nvl\Media\Models\Media;
 use Nvl\Support\Config\PackageStorage;
 use Nvl\Support\Ownership\Contracts\Ownable;
 use Nvl\Templates\Database\Factories\TemplateRenderFactory;
@@ -51,7 +49,6 @@ use Nvl\Templates\Support\TemplatesConfiguration;
  * @property-read Template $template
  * @property-read TemplateVersion $version
  * @property-read TemplateAssignment|null $assignment
- * @property-read Collection<int, Media> $media
  *
  * @api
  */
@@ -139,10 +136,6 @@ final class TemplateRender extends Model implements Ownable
             'failed_at' => 'immutable_datetime',
         ];
     }
-
-    /**
-     * Render outputs are private and atomically replaceable.
-     */
 
     /**
      * @return BelongsTo<Template, $this>

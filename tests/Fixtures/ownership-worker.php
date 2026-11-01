@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Nvl\Content\Providers\ContentServiceProvider;
 use Nvl\Filterable\Providers\FilterableServiceProvider;
 use Nvl\Media\Providers\MediaServiceProvider;
@@ -46,6 +47,9 @@ $app = Application::create(options: ['load_environment_variables' => false, 'ext
 ]]]);
 $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
+$app['events']->listen(JobExceptionOccurred::class, static function (JobExceptionOccurred $event): void {
+    fwrite(STDERR, $event->exception::class.': '.$event->exception->getMessage().PHP_EOL);
+});
 if (($options['mode'] ?? 'queue') === 'version') {
     if (! is_string($options['ready'] ?? null) || ! is_string($options['gate'] ?? null) || ! is_string($options['template'] ?? null)) {
         throw new RuntimeException('Invalid native race options.');

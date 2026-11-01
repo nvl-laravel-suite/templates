@@ -27,7 +27,6 @@ use Nvl\Translatable\Translatable as HasTranslations;
  *
  * @property string|null $owner_scope_key
  * @property string $id
- * @property string $ownership_key
  * @property string $key
  * @property string $renderer
  * @property TemplateStatus $status
@@ -69,7 +68,6 @@ class Template extends Model implements Ownable, TranslatableModel
     /** @var list<string> */
     protected $fillable = [
         'key',
-        'ownership_key',
         'renderer',
         'status',
         'schema',

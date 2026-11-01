@@ -14,6 +14,7 @@ use Nvl\Templates\Models\TemplateAssignment;
 use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Models\TemplateTranslation;
 use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Services\CanonicalJson;
 use Nvl\Templates\Tests\Fixtures\TestTemplateOwner;
 
 function consumerTemplateSnapshot(): array
@@ -63,7 +64,7 @@ it('persists a supplied published snapshot and an exact assignment render graph 
     $render = TemplateRender::factory()->forAssignment($assignment)->create();
     $reloaded = $version->fresh();
     expect($reloaded->id)->toBe($snapshot['ownerId'])->and($reloaded->content_hash)->toBe($snapshot['version'])
-        ->and($reloaded->content_snapshot)->toBe($snapshot)
+        ->and(app(CanonicalJson::class)->digest($reloaded->content_snapshot))->toBe(app(CanonicalJson::class)->digest($snapshot))
         ->and($reloaded->published_at)->not->toBeNull()
         ->and($render->template_id)->toBe($template->id)->and($render->template_version_id)->toBe($version->id)
         ->and($render->template_assignment_id)->toBe($assignment->id)->and($render->profile)->toBe('letter')
@@ -92,7 +93,7 @@ it('uses configured package tables and connection for real parent expansion', fu
     config()->set('database.connections.factory_custom', ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '', 'foreign_key_constraints' => true]);
     config()->set('nvl-templates.connection', 'factory_custom');
     config()->set('nvl-templates.tables.templates', 'host_templates');
-    config()->set('nvl-templates.tables.templates_i18n', 'host_template_translations');
+    config()->set('nvl-templates.tables.i18n', 'host_template_translations');
     foreach (['2026_07_27_100001_nvl_templates_create_templates_table.php', '2026_07_27_100002_nvl_templates_create_templates_i18n_table.php'] as $migration) {
         (require dirname(__DIR__, 2).'/database/migrations/'.$migration)->up();
     }

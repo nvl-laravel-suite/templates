@@ -38,10 +38,10 @@ final readonly class TemplateAssignments
         array $data,
         Authenticatable|SystemActor $actor,
     ): TemplateAssignment {
-        $data = app(TemplateContentGuard::class)->assign($data);
+        $data = $this->guard->assign($data);
         $data += ['profile' => 'default', 'versionId' => null, 'settings' => [], 'expected_revision' => 0];
         $templateId = $template instanceof Template ? $template->id : $template;
-        $actor = app(TemplateContentGuard::class)->actor($actor);
+        $actor = $this->guard->actor($actor);
         $this->authorization->authorize(
             TemplateAbility::Assign,
             $actor,
@@ -157,7 +157,7 @@ final readonly class TemplateAssignments
                 $assignment = $this->boundary->query(TemplateAssignment::query(), 'templates.assignments')
                     ->lockForUpdate()
                     ->findOrFail($assignmentId);
-                $actor = app(TemplateContentGuard::class)->actor($actor);
+                $actor = $this->guard->actor($actor);
                 $this->authorization->authorize(
                     TemplateAbility::Assign,
                     $actor,

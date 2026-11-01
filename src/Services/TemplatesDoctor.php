@@ -7,6 +7,7 @@ namespace Nvl\Templates\Services;
 use Illuminate\Contracts\View\Factory;
 use Mpdf\Mpdf;
 use Nvl\Content\Services\ContentDefinitionRegistry;
+use Nvl\Media\Services\MediaUploader;
 use Nvl\Support\Config\PackageOptions;
 use Nvl\Support\Ownership\Contracts\OwnershipReadiness;
 use Nvl\Templates\Contracts\TemplateAuthorization;
@@ -84,14 +85,6 @@ final class TemplatesDoctor
             'renderers' => $registeredRenderers,
             'definitions' => array_keys($definitions->all()),
             'owners' => $owners->aliases(),
-            'management_routes' => (bool) config(
-                'nvl-templates.routes.management.enabled',
-                false,
-            ),
-            'render_routes' => (bool) config(
-                'nvl-templates.routes.render.enabled',
-                false,
-            ),
             'queue' => PackageOptions::queueName('templates'),
             'pdf.version' => $pdfAvailable ? Mpdf::VERSION : null,
             'dependencies.pdf' => [
@@ -174,8 +167,6 @@ final class TemplatesDoctor
                 TemplatesTables::get(TemplatesTables::Versions) => 'template_versions',
                 TemplatesTables::get(TemplatesTables::Assignments) => 'template_assignments',
                 TemplatesTables::get(TemplatesTables::Renders) => 'template_renders',
-                TemplatesTables::get(TemplatesTables::TenantGrants) => 'template_tenant_grants',
-                TemplatesTables::get(TemplatesTables::TenantGrantLocks) => 'template_tenant_grant_locks',
                 default => $key,
             };
             $checks["table.{$logicalKey}"] = $schema->hasTable($table);
@@ -380,6 +371,7 @@ final class TemplatesDoctor
 
         return is_string($disk)
             && $disk !== ''
+            && class_exists(MediaUploader::class)
             && is_array(config("filesystems.disks.{$disk}"));
     }
 }

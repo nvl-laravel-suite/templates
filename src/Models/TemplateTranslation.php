@@ -39,7 +39,7 @@ final class TemplateTranslation extends Model implements Ownable
     use OwnsTemplateChild;
 
     /** @var list<string> */
-    protected $fillable = ['template_id', 'tenant_id', 'ownership_key', 'locale', 'title', 'description'];
+    protected $fillable = ['template_id', 'locale', 'title', 'description'];
 
     /** Resolve the configured native table owned by this model. */
     public function getTable(): string

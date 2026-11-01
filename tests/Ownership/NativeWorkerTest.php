@@ -4,6 +4,8 @@ declare(strict_types=1);
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Nvl\Media\Enums\MediaVisibility;
+use Nvl\Media\Services\MediaReader;
 use Nvl\Ownership\Services\OwnershipRunner;
 use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Models\TemplateRender;
@@ -67,13 +69,19 @@ it('runs captured Template workers with private Media outputs and races version 
     $root = Storage::disk('local')->path('');
     $worker = new Process([PHP_BINARY, __DIR__.'/../Fixtures/ownership-worker.php', $source, json_encode(['root' => $root], JSON_THROW_ON_ERROR)], env: ['XDEBUG_MODE' => 'off'], timeout: 60);
     $worker->mustRun();
-    expect($worker->getOutput())->toBe('unresolved')->and(DB::table('jobs')->count())->toBe(0)->and(DB::table('failed_jobs')->pluck('exception')->all())->toBe([]);
+    expect($worker->getOutput())->toBe('unresolved')
+        ->and(DB::table('jobs')->count())->toBe(0, $worker->getErrorOutput().json_encode(DB::table('jobs')->get(['queue', 'attempts', 'reserved_at', 'available_at'])->all(), JSON_THROW_ON_ERROR))
+        ->and(DB::table('failed_jobs')->pluck('exception')->all())->toBe([]);
     foreach ([7, 8] as $company) {
         $runner->run(OwnershipCompany::findOrFail($company), $actor, function () use ($company, $renders): void {
             $render = TemplateRender::query()->findOrFail($renders[$company]);
             expect($render->status->value)->toBe('completed');
-            $output = $render->media()->firstOrFail();
-            expect($output->getAttribute('owner_scope_key'))->toBe($render->getAttribute('owner_scope_key'));
+            $outputs = app(MediaReader::class)->slots(SystemActor::Background, $render, ['output']);
+            expect($outputs['output'])->toHaveCount(1);
+            $output = $outputs['output'][0];
+            expect($output->getAttribute('owner_scope_key'))->toBe($render->getAttribute('owner_scope_key'))
+                ->and($output->is_public)->toBeFalse()
+                ->and($output->visibility)->toBe(MediaVisibility::Private);
             expect(Storage::disk('local')->get($output->storage_path))->toContain('Owner '.$company);
         });
     }

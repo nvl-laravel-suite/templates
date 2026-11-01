@@ -7,20 +7,20 @@ namespace Nvl\Templates\Services;
 use InvalidArgumentException;
 use Nvl\Content\Enums\ContentVisibility;
 use Nvl\Content\Services\ContentDefinitionRegistry;
-use Nvl\Content\Services\ContentLocalePolicy;
 use Nvl\Content\Services\ContentPatch;
 use Nvl\Content\Services\ContentScopeRegistry;
 use Nvl\Content\Validation\ContentValueValidator;
 use Nvl\Media\Enums\MediaLifecycleStatus;
 use Nvl\Media\Models\Media;
 use Nvl\Media\Services\MediaModelRegistry;
+use Nvl\Support\Contracts\LocaleCatalog;
 use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Enums\TemplateStatus;
 
 /**
  * Validates and normalizes the bounded source-to-suite adoption manifest.
  *
- * @phpstan-type TemplateItem array{legacy_key: string, key: string, status: TemplateStatus, metadata: array<string, mixed>, translations: array<string, array<string, mixed>>}
+ * @phpstan-type TemplateItem array{legacy_key: string, key: string, status: TemplateStatus, metadata: array<string, mixed>, translations: array<string, array{title: string, description?: string|null}>}
  * @phpstan-type ContentItem array{legacy_identity: string, identity: string, definition: string, key: string, scope: string, scopeKey: string, visibility: ContentVisibility, values: array<string, mixed>, translations: array<string, array<string, mixed>>, metadata: array<string, mixed>, publish: bool}
  * @phpstan-type AssetItem array{legacy_alias: string, key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null, asset: array{key: string, mediaId: string, scope: string, type: string, variation: string, delivery: string, expected_revision: int|null}}
  * @phpstan-type NormalizedManifest array{staging_connection: string, staging_tables: list<string>, legacy_asset_count: int, templates: list<TemplateItem>, content: list<ContentItem>, assets: list<AssetItem>}
@@ -32,11 +32,7 @@ final readonly class TemplateAdoptionManifest
     /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(
         private TemplateDefinitionRegistry $templateDefinitions,
-        private ContentDefinitionRegistry $contentDefinitions,
-        private ContentScopeRegistry $contentScopes,
-        private ContentLocalePolicy $locales,
-        private ContentPatch $contentPatch,
-        private ContentValueValidator $contentValues,
+        private LocaleCatalog $locales,
         private TemplateContentGuard $templateGuard,
         private MediaTemplateAssetRegistry $assets,
     ) {}
@@ -142,8 +138,17 @@ final readonly class TemplateAdoptionManifest
         $translations = $this->translations($item['translations'] ?? [], "template {$sourceKey}");
         $this->templateGuard->metadata($metadata);
 
+        $normalizedTranslations = [];
+
         foreach ($translations as $locale => $translation) {
-            $this->locales->assertSupported($locale);
+            if (! $this->locales->supports($locale)) {
+                throw new InvalidArgumentException("Adoption template [{$sourceKey}] translation locale [{$locale}] is not supported.");
+            }
+            $locale = $this->locales->normalize($locale);
+            if (array_key_exists($locale, $normalizedTranslations)) {
+                throw new InvalidArgumentException("Adoption template [{$sourceKey}] contains duplicate locale [{$locale}].");
+            }
+            $this->exactKeys($translation, ['title', 'description'], "template {$sourceKey} translation {$locale}");
             $title = $translation['title'] ?? null;
             $description = $translation['description'] ?? null;
 
@@ -158,6 +163,10 @@ final readonly class TemplateAdoptionManifest
                     "Adoption template [{$sourceKey}] translation [{$locale}] description must be a string or null.",
                 );
             }
+            $normalizedTranslations[$locale] = ['title' => $title];
+            if (array_key_exists('description', $translation)) {
+                $normalizedTranslations[$locale]['description'] = $description;
+            }
         }
 
         $this->templateDefinitions->get($key);
@@ -167,7 +176,7 @@ final readonly class TemplateAdoptionManifest
             'key' => $key,
             'status' => $status,
             'metadata' => $metadata,
-            'translations' => $translations,
+            'translations' => $normalizedTranslations,
         ];
     }
 
@@ -177,6 +186,9 @@ final readonly class TemplateAdoptionManifest
      */
     private function normalizeContent(array $item): array
     {
+        if (! config('nvl-templates.integrations.content', false) || ! class_exists(ContentDefinitionRegistry::class)) {
+            throw new InvalidArgumentException('Adopting Content requires the enabled Content integration.');
+        }
         $this->exactKeys($item, [
             'legacy_key',
             'legacy_scope',
@@ -217,11 +229,11 @@ final readonly class TemplateAdoptionManifest
         $values = $this->stringMap($item['values'] ?? [], "content {$sourceKey} values");
         $translations = $this->translations($item['translations'] ?? [], "content {$sourceKey}");
         $metadata = $this->stringMap($item['metadata'] ?? [], "content {$sourceKey} metadata");
-        $contentDefinition = $this->contentDefinitions->get($definition);
-        $this->contentScopes->assert($scope, $scopeKey, $contentDefinition);
-        $validated = $this->contentValues->validate(
+        $contentDefinition = app(ContentDefinitionRegistry::class)->get($definition);
+        app(ContentScopeRegistry::class)->assert($scope, $scopeKey, $contentDefinition);
+        $validated = app(ContentValueValidator::class)->validate(
             $contentDefinition['schema'],
-            $this->contentPatch->merge($contentDefinition['defaults'], $values),
+            app(ContentPatch::class)->merge($contentDefinition['defaults'], $values),
             $translations,
             SystemActor::Background,
             $visibility,
@@ -249,6 +261,9 @@ final readonly class TemplateAdoptionManifest
      */
     private function normalizeAsset(array $item): array
     {
+        if (! class_exists(MediaModelRegistry::class)) {
+            throw new InvalidArgumentException('Adopting Media assets requires nvl/media.');
+        }
         $this->exactKeys($item, [
             'legacy_alias',
             'key',

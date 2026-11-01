@@ -7,6 +7,7 @@ namespace Nvl\Templates\Services;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
+use InvalidArgumentException;
 use Nvl\Media\Enums\MediaLifecycleStatus;
 use Nvl\Media\Models\Media;
 use Nvl\Media\Services\MediaAttachments;
@@ -17,6 +18,7 @@ use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Contracts\TemplateAssetResolver;
 use Nvl\Templates\Exceptions\TemplateResolutionException;
 use Nvl\Templates\Models\TemplateRender;
+use RuntimeException;
 
 /**
  * Resolves opt-in template aliases through revision-aware NVL Media delivery.
@@ -65,17 +67,23 @@ final readonly class MediaTemplateAssetResolver implements TemplateAssetResolver
             }
         }
 
-        $value = $asset['delivery'] === 'url'
-            ? $media->getUrl($asset['variation'])
-            : $media->getPath($asset['variation']);
+        try {
+            $value = $asset['delivery'] === 'url'
+                ? $media->getUrl($asset['variation'])
+                : $media->getPath($asset['variation']);
+            $this->guard->value($value);
+        } catch (RuntimeException|InvalidArgumentException $exception) {
+            throw new TemplateResolutionException(
+                "Template Media alias [{$key}] could not produce a safe {$asset['delivery']}.",
+                previous: $exception,
+            );
+        }
 
         if ($value === '') {
             throw new TemplateResolutionException(
                 "Template Media alias [{$key}] could not produce a safe {$asset['delivery']}.",
             );
         }
-
-        $this->guard->value($value);
 
         return $value;
     }
@@ -105,11 +113,11 @@ final readonly class MediaTemplateAssetResolver implements TemplateAssetResolver
     {
         $temporary = tempnam(sys_get_temp_dir(), 'nvl-template-');
         if ($temporary === false) {
-            throw new \RuntimeException('Unable to stage template output.');
+            throw new RuntimeException('Unable to stage template output.');
         }
         try {
             if (file_put_contents($temporary, $result['content']) !== strlen($result['content'])) {
-                throw new \RuntimeException('Unable to stage complete template output.');
+                throw new RuntimeException('Unable to stage complete template output.');
             }
             $slot = (new MediaSlot('output'))->privateExclusive()->onlyKeepLatest(1);
             $file = new UploadedFile($temporary, $filename, $result['mime_type'], test: true);
