@@ -1,24 +1,15 @@
-# Security Policy
+# Security policy
 
-Submit reports through [this package's private vulnerability reporting form](https://github.com/nvl-laravel-suite/templates/security/advisories/new).
+Report a suspected vulnerability privately to the maintainers through the repository security channel. Include the affected package revision, reproducible input and relevant configuration; redact credentials, personal data and private render content.
 
-Security fixes are provided for the published `5.x` release line and the `6.x` line once published. Prepared 6.0.0 source does not establish release certification. Enabled Ownership requires Laravel 13; disabled/unowned hosts keep the declared framework range. Composer declares PHP `^8.4` and Laravel `^12.0|^13.0`. The local Dagger release gate verifies PHP 8.4/Laravel 13 with MySQL 8.4 and PostgreSQL 17 persistence contracts; PHP 8.5, Laravel 12 and MariaDB require separate compatibility evidence. Upstream security lifecycle limits still apply.
+The engine treats template sources, runtime values, HTML/CSS, imported URLs and asset bytes as separate validated boundaries. Stored documents are never evaluated as Blade/PHP. Published documents and dependency pins are immutable; current authorization, asset evidence and output limits are checked again at use.
 
-Include the definition key, renderer alias, route group, owner scope, payload
-shape, storage disk, and impact. Do not include production secrets or personal
-content. Keep APIs disabled until authorization is bound, keep views and
-renderer classes source-controlled, bound every JSON input, encrypt queued
-payloads, and deliver private outputs only through Media authorization.
+Bind explicit Template and Media policies. Persisted actors are reloaded from canonical storage. Native Ownership admission, source scope, business owner authorization and exposed customer inputs/settings are independent checks. Public endpoints must resolve trusted facts/context server-side and limit request/response bodies. Do not expose authoring or internal worker operations merely because an editor button is hidden.
 
-The bundled PDF renderer rejects dangerous tags and resource schemes, bounds
-HTML/data-image size, uses a dedicated allowlisted temp root, and disables
-remote assets by default. Enabling remote assets requires HTTPS and exact hosts.
-These controls do not make arbitrary user HTML safe: escape all persisted and
-request values in Blade and never render user-authored executable markup.
+Import through configured storage sources or allowlisted public URLs. Retained assets/output use native private Media slots and checked identities/bytes. Serve private content through authorized host responses; do not expose raw storage paths or bypass Media policy with a public filesystem URL. Email permits PNG/JPEG/GIF; retain matching safe CIDs and validate MIME bytes.
 
-Renderer output is verified for maximum size, MIME safety, exact byte count,
-SHA-256 checksum, safe filename, subject line safety, and PDF signature.
-`TemplateResponseFactory` protects Content-Type, Content-Length, ETag,
-Content-Disposition, and nosniff headers. PDF headers and footers must be
-source-controlled views; database/request-provided raw header or footer HTML is
-not supported.
+Provision a trusted compiler executable/argument array, deployment identity, execution timeout and matching bundle. Configure PDF driver credentials and request bounds server-side. Never accept executable commands, class names, private service URLs or credentials from template/user data.
+
+Durable snapshots are encrypted. Keep the application encryption key and queue/storage access secure, capture/re-admit native authority, and schedule bounded recovery/retention plus Media maintenance. Host delivery services own sender policy, recipients, transport retries and any business outbox.
+
+Legacy migration files are historical source. Existing installations require staged review; backups and migration names alone do not prove a compatible document graph. See [UPGRADING.md](UPGRADING.md).

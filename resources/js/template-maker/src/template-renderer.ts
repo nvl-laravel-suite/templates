@@ -1,0 +1,16 @@
+export * from './template-schema'
+export { renderTemplate, createTemplateRevision } from './template-core/render'
+export { exportTemplateBlock } from './template-core/blocks'
+export type { TemplateRenderOptions, TemplateRenderResult } from './template-core/render'
+export { createTemplateDefinition, createInvoiceTemplate, createTemplateNode } from './template-core/defaults'
+export { compileTemplateCSS, discoverTemplateClasses } from './template-core/styles'
+export { getTemplatePresets } from './template-core/presets'
+export type { TemplateInsertPreset } from './template-core/presets'
+export type { TemplateFragment } from './template-core/fragments'
+export { createTemplateColumns, getTemplateColumns } from './template-core/columns'
+export type { TemplateColumns, TemplateColumnLayoutPatch } from './template-core/columns'
+
+export { adaptVoucherProject } from './template-core/legacy'
+export type { VoucherMigrationResult } from './template-core/legacy'
+
+export * from './template-platform/platform'

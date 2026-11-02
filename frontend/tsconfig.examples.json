@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
+  },
+  "include": [
+    "examples/**/*.tsx",
+    "examples/**/*.ts"
+  ],
+  "exclude": [
+    "examples/**/*.test.ts",
+    "examples/**/*.test.tsx"
+  ]
+}

@@ -37,8 +37,6 @@ That group copies the full skill tree to `.agents/skills`. Avoid force-overwriti
 - `nvl-templates-config`
 - `nvl-templates-migrations`
 - `nvl-templates-skills`
-- `nvl-templates-translations`
-- `nvl-templates-views`
 
 ## Configuration
 
@@ -67,20 +65,16 @@ Configure `nvl-templates.connection` and supported table mappings before migrati
 
 These commands are registered by Composer-discovered package providers. Feature-gated commands require the corresponding enabled adapter/runtime. Read each installed command’s `--help` before supplying operation options:
 
-- `php artisan nvl:templates:adopt --help`
-- `php artisan nvl:templates:views:publish --help`
+- `php artisan nvl:templates:renders:prune --help`
+- `php artisan nvl:templates:frontend:publish --help`
 - `php artisan nvl:templates:renders:recover --help`
-- `php artisan nvl:templates:sync --help`
 - `php artisan nvl:templates:doctor --help`
 
 ## Optional packages
 
 Installing an optional library does not grant a policy decision or automatically enable an integration. The manifest suggests:
 
-- `mpdf/mpdf`: Built-in PDF renderer: composer require mpdf/mpdf:^8.3.0 --with-all-dependencies (requires GD and mbstring).
-- `nvl/ownership`: Adds optional model-declared ownership, isolation, adoption and captured worker contexts.
-- `nvl/content`: Optional stored-template composition and publication integration.
-- `nvl/media`: Optional private render output and asset integration.
+- `nvl/ownership`: Optional native ownership isolation and captured queue execution for document roots.
 
 ## Verify the consumer
 

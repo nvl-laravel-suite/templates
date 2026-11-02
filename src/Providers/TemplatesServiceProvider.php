@@ -4,395 +4,102 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Providers;
 
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
-use Nvl\Content\Contracts\ContentOwnerRegistrar;
-use Nvl\Content\Services\ContentCatalogCopyRegistry;
-use Nvl\Media\Services\MediaReader;
+use Nvl\Media\Providers\MediaServiceProvider;
 use Nvl\Ownership\Services\OwnershipAdoptionRegistry;
 use Nvl\Support\Doctor\PackageDoctorContributor;
-use Nvl\Support\Globals\GlobalNames;
 use Nvl\Support\OwnerRegistry;
 use Nvl\Support\Ownership\Contracts\OwnershipIntegratedProvider;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Providers\SupportServiceProvider;
 use Nvl\Support\Traits\MergesPackageConfiguration;
-use Nvl\Support\Traits\RegistersNamespacedResources;
-use Nvl\Templates\Console\Commands\AdoptTemplatesCommand;
-use Nvl\Templates\Console\Commands\PublishTemplateViewsCommand;
-use Nvl\Templates\Console\Commands\RecoverTemplateRendersCommand;
-use Nvl\Templates\Console\Commands\SyncTemplateDefinitionsCommand;
+use Nvl\Templates\Console\Commands\PruneTemplateRenders;
+use Nvl\Templates\Console\Commands\PublishTemplateFrontend;
+use Nvl\Templates\Console\Commands\RecoverTemplateRenders;
 use Nvl\Templates\Console\Commands\TemplatesDoctorCommand;
-use Nvl\Templates\Contracts\TemplateAssetResolver;
+use Nvl\Templates\Contracts\ContextProvider;
+use Nvl\Templates\Contracts\DnsResolver;
+use Nvl\Templates\Contracts\RenderExecutionContext;
 use Nvl\Templates\Contracts\TemplateAuthorization;
-use Nvl\Templates\Contracts\TemplateCatalogAccess;
-use Nvl\Templates\Contracts\TemplateOwnerResolver;
-use Nvl\Templates\Contracts\TemplatePayloadValidator;
-use Nvl\Templates\Contracts\TemplateRenderer;
-use Nvl\Templates\Models\TemplateVersion;
-use Nvl\Templates\Ownership\TemplatesAdoptionAdapter as OwnershipTemplatesAdoptionAdapter;
-use Nvl\Templates\Ownership\TemplatesResourceRegistrar as OwnershipTemplatesResourceRegistrar;
-use Nvl\Templates\Rendering\MpdfTemplateRenderer;
-use Nvl\Templates\Rendering\UnavailablePdfTemplateRenderer;
+use Nvl\Templates\Models\TemplateAsset;
+use Nvl\Templates\Models\TemplateRender;
+use Nvl\Templates\Ownership\TemplatesAdoptionAdapter;
+use Nvl\Templates\Ownership\TemplatesResourceRegistrar;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
-use Nvl\Templates\Services\ConfiguredTemplatePayloadValidator;
-use Nvl\Templates\Services\DenyTemplateCatalogAccess;
-use Nvl\Templates\Services\MediaTemplateAssetRegistry;
-use Nvl\Templates\Services\MediaTemplateAssetResolver;
-use Nvl\Templates\Services\NullTemplateAssetResolver;
-use Nvl\Templates\Services\TemplateContentCopyAccess;
-use Nvl\Templates\Services\TemplateDefinitionRegistry;
+use Nvl\Templates\Services\EmptyContextProvider;
+use Nvl\Templates\Services\NativeDnsResolver;
+use Nvl\Templates\Services\NativeRenderExecutionContext;
 use Nvl\Templates\Services\TemplateModelRegistry;
-use Nvl\Templates\Services\TemplateOwnerRegistry;
-use Nvl\Templates\Services\TemplatePdfDependencyGuard;
-use Nvl\Templates\Services\TemplateRendererRegistry;
+use Nvl\Templates\Services\TemplateOperation;
 use Nvl\Templates\Services\TemplatesDoctor;
-use Nvl\Translatable\Services\TranslationResourceRegistry;
 
-/**
- * Registers the composable rendering core and database-backed implementation.
- */
+/** Registers native document services, Media owners and opt-in publishable frontend. */
 final class TemplatesServiceProvider extends ServiceProvider implements OwnershipIntegratedProvider
 {
     use MergesPackageConfiguration;
-    use RegistersNamespacedResources;
 
-    /**
-     * Register package configuration, contracts, and renderer registry.
-     */
     public function register(): void
     {
-
         $this->app->register(SupportServiceProvider::class);
-        PackageDoctorContributor::register($this->app, 'nvl/templates', fn (): array => PackageDoctorContributor::reportChecks($this->app->make(TemplatesDoctor::class)->inspect(), 'nvl:templates:doctor'));
-
+        PackageDoctorContributor::register($this->app, 'nvl/templates', fn (): array => PackageDoctorContributor::booleanChecks(
+            $this->app->make(TemplatesDoctor::class)->inspect()['checks'], 'nvl:templates:doctor',
+        ));
+        $this->app->register(MediaServiceProvider::class);
         $this->mergePackageConfiguration(__DIR__.'/../../config/nvl-templates.php', 'templates');
         $this->app->singleton(TemplateModelRegistry::class);
         $this->app->booting(fn () => $this->app->make(TemplateModelRegistry::class)->prepare());
-        $authorization = config(
-            'nvl-templates.authorization.class',
-            ConfiguredTemplateAuthorization::class,
-        );
-
-        if (! is_string($authorization)
-            || ! is_a($authorization, TemplateAuthorization::class, true)) {
-            throw new InvalidArgumentException(
-                'templates.authorization.class must implement TemplateAuthorization.',
-            );
+        $this->app->scoped(TemplateOperation::class);
+        $policy = config('nvl-templates.authorization.class', ConfiguredTemplateAuthorization::class);
+        if (! is_string($policy) || ! is_a($policy, TemplateAuthorization::class, true)) {
+            throw new InvalidArgumentException('Templates authorization must implement TemplateAuthorization.');
         }
+        $this->app->bindIf(TemplateAuthorization::class, $policy);
+        $this->app->bindIf(ContextProvider::class, function (Application $app): ContextProvider {
+            $binding = config('nvl-templates.context_provider') ?: EmptyContextProvider::class;
+            if (! is_string($binding)) {
+                throw new InvalidArgumentException('Templates context_provider must name a container binding.');
+            }
+            $service = $app->make($binding);
+            if (! $service instanceof ContextProvider) {
+                throw new InvalidArgumentException('Templates context_provider must implement ContextProvider.');
+            }
 
-        $this->app->bindIf(TemplateCatalogAccess::class, DenyTemplateCatalogAccess::class);
-        $this->app->bindIf(TemplateAuthorization::class, $authorization);
-        $this->app->bindIf(
-            TemplatePayloadValidator::class,
-            ConfiguredTemplatePayloadValidator::class,
-        );
-        $assetDriver = config('nvl-templates.assets.driver', 'null');
+            return $service;
+        });
+        $this->app->bindIf(DnsResolver::class, NativeDnsResolver::class);
+        $this->app->bindIf(RenderExecutionContext::class, function (Application $app): RenderExecutionContext {
+            $binding = config('nvl-templates.render_context') ?: NativeRenderExecutionContext::class;
+            if (! is_string($binding)) {
+                throw new InvalidArgumentException('Templates render_context must name a container binding.');
+            }
+            $service = $app->make($binding);
+            if (! $service instanceof RenderExecutionContext) {
+                throw new InvalidArgumentException('Templates render_context must implement RenderExecutionContext.');
+            }
 
-        if (! is_string($assetDriver) || ! in_array($assetDriver, ['null', 'media'], true)) {
-            throw new InvalidArgumentException('templates.assets.driver must be null or media.');
-        }
-
-        if ($assetDriver === 'media' && ! class_exists(MediaReader::class)) {
-            throw new InvalidArgumentException('Template Media assets are enabled but nvl/media is unavailable.');
-        }
-
-        $this->app->singleton(MediaTemplateAssetRegistry::class);
-        $this->app->bindIf(
-            TemplateAssetResolver::class,
-            $assetDriver === 'media'
-                ? MediaTemplateAssetResolver::class
-                : NullTemplateAssetResolver::class,
-        );
-        $this->app->singleton(TemplateDefinitionRegistry::class);
-        $this->app->singleton(TemplateRendererRegistry::class);
-        $this->app->singleton(TemplateOwnerRegistry::class);
+            return $service;
+        });
     }
 
-    /**
-     * Register renderers, views, commands, and publishable package resources.
-     */
-    public function boot(
-        TranslationResourceRegistry $translationResources,
-        TemplateDefinitionRegistry $definitions,
-        TemplateRendererRegistry $renderers,
-        TemplateOwnerRegistry $owners,
-    ): void {
-        $this->app->make(OwnershipTemplatesResourceRegistrar::class)->register($this->app->make(OwnershipResourceRegistry::class));
+    public function boot(OwnershipResourceRegistry $resources, OwnerRegistry $owners): void
+    {
+        $this->app->make(TemplatesResourceRegistrar::class)->register($resources);
         if ($this->app->bound(OwnershipAdoptionRegistry::class)) {
-            $this->app->make(OwnershipAdoptionRegistry::class)->register('templates', OwnershipTemplatesAdoptionAdapter::class);
+            $this->app->make(OwnershipAdoptionRegistry::class)->register('templates', TemplatesAdoptionAdapter::class);
         }
-        $this->publishes([
-            __DIR__.'/../../resources/boost/skills' => base_path('.agents/skills'),
-        ], 'nvl-templates-skills');
-        $this->app->make(GlobalNames::class)->translations('templates', __DIR__.'/../../lang', $this->app->make('translation.loader'));
-        $this->publishes([
-            __DIR__.'/../../lang' => lang_path('vendor/nvl-templates'),
-        ], 'nvl-templates-translations');
-        $this->app->make(OwnerRegistry::class)->registerPackage(TemplateVersion::CONTENT_OWNER_TYPE, TemplateVersion::class, package: 'templates');
-        $assets = $this->app->make(MediaTemplateAssetRegistry::class);
-        $this->registerRenderers($renderers);
-        $this->loadViewsFrom(
-            __DIR__.'/../../resources/views',
-            $this->viewNamespace(),
-        );
-        $this->registerDefinitions($definitions);
-        $this->registerOwners($owners);
-        $this->registerMediaAssets($assets);
-        if (config('nvl-templates.integrations.content', false)) {
-            if (! interface_exists(ContentOwnerRegistrar::class)) {
-                throw new InvalidArgumentException('Templates Content integration is enabled but nvl/content is unavailable.');
-            }
-            $contentOwners = $this->app->make(ContentOwnerRegistrar::class);
-            $catalogCopies = $this->app->make(ContentCatalogCopyRegistry::class);
-            $catalogCopies->register(
-                TemplateVersion::CONTENT_OWNER_TYPE,
-                TemplateContentCopyAccess::class,
-            );
-            $registeredContentOwner = $contentOwners->registered(
-                TemplateVersion::CONTENT_OWNER_TYPE,
-            );
-
-            if ($registeredContentOwner === null) {
-                $contentOwners->register(
-                    TemplateVersion::CONTENT_OWNER_TYPE,
-                    TemplateVersion::class,
-                    [TemplateVersion::CONTENT_GROUP],
-                );
-            } elseif ($registeredContentOwner !== TemplateVersion::class) {
-                throw new InvalidArgumentException(
-                    'Content owner alias [template-version] must resolve to TemplateVersion.',
-                );
-            }
+        $owners->registerPackage('nvl-template-asset', TemplateAsset::class, package: 'templates');
+        $owners->registerPackage('nvl-template-render', TemplateRender::class, package: 'templates');
+        $root = dirname(__DIR__, 2);
+        if (config('nvl-templates.migrations.enabled', true)) {
+            $this->loadMigrationsFrom($root.'/database/document-migrations');
         }
-        if ((bool) config('nvl-templates.migrations.enabled', true)) {
-            $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
-        }
-
-        $translationResources->register(
-            key: 'templates.templates',
-            modelClass: $this->app->make(TemplateModelRegistry::class)->templateClass(),
-            label: 'Templates',
-            searchableColumns: ['key', 'renderer', 'status'],
-            displayColumns: ['key', 'renderer', 'status', 'revision'],
-            orderColumn: 'updated_at',
-        );
-
+        $this->publishes([$root.'/resources/config/nvl-templates.php' => config_path('nvl-templates.php')], 'nvl-templates-config');
+        $this->publishesMigrations([$root.'/database/document-migrations' => database_path('migrations')], 'nvl-templates-migrations');
+        $this->publishes([$root.'/resources/boost/skills' => base_path('.agents/skills')], 'nvl-templates-skills');
         if ($this->app->runningInConsole()) {
-            $this->commands([
-                AdoptTemplatesCommand::class,
-                SyncTemplateDefinitionsCommand::class,
-                TemplatesDoctorCommand::class,
-                PublishTemplateViewsCommand::class,
-                RecoverTemplateRendersCommand::class,
-            ]);
+            $this->commands([TemplatesDoctorCommand::class, RecoverTemplateRenders::class, PruneTemplateRenders::class, PublishTemplateFrontend::class]);
         }
-
-        $this->publishes([
-            __DIR__.'/../../config/nvl-templates.php' => config_path('nvl-templates.php'),
-        ], 'nvl-templates-config');
-        $this->publishes([
-            __DIR__.'/../../resources/views' => $this->publishedViewPath(),
-        ], 'nvl-templates-views');
-        $this->publishesMigrations([
-            __DIR__.'/../../database/migrations' => database_path('migrations'),
-        ], 'nvl-templates-migrations');
-    }
-
-    private function registerRenderers(TemplateRendererRegistry $registry): void
-    {
-        $configured = config('nvl-templates.renderers', []);
-
-        if (! is_array($configured)) {
-            throw new InvalidArgumentException('templates.renderers must be an array.');
-        }
-
-        foreach ($configured as $alias => $renderer) {
-            if (! is_string($alias)
-                || ! is_string($renderer)
-                || ! is_a($renderer, TemplateRenderer::class, true)) {
-                throw new InvalidArgumentException('Every configured template renderer is invalid.');
-            }
-
-            if ($renderer === MpdfTemplateRenderer::class && ! (new TemplatePdfDependencyGuard)->available()) {
-                $renderer = UnavailablePdfTemplateRenderer::class;
-            }
-
-            $registry->register($alias, $renderer);
-        }
-    }
-
-    private function registerDefinitions(TemplateDefinitionRegistry $registry): void
-    {
-        $configured = config('nvl-templates.definitions', []);
-
-        if (! is_array($configured)) {
-            throw new InvalidArgumentException('templates.definitions must be an array.');
-        }
-
-        foreach ($configured as $key => $definition) {
-            if (! is_string($key) || ! is_array($definition)) {
-                throw new InvalidArgumentException(
-                    'Every configured template definition is invalid.',
-                );
-            }
-
-            foreach ([
-                'renderer_options' => 'rendererOptions',
-                'subject_path' => 'subjectPath',
-                'required_regions' => 'requiredRegions',
-                'allowed_content_definitions' => 'allowedContentDefinitions',
-            ] as $configuredKey => $property) {
-                if (array_key_exists($configuredKey, $definition)
-                    && array_key_exists($property, $definition)) {
-                    throw new InvalidArgumentException(
-                        "Template definition [{$key}] cannot declare both [{$configuredKey}] and [{$property}].",
-                    );
-                }
-
-                if (array_key_exists($configuredKey, $definition)) {
-                    $definition[$property] = $definition[$configuredKey];
-                    unset($definition[$configuredKey]);
-                }
-            }
-
-            $allowed = [
-                'renderer',
-                'view',
-                'profiles',
-                'schema',
-                'rendererOptions',
-                'subjectPath',
-                'requiredRegions',
-                'allowedContentDefinitions',
-            ];
-            $unknown = array_diff(array_keys($definition), $allowed);
-
-            if ($unknown !== []) {
-                throw new InvalidArgumentException(
-                    "Template definition [{$key}] contains unknown option [".
-                    (string) reset($unknown).'].',
-                );
-            }
-
-            /** @var array{key: string, renderer: string, view: string, profiles?: list<string>, schema?: array<string, mixed>, rendererOptions?: array<string, mixed>, subjectPath?: string|null, requiredRegions?: list<string>, allowedContentDefinitions?: list<string>} $nativeDefinition */
-            $nativeDefinition = ['key' => $key, ...$definition];
-            $registry->register($nativeDefinition);
-        }
-    }
-
-    private function registerOwners(TemplateOwnerRegistry $registry): void
-    {
-        $configured = config('nvl-templates.owners', []);
-
-        if (! is_array($configured)) {
-            throw new InvalidArgumentException('templates.owners must be an array.');
-        }
-
-        foreach ($configured as $alias => $resolver) {
-            $owner = null;
-
-            if (is_array($resolver)) {
-                $owner = $resolver['owner'] ?? null;
-                $resolver = $resolver['resolver'] ?? null;
-
-                if (! is_string($owner)) {
-                    throw new InvalidArgumentException('Every templates identity reference must declare an owner alias.');
-                }
-            }
-
-            if (! is_string($alias)
-                || ! is_string($resolver)
-                || ! is_a($resolver, TemplateOwnerResolver::class, true)) {
-                throw new InvalidArgumentException(
-                    'Every configured template owner is invalid.',
-                );
-            }
-
-            $registry->register($alias, $resolver, $owner);
-        }
-    }
-
-    private function registerMediaAssets(MediaTemplateAssetRegistry $registry): void
-    {
-        $configured = config('nvl-templates.assets.media.aliases', []);
-
-        if (! is_array($configured)) {
-            throw new InvalidArgumentException('templates.assets.media.aliases must be an array.');
-        }
-
-        foreach ($configured as $key => $asset) {
-            if (! is_string($key) || ! is_array($asset)) {
-                throw new InvalidArgumentException(
-                    'Every configured template Media alias must be a keyed object.',
-                );
-            }
-
-            $unknown = array_diff(array_keys($asset), [
-                'media_id',
-                'scope',
-                'type',
-                'variation',
-                'delivery',
-                'expected_revision',
-            ]);
-
-            if ($unknown !== []) {
-                throw new InvalidArgumentException(
-                    "Template Media alias [{$key}] contains unknown option [".
-                    (string) reset($unknown).'].',
-                );
-            }
-
-            $mediaId = $asset['media_id'] ?? null;
-            $scope = $asset['scope'] ?? 'default';
-            $type = $asset['type'] ?? 'image';
-            $variation = $asset['variation'] ?? '';
-            $delivery = $asset['delivery'] ?? 'path';
-            $expectedRevision = $asset['expected_revision'] ?? null;
-
-            if (! is_string($mediaId)
-                || ! is_string($scope)
-                || ! is_string($type)
-                || ! is_string($variation)
-                || ! is_string($delivery)
-                || ($expectedRevision !== null && ! is_int($expectedRevision))) {
-                throw new InvalidArgumentException(
-                    "Template Media alias [{$key}] contains invalid values.",
-                );
-            }
-
-            $registry->register(['scope' => $scope, 'type' => $type, 'variation' => $variation, 'delivery' => $delivery, 'expected_revision' => $expectedRevision, 'key' => $key, 'mediaId' => $mediaId]);
-        }
-    }
-
-    private function viewNamespace(): string
-    {
-        $namespace = config('nvl-templates.views.namespace', 'nvl-templates');
-
-        if (! is_string($namespace)
-            || preg_match('/^[a-z][a-z0-9-]*$/', $namespace) !== 1) {
-            throw new InvalidArgumentException(
-                'templates.views.namespace must be a lowercase view namespace.',
-            );
-        }
-
-        return $namespace;
-    }
-
-    private function publishedViewPath(): string
-    {
-        $path = config(
-            'nvl-templates.views.publish_path',
-            resource_path('views/vendor/nvl-templates'),
-        );
-
-        if (! is_string($path) || trim($path) === '') {
-            throw new InvalidArgumentException(
-                'templates.views.publish_path must be a non-empty path.',
-            );
-        }
-
-        return $path;
     }
 }

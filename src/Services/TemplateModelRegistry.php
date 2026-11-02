@@ -45,9 +45,10 @@ final class TemplateModelRegistry
     /**
      * Resolve and freeze the concrete Template class before resource compilation.
      *
-     * @internal
      *
      * @return class-string<Template>
+     *
+     * @internal
      */
     public function prepare(): string
     {
@@ -65,9 +66,10 @@ final class TemplateModelRegistry
     /**
      * Resolve the immutable model from native framework entry points.
      *
-     * @internal
      *
      * @return class-string<Template>
+     *
+     * @internal
      */
     public static function modelClass(): string
     {
@@ -77,9 +79,10 @@ final class TemplateModelRegistry
     /**
      * Construct the configured root.
      *
-     * @internal
      *
      * @param  array<string,mixed>  $attributes
+     *
+     * @internal
      */
     public static function newInstance(array $attributes = []): Template
     {
@@ -91,9 +94,10 @@ final class TemplateModelRegistry
     /**
      * Persist a package-authored attribute map under the exact source assignment.
      *
-     * @internal
      *
      * @param  array<string, mixed>  $attributes
+     *
+     * @internal
      */
     public static function create(array $attributes): Template
     {
@@ -122,9 +126,10 @@ final class TemplateModelRegistry
     /**
      * Create the exact configured query.
      *
-     * @internal
      *
      * @return Builder<Template>
+     *
+     * @internal
      */
     public static function query(): Builder
     {

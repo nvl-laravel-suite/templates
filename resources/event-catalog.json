@@ -2,153 +2,24 @@
     "schema_version": 1,
     "package": "nvl/templates",
     "documentation": "docs/events.md",
-    "implementation_status": "implemented; executable acceptance proof pending",
-    "events": [
-        {
-            "class": "Nvl\\Templates\\Events\\TemplateChanged",
-            "source": "packages/nvl/templates/src/Events/TemplateChanged.php",
-            "constructor_fields": [
-                {
-                    "name": "templateId",
-                    "type": "string",
-                    "visibility": "public",
-                    "required": true
-                },
-                {
-                    "name": "operation",
-                    "type": "string",
-                    "visibility": "public",
-                    "required": true
-                },
-                {
-                    "name": "actor",
-                    "type": "Illuminate\\Contracts\\Auth\\Authenticatable|Nvl\\Support\\Enums\\SystemActor",
-                    "visibility": "public",
-                    "required": true
-                },
-                {
-                    "name": "schemaVersion",
-                    "type": "int",
-                    "visibility": "public",
-                    "required": false,
-                    "default_expression": "1"
-                }
-            ],
-            "public_fields": [
-                {
-                    "name": "templateId",
-                    "type": "string"
-                },
-                {
-                    "name": "operation",
-                    "type": "string"
-                },
-                {
-                    "name": "actor",
-                    "type": "Illuminate\\Contracts\\Auth\\Authenticatable|Nvl\\Support\\Enums\\SystemActor"
-                },
-                {
-                    "name": "schemaVersion",
-                    "type": "int"
-                }
-            ],
-            "kind": "value_object",
-            "schema_version": 1,
-            "trigger": "Template aggregate/assignment/version changed.",
-            "aliases": [],
-            "producers": [
-                {
-                    "path": "packages/nvl/templates/src/Services/TemplateAssignments.php",
-                    "trigger": "Template aggregate/assignment/version changed."
-                },
-                {
-                    "path": "packages/nvl/templates/src/Services/TemplateLifecycle.php",
-                    "trigger": "Template aggregate/assignment/version changed."
-                }
-            ],
-            "security_notes": [
-                "Template/version/render and actor identifiers only; no rendered output, definition payload or assigned model."
-            ],
-            "no_op_semantics": "Existing assignment/version/render guards govern publication. Completed render describes its persisted record, not durable listener execution."
-        },
-        {
-            "class": "Nvl\\Templates\\Events\\TemplateRendered",
-            "source": "packages/nvl/templates/src/Events/TemplateRendered.php",
-            "constructor_fields": [
-                {
-                    "name": "renderId",
-                    "type": "string",
-                    "visibility": "public",
-                    "required": true
-                },
-                {
-                    "name": "templateId",
-                    "type": "string",
-                    "visibility": "public",
-                    "required": true
-                },
-                {
-                    "name": "versionId",
-                    "type": "string",
-                    "visibility": "public",
-                    "required": true
-                },
-                {
-                    "name": "schemaVersion",
-                    "type": "int",
-                    "visibility": "public",
-                    "required": false,
-                    "default_expression": "1"
-                }
-            ],
-            "public_fields": [
-                {
-                    "name": "renderId",
-                    "type": "string"
-                },
-                {
-                    "name": "templateId",
-                    "type": "string"
-                },
-                {
-                    "name": "versionId",
-                    "type": "string"
-                },
-                {
-                    "name": "schemaVersion",
-                    "type": "int"
-                }
-            ],
-            "kind": "value_object",
-            "schema_version": 1,
-            "trigger": "Persisted render completed.",
-            "aliases": [],
-            "producers": [
-                {
-                    "path": "packages/nvl/templates/src/Services/TemplateRenderer.php",
-                    "trigger": "Persisted render completed."
-                }
-            ],
-            "security_notes": [
-                "Template/version/render and actor identifiers only; no rendered output, definition payload or assigned model."
-            ],
-            "no_op_semantics": "Existing assignment/version/render guards govern publication. Completed render describes its persisted record, not durable listener execution."
-        }
-    ],
+    "implementation_status": "document engine has no package domain event producers",
+    "events": [],
     "value_types": [],
     "aliases": [],
     "publication": {
         "publication": "The native host dispatcher receives the captured event after the supplied source connection outer commit, or immediately when that connection has no active transaction.",
         "rollback": "Callbacks attach to the matching native connection and current nesting record; native outer/savepoint rollback discards the corresponding callbacks.",
-        "registration_failure": "Missing source transaction records fail before commit; Mail Notifications reports and drops unusable observations.",
+        "registration_failure": "Host-defined events retain their native dispatcher failure behavior.",
         "host_policy": "Host after-commit listeners and queue after_commit policies can add their own deferral after publication. Host transaction infrastructure and dispatcher bindings are preserved.",
         "delivery_limit": "Local callbacks are not an outbox. Process exit between commit and callback can lose delivery; no crash durability or exactly-once delivery is promised.",
         "cardinality": "One canonical object is dispatched per qualifying producer call. This is local publication, not cross-process deduplication or a guarantee that repeated observations are unique.",
         "manual_producers": "Use Nvl\\Support\\Events\\DomainEventDispatcher::dispatch($event, $writerConnection). Native Event::dispatch() is immediate and has no package interception."
     },
     "security_notes": [
-        "Template/version/render and actor identifiers only; no rendered output, definition payload or assigned model."
+        "Host event payloads must preserve current actor/owner authorization and omit private document, snapshot and attachment content."
     ],
-    "no_op_semantics": "Existing assignment/version/render guards govern publication. Completed render describes its persisted record, not durable listener execution.",
-    "notes": []
+    "no_op_semantics": "The document engine has no named package business-event producers; consumers define their own committed delivery workflows.",
+    "notes": [
+        "Legacy Blade/Content lifecycle events are retired; see UPGRADING.md."
+    ]
 }

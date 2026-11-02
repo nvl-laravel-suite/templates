@@ -1,0 +1,280 @@
+{
+  "format": "template-document",
+  "schemaVersion": 1,
+  "target": "document",
+  "source": {
+    "mode": "standalone",
+    "definition": {
+      "format": "gct-template",
+      "schemaVersion": 1,
+      "id": "experience",
+      "name": "Experience voucher",
+      "description": "",
+      "locale": "en-GB",
+      "page": {
+        "widthMm": 210,
+        "heightMm": 297,
+        "margins": {
+          "top": 16,
+          "right": 16,
+          "bottom": 16,
+          "left": 16
+        }
+      },
+      "roots": [
+        "message"
+      ],
+      "nodes": {
+        "message": {
+          "id": "message",
+          "name": "Message",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "p",
+          "classes": [],
+          "attributes": {},
+          "attributeBindings": {},
+          "style": {},
+          "children": [
+            "copy"
+          ]
+        },
+        "copy": {
+          "id": "copy",
+          "name": "Copy",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "code"
+              },
+              "format": "text",
+              "currency": "EUR"
+            },
+            {
+              "value": {
+                "source": "literal",
+                "value": " — "
+              },
+              "format": "text",
+              "currency": "EUR"
+            },
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "message"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        }
+      },
+      "fields": [
+        {
+          "id": "code",
+          "path": "facts.code",
+          "label": "Code",
+          "description": "",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required": true,
+          "editable": false
+        },
+        {
+          "id": "message",
+          "path": "inputs.message",
+          "label": "Message",
+          "description": "",
+          "schema": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "required": true,
+          "editable": true,
+          "defaultValue": "Enjoy your experience!"
+        }
+      ],
+      "blocks": [],
+      "assets": [],
+      "styles": {
+        "theme": "",
+        "css": ""
+      }
+    }
+  },
+  "dataSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "facts": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Code",
+            "description": "",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Message",
+            "description": "",
+            "default": "Enjoy your experience!"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "context": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "content": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "settings": {
+        "type": "object",
+        "properties": {
+          "textSize": {
+            "type": "number",
+            "minimum": 12,
+            "maximum": 24
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "textSize"
+        ]
+      }
+    },
+    "required": [
+      "facts",
+      "inputs"
+    ],
+    "additionalProperties": false
+  },
+  "content": {},
+  "inputDefaults": {
+    "message": "Enjoy your experience!"
+  },
+  "settingsDefaults": {
+    "textSize": 16
+  },
+  "settingsSpec": [
+    {
+      "id": "textSize",
+      "label": "Text size",
+      "schema": {
+        "type": "number",
+        "minimum": 12,
+        "maximum": 24
+      },
+      "defaultValue": 16,
+      "exposed": true,
+      "unit": "px",
+      "targets": [
+        {
+          "nodeId": "message",
+          "property": "font-size"
+        }
+      ]
+    }
+  ],
+  "theme": {
+    "colors": {
+      "primary": "#275B49",
+      "primaryForeground": "#FFFFFF",
+      "background": "#FFFFFF",
+      "foreground": "#202722",
+      "muted": "#EFF3EF",
+      "mutedForeground": "#637067"
+    },
+    "typography": {
+      "fontFamily": "Arial, sans-serif",
+      "text": 14,
+      "small": 12,
+      "h1": 28,
+      "h2": 22,
+      "lineHeight": 1.5
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "actions": {
+      "height": 40,
+      "paddingInline": 16,
+      "radius": 6
+    }
+  },
+  "exposedInputs": [
+    "message"
+  ],
+  "exposedSettings": [
+    "textSize"
+  ],
+  "dependencies": [],
+  "managedAssets": {},
+  "compilerVersion": "template-platform/1",
+  "rendering": {
+    "engine": "bindings",
+    "subject": "Experience voucher",
+    "text": "Your voucher is ready."
+  },
+  "artifacts": {
+    "engine": "bindings",
+    "html": "<!DOCTYPE html><html lang=\"en-GB\"><head><meta charset=\"utf-8\"><title>Experience voucher</title><style>\n      *{box-sizing:border-box}body{margin:0;background:#fff;color:#202722;font:14px/1.55 Arial,sans-serif}h1,h2,h3,p{margin:0 0 12px}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:10px 8px}img{max-width:100%}tr{break-inside:avoid}.template-document{padding:16mm 16mm 16mm 16mm;width:210mm;min-height:297mm}.tpl-missing{background:#fff0ca;color:#8c5a00;border-radius:3px;padding:1px 4px;font-size:12px}@page{size:210mm 297mm;margin:16mm 16mm 16mm 16mm}@media print{.template-document{padding:0;width:auto;min-height:0}.tpl-missing{background:none}}\n.template-document{color:#202722;background-color:#FFFFFF;font-family:Arial, sans-serif;font-size:14px;line-height:1.5}.template-document p{font-size:14px}.template-document small,.template-document .text-small{font-size:12px;color:#637067}.template-document h1{font-size:28px}.template-document h2{font-size:22px}.template-document a{color:#275B49}.template-document .action{display:inline-block;background-color:#275B49;color:#FFFFFF;min-height:40px;padding:0 16px;border-radius:6px}.template-document .muted{background-color:#EFF3EF;color:#637067}\n\n\n\n      </style></head><body><main class=\"template-document\"><p style=\"font-size:{{s_textSize}}\"><span>{{b_code}} — {{b_message}}</span></p></main></body></html>",
+    "css": "",
+    "bindings": [
+      {
+        "id": "b_code",
+        "path": "facts.code",
+        "kind": "text"
+      },
+      {
+        "id": "b_message",
+        "path": "inputs.message",
+        "kind": "text"
+      },
+      {
+        "id": "s_textSize",
+        "path": "settings.textSize",
+        "kind": "style",
+        "property": "font-size",
+        "unit": "px"
+      }
+    ],
+    "subject": "Experience voucher",
+    "text": "Your voucher is ready."
+  }
+}

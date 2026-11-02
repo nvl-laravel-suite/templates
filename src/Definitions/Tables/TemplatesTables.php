@@ -6,40 +6,30 @@ namespace Nvl\Templates\Definitions\Tables;
 
 use Nvl\Support\Config\PackageStorage;
 
-/**
- * Defines the configurable persistence table keys owned by Templates.
- */
+/** Canonical table identities owned by the document engine. */
 final class TemplatesTables
 {
+    public const string Groups = 'nvl_templates_groups';
+
+    public const string GroupRevisions = 'nvl_templates_group_revisions';
+
     public const string Templates = 'nvl_templates_templates';
 
-    public const string I18n = 'nvl_templates_i18n';
+    public const string Drafts = 'nvl_templates_drafts';
 
-    public const string Versions = 'nvl_templates_versions';
+    public const string Revisions = 'nvl_templates_revisions';
 
-    public const string Assignments = 'nvl_templates_assignments';
+    public const string Resources = 'nvl_templates_resources';
+
+    public const string ResourceRevisions = 'nvl_templates_resource_revisions';
+
+    public const string Assets = 'nvl_templates_assets';
 
     public const string Renders = 'nvl_templates_renders';
 
-    public const string OwnerGrants = 'nvl_templates_owner_grants';
+    public const string FamilyChanges = 'nvl_templates_family_changes';
 
-    public const string TenantGrants = 'nvl_templates_tenant_grants';
-
-    public const string TenantGrantLocks = 'nvl_templates_tenant_grant_locks';
-
-    public const string TEMPLATES = self::Templates;
-
-    public const string TEMPLATES_I18N = self::I18n;
-
-    public const string TEMPLATE_VERSIONS = self::Versions;
-
-    public const string TEMPLATE_ASSIGNMENTS = self::Assignments;
-
-    public const string TEMPLATE_RENDERS = self::Renders;
-
-    /**
-     * Return a configured package table name.
-     */
+    /** Resolve a logical key, canonical constant or configured physical table. */
     public static function get(string $key): string
     {
         return PackageStorage::resolveTable('templates', $key);

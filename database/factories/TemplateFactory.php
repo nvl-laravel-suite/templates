@@ -9,7 +9,7 @@ use Nvl\Templates\Models\Template;
 use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
- * Builds Template fixture rows and their declared package parents.
+ * Native document fixtures; production mutations use TemplateLifecycle.
  *
  * @extends Factory<Template>
  *
@@ -25,40 +25,16 @@ final class TemplateFactory extends Factory
         return TemplateModelRegistry::modelClass();
     }
 
-    /**
-     * Prepare native parent and owner facts after Laravel expands relationships.
-     *
-     * @internal
-     */
-    public function configure(): static
-    {
-        $expandRelationships = true;
-
-        return $this->state(function () use (&$expandRelationships): array {
-            $expandRelationships = $this->expandRelationships;
-
-            return [];
-        })->afterMaking(function (Template $model) use (&$expandRelationships): void {
-            if (! $expandRelationships) {
-                return;
-            }
-
-            FactoryGuard::root($model, 'templates.templates');
-        });
-    }
-
-    /**
-     * Define the fixture's persisted attributes.
-     *
-     * @return array<model-property<Template>, mixed>
-     */
+    /** @return array<model-property<Template>,mixed> */
     public function definition(): array
     {
         return [
             'key' => $this->faker->unique()->slug(3),
-            'renderer' => 'blade',
+            'name' => $this->faker->sentence(3),
             'status' => 'active',
-            'revision' => 1,
+            'version' => 0,
+            'group_id' => null,
+            'current_revision_id' => null,
         ];
     }
 }

@@ -1,52 +1,36 @@
 <?php
 
 declare(strict_types=1);
+
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Models\Template;
-use Nvl\Templates\Rendering\BladeTemplateRenderer;
-use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 
-/** Common published defaults; advanced defaults remain in the package configuration. */
+/** Common host overrides; advanced defaults remain in the installed package. */
 return [
-    'ownership' => ['owner_resources' => []],
-    'models' => ['template' => Template::class],
     'connection' => null,
-    'tables' => ['owner_grants' => TemplatesTables::OwnerGrants, 'templates' => TemplatesTables::Templates, 'i18n' => TemplatesTables::I18n, 'versions' => TemplatesTables::Versions, 'assignments' => TemplatesTables::Assignments, 'renders' => TemplatesTables::Renders],
+    'scope' => 'app',
+    'models' => ['template' => Template::class],
+    'tables' => [
+        'groups' => TemplatesTables::Groups,
+        'group_revisions' => TemplatesTables::GroupRevisions,
+        'templates' => TemplatesTables::Templates,
+        'drafts' => TemplatesTables::Drafts,
+        'revisions' => TemplatesTables::Revisions,
+        'resources' => TemplatesTables::Resources,
+        'resource_revisions' => TemplatesTables::ResourceRevisions,
+        'assets' => TemplatesTables::Assets,
+        'renders' => TemplatesTables::Renders,
+        'family_changes' => TemplatesTables::FamilyChanges,
+    ],
     'migrations' => ['enabled' => true],
     'authorization' => ['class' => ConfiguredTemplateAuthorization::class],
-    /*
-    |--------------------------------------------------------------------------
-    | Source-controlled stored-template definitions
-    |--------------------------------------------------------------------------
-    |
-    | These definitions drive the database implementation. The public
-    | Nvl\Templates\Template class can also be rendered directly without rows.
-    |
-    */
-    'definitions' => [],
-    'owners' => [],
-    /*
-    |--------------------------------------------------------------------------
-    | Template defaults and renderer implementations
-    |--------------------------------------------------------------------------
-    |
-    | A Template may override these defaults through TemplateOptions. Custom
-    | renderer aliases must implement the TemplateRenderer contract.
-    |
-    */
-    'default_renderer' => 'blade',
-    'default_locale' => null,
-    'renderers' => ['blade' => BladeTemplateRenderer::class, 'pdf' => MpdfTemplateRenderer::class],
-    /*
-    |--------------------------------------------------------------------------
-    | Bundled PDF renderer
-    |--------------------------------------------------------------------------
-    |
-    | PDF definitions use the source-controlled `renderer_options` array.
-    | Remote assets fail closed and require an exact host allowlist.
-    |
-    */
-    'pdf' => ['remote_assets' => ['enabled' => false], 'data_images' => ['enabled' => true]],
-    'queue' => ['connection' => null],
+    'context_provider' => null,
+    'render_context' => null,
+    'media' => ['disk' => null],
+    // Exact destination directory for the publishable React source.
+    'frontend' => ['path' => resource_path('js/components/template-maker')],
+    'compiler' => ['driver' => null, 'command' => [], 'identity' => null],
+    'rendering' => ['queue' => ['enabled' => false, 'connection' => null, 'name' => 'templates']],
+    'pdf' => ['driver' => null, 'url' => null],
 ];

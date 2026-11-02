@@ -6,56 +6,94 @@ Search for the relevant fully qualified service or contract and read only its ma
 
 ## Symbols
 
-- `Nvl\Templates\Contracts\TemplateAssetResolver`
+- `Nvl\Templates\Contracts\ContextProvider`
+- `Nvl\Templates\Contracts\DnsResolver`
+- `Nvl\Templates\Contracts\DocumentCompiler`
+- `Nvl\Templates\Contracts\PdfDriver`
+- `Nvl\Templates\Contracts\RenderExecutionContext`
 - `Nvl\Templates\Contracts\TemplateAuthorization`
-- `Nvl\Templates\Contracts\TemplateCatalogAccess`
-- `Nvl\Templates\Contracts\TemplateOwnerResolver`
-- `Nvl\Templates\Contracts\TemplatePayloadValidator`
-- `Nvl\Templates\Contracts\TemplateRenderer`
-- `Nvl\Templates\Database\Factories\TemplateAssignmentFactory`
 - `Nvl\Templates\Database\Factories\TemplateFactory`
-- `Nvl\Templates\Database\Factories\TemplateOwnerGrantFactory`
-- `Nvl\Templates\Database\Factories\TemplateRenderFactory`
-- `Nvl\Templates\Database\Factories\TemplateTranslationFactory`
-- `Nvl\Templates\Database\Factories\TemplateVersionFactory`
-- `Nvl\Templates\Enums\PdfOrientation`
-- `Nvl\Templates\Enums\PdfPageSize`
+- `Nvl\Templates\Drivers\Compiler\LocalNodeCompiler`
+- `Nvl\Templates\Drivers\Pdf\ChromiumPdfDriver`
+- `Nvl\Templates\Emails\RenderedTemplateMail`
 - `Nvl\Templates\Enums\TemplateAbility`
-- `Nvl\Templates\Enums\TemplateStatus`
-- `Nvl\Templates\Enums\TemplatesResponseCode`
-- `Nvl\Templates\Events\TemplateChanged`
-- `Nvl\Templates\Events\TemplateRendered`
-- `Nvl\Templates\Exceptions\StaleTemplateException`
-- `Nvl\Templates\Exceptions\TemplateDependencyUnavailableException`
-- `Nvl\Templates\Exceptions\TemplateResolutionException`
-- `Nvl\Templates\Exceptions\TemplatesException`
+- `Nvl\Templates\Exceptions\DraftConflict`
+- `Nvl\Templates\Exceptions\RenderConflict`
+- `Nvl\Templates\Exceptions\RenderUnavailable`
+- `Nvl\Templates\Exceptions\RetryableRenderException`
+- `Nvl\Templates\Models\FamilyChange`
 - `Nvl\Templates\Models\Template`
-- `Nvl\Templates\Models\TemplateAssignment`
-- `Nvl\Templates\Models\TemplateOwnerGrant`
+- `Nvl\Templates\Models\TemplateAsset`
+- `Nvl\Templates\Models\TemplateDraft`
+- `Nvl\Templates\Models\TemplateGroup`
+- `Nvl\Templates\Models\TemplateGroupRevision`
 - `Nvl\Templates\Models\TemplateRender`
-- `Nvl\Templates\Models\TemplateTranslation`
-- `Nvl\Templates\Models\TemplateVersion`
-- `Nvl\Templates\Ownership\TemplateOwnerCatalog`
-- `Nvl\Templates\Rendering\TemplateRenderContext`
-- `Nvl\Templates\Services\TemplateAssignments`
-- `Nvl\Templates\Services\TemplateDefinitionRegistry`
-- `Nvl\Templates\Services\TemplateDefinitions`
-- `Nvl\Templates\Services\TemplateImporter`
+- `Nvl\Templates\Models\TemplateResource`
+- `Nvl\Templates\Models\TemplateResourceRevision`
+- `Nvl\Templates\Models\TemplateRevision`
+- `Nvl\Templates\Services\FamilyLifecycle`
+- `Nvl\Templates\Services\RenderRequests`
+- `Nvl\Templates\Services\ResourceManager`
+- `Nvl\Templates\Services\TemplateAssets`
+- `Nvl\Templates\Services\TemplateCatalog`
+- `Nvl\Templates\Services\TemplateFamilies`
 - `Nvl\Templates\Services\TemplateLifecycle`
 - `Nvl\Templates\Services\TemplateModelRegistry`
-- `Nvl\Templates\Services\TemplateOwnerRegistry`
 - `Nvl\Templates\Services\TemplateReader`
 - `Nvl\Templates\Services\TemplateRenderer`
-- `Nvl\Templates\Services\TemplateRendererRegistry`
-- `Nvl\Templates\Template`
+- `Nvl\Templates\Support\Capabilities`
+- `Nvl\Templates\ValueObjects\PdfOutput`
 
-## Nvl\Templates\Contracts\TemplateAssetResolver
+## Nvl\Templates\Contracts\ContextProvider
 
 ```text
-interface Nvl\Templates\Contracts\TemplateAssetResolver
-public abstract function resolve(string $key, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): ?string
-public abstract function scope(string $scope, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, ?string $type=null): array
-@return array<string, string>
+interface Nvl\Templates\Contracts\ContextProvider
+public abstract function resolve(Nvl\Templates\Models\TemplateRevision $release, array $owner, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param array<array-key, mixed> $owner
+@return array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>}
+```
+
+## Nvl\Templates\Contracts\DnsResolver
+
+```text
+interface Nvl\Templates\Contracts\DnsResolver
+public abstract function addresses(string $host): array
+@return list<string>
+```
+
+## Nvl\Templates\Contracts\DocumentCompiler
+
+```text
+interface Nvl\Templates\Contracts\DocumentCompiler
+public abstract function compile(array $document, array $data, array $assets=[]): array
+@param array<array-key, mixed> $document
+@param array<array-key, mixed> $data
+@param array<array-key, string> $assets
+@return array{html: string, css: string, subject?: (string | null), text?: (string | null)}
+```
+
+## Nvl\Templates\Contracts\PdfDriver
+
+```text
+interface Nvl\Templates\Contracts\PdfDriver
+public abstract function identity(): string
+public abstract function render(Nvl\Templates\Rendering\RenderedDocument $result, array $document, array $options=[]): Nvl\Templates\ValueObjects\PdfOutput
+@param array<array-key, mixed> $document
+@param array<array-key, mixed> $options
+```
+
+## Nvl\Templates\Contracts\RenderExecutionContext
+
+```text
+interface Nvl\Templates\Contracts\RenderExecutionContext
+public abstract function capture(): array
+@return array<array-key, mixed>
+public abstract function run(array $context, Closure $operation): mixed
+@template T
+@param array<array-key, mixed> $context
+@param Closure(): T $operation
+@return T
+template Nvl\Templates\Contracts\RenderExecutionContext::T
 ```
 
 ## Nvl\Templates\Contracts\TemplateAuthorization
@@ -64,55 +102,6 @@ public abstract function scope(string $scope, Illuminate\Contracts\Auth\Authenti
 interface Nvl\Templates\Contracts\TemplateAuthorization
 public abstract function authorize(Nvl\Templates\Enums\TemplateAbility $ability, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, array $context=[]): void
 @param array<string, mixed> $context
-```
-
-## Nvl\Templates\Contracts\TemplateCatalogAccess
-
-```text
-interface Nvl\Templates\Contracts\TemplateCatalogAccess
-public abstract function assertCanGrant(string $sourceId, int $revision): void
-public abstract function assertCanRevoke(string $grantId): void
-```
-
-## Nvl\Templates\Contracts\TemplateOwnerResolver
-
-```text
-interface Nvl\Templates\Contracts\TemplateOwnerResolver
-public abstract function alias(): string
-public abstract function resolve(string $identifier): ?Illuminate\Database\Eloquent\Model
-```
-
-## Nvl\Templates\Contracts\TemplatePayloadValidator
-
-```text
-interface Nvl\Templates\Contracts\TemplatePayloadValidator
-public abstract function validate(array $schema, array $payload): void
-@param array<string, mixed> $schema
-@param array<string, mixed> $payload
-public abstract function validateSchema(array $schema): void
-@param array<string, mixed> $schema
-```
-
-## Nvl\Templates\Contracts\TemplateRenderer
-
-```text
-interface Nvl\Templates\Contracts\TemplateRenderer
-public abstract function render(Nvl\Templates\Rendering\TemplateRenderContext $context): array
-@return array{content: string, mime_type: string, renderer: string, byte_size: int, checksum: string, subject: (string | null), suggested_filename: (string | null)}
-```
-
-## Nvl\Templates\Database\Factories\TemplateAssignmentFactory
-
-```text
-final class Nvl\Templates\Database\Factories\TemplateAssignmentFactory extends Illuminate\Database\Eloquent\Factories\Factory
-@extends Factory<TemplateAssignment>
-resolved @extends Illuminate\Database\Eloquent\Factories\Factory<Nvl\Templates\Models\TemplateAssignment>
-public function definition(): array
-@return array<model-property<TemplateAssignment>, mixed>
-resolved @return array<model-property<Nvl\Templates\Models\TemplateAssignment>, mixed>
-public function forOwner(Illuminate\Database\Eloquent\Model $owner): static
-public function forTemplate(Nvl\Templates\Models\Template $parent): static
-public function forVersion(Nvl\Templates\Models\TemplateVersion $parent): static
 ```
 
 ## Nvl\Templates\Database\Factories\TemplateFactory
@@ -127,86 +116,27 @@ resolved @return array<model-property<Nvl\Templates\Models\Template>, mixed>
 public function modelName(): string
 ```
 
-## Nvl\Templates\Database\Factories\TemplateOwnerGrantFactory
+## Nvl\Templates\Drivers\Compiler\LocalNodeCompiler
 
 ```text
-final class Nvl\Templates\Database\Factories\TemplateOwnerGrantFactory extends Illuminate\Database\Eloquent\Factories\Factory
-@extends Factory<TemplateOwnerGrant>
-resolved @extends Illuminate\Database\Eloquent\Factories\Factory<Nvl\Templates\Models\TemplateOwnerGrant>
-public function configure(): static
-public function definition(): array
-@return array<model-property<TemplateOwnerGrant>, mixed>
-resolved @return array<model-property<Nvl\Templates\Models\TemplateOwnerGrant>, mixed>
-public function forVersion(Nvl\Templates\Models\TemplateVersion $source): static
+final class Nvl\Templates\Drivers\Compiler\LocalNodeCompiler implements Nvl\Templates\Contracts\DocumentCompiler
+public function compile(array $document, array $data, array $assets=[]): array
 ```
 
-## Nvl\Templates\Database\Factories\TemplateRenderFactory
+## Nvl\Templates\Drivers\Pdf\ChromiumPdfDriver
 
 ```text
-final class Nvl\Templates\Database\Factories\TemplateRenderFactory extends Illuminate\Database\Eloquent\Factories\Factory
-@extends Factory<TemplateRender>
-resolved @extends Illuminate\Database\Eloquent\Factories\Factory<Nvl\Templates\Models\TemplateRender>
-public function definition(): array
-@return array<model-property<TemplateRender>, mixed>
-resolved @return array<model-property<Nvl\Templates\Models\TemplateRender>, mixed>
-public function forAssignment(Nvl\Templates\Models\TemplateAssignment $assignment): static
-public function forVersion(Nvl\Templates\Models\TemplateVersion $parent): static
+final class Nvl\Templates\Drivers\Pdf\ChromiumPdfDriver implements Nvl\Templates\Contracts\PdfDriver
+public function identity(): string
+public function render(Nvl\Templates\Rendering\RenderedDocument $result, array $document, array $options=[]): Nvl\Templates\ValueObjects\PdfOutput
 ```
 
-## Nvl\Templates\Database\Factories\TemplateTranslationFactory
+## Nvl\Templates\Emails\RenderedTemplateMail
 
 ```text
-final class Nvl\Templates\Database\Factories\TemplateTranslationFactory extends Illuminate\Database\Eloquent\Factories\Factory
-@extends Factory<TemplateTranslation>
-resolved @extends Illuminate\Database\Eloquent\Factories\Factory<Nvl\Templates\Models\TemplateTranslation>
-public function definition(): array
-@return array<model-property<TemplateTranslation>, mixed>
-resolved @return array<model-property<Nvl\Templates\Models\TemplateTranslation>, mixed>
-public function forTemplate(Nvl\Templates\Models\Template $parent): static
-```
-
-## Nvl\Templates\Database\Factories\TemplateVersionFactory
-
-```text
-final class Nvl\Templates\Database\Factories\TemplateVersionFactory extends Illuminate\Database\Eloquent\Factories\Factory
-@extends Factory<TemplateVersion>
-resolved @extends Illuminate\Database\Eloquent\Factories\Factory<Nvl\Templates\Models\TemplateVersion>
-public function definition(): array
-@return array<model-property<TemplateVersion>, mixed>
-resolved @return array<model-property<Nvl\Templates\Models\TemplateVersion>, mixed>
-public function forTemplate(Nvl\Templates\Models\Template $parent): static
-public function published(array $snapshot): static
-@param array{ownerType: string, ownerId: string, group: string, blocks: list<array{placementId: string, parentId: (string | null), key: string, region: string, sortOrder: int, blockId: string, definitionKey: string, definitionSchema: array<string, mixed>, definitionView: (string | null), visibility: string, values: array<string, mixed>, translations: array<string, array<string, mixed>>, overrides: array<string, mixed>, blockRevision: int, placementRevision: int}>, version: string, tenantId: (string | null), formatVersion: int, ownershipContext: (array<string, mixed> | null)} $snapshot
-```
-
-## Nvl\Templates\Enums\PdfOrientation
-
-```text
-enum Nvl\Templates\Enums\PdfOrientation implements BackedEnum, UnitEnum: string
-public const Nvl\Templates\Enums\PdfOrientation Landscape=Nvl\Templates\Enums\PdfOrientation::Landscape="landscape"
-public const Nvl\Templates\Enums\PdfOrientation Portrait=Nvl\Templates\Enums\PdfOrientation::Portrait="portrait"
-public function mpdfValue(): string
-public readonly string $name
-public static function cases(): array
-public readonly string $value
-public static function from(string|int $value): static
-public static function tryFrom(string|int $value): ?static
-```
-
-## Nvl\Templates\Enums\PdfPageSize
-
-```text
-enum Nvl\Templates\Enums\PdfPageSize implements BackedEnum, UnitEnum: string
-public const Nvl\Templates\Enums\PdfPageSize A3=Nvl\Templates\Enums\PdfPageSize::A3="A3"
-public const Nvl\Templates\Enums\PdfPageSize A4=Nvl\Templates\Enums\PdfPageSize::A4="A4"
-public const Nvl\Templates\Enums\PdfPageSize A5=Nvl\Templates\Enums\PdfPageSize::A5="A5"
-public const Nvl\Templates\Enums\PdfPageSize Legal=Nvl\Templates\Enums\PdfPageSize::Legal="Legal"
-public const Nvl\Templates\Enums\PdfPageSize Letter=Nvl\Templates\Enums\PdfPageSize::Letter="Letter"
-public readonly string $name
-public static function cases(): array
-public readonly string $value
-public static function from(string|int $value): static
-public static function tryFrom(string|int $value): ?static
+final class Nvl\Templates\Emails\RenderedTemplateMail extends Illuminate\Mail\Mailable
+public function __construct(array $rendered): mixed
+@param array<array-key, mixed> $rendered
 ```
 
 ## Nvl\Templates\Enums\TemplateAbility
@@ -214,10 +144,13 @@ public static function tryFrom(string|int $value): ?static
 ```text
 enum Nvl\Templates\Enums\TemplateAbility implements BackedEnum, UnitEnum: string
 public const Nvl\Templates\Enums\TemplateAbility Assign=Nvl\Templates\Enums\TemplateAbility::Assign="assign"
+public const Nvl\Templates\Enums\TemplateAbility Copy=Nvl\Templates\Enums\TemplateAbility::Copy="copy"
 public const Nvl\Templates\Enums\TemplateAbility Create=Nvl\Templates\Enums\TemplateAbility::Create="create"
 public const Nvl\Templates\Enums\TemplateAbility Delete=Nvl\Templates\Enums\TemplateAbility::Delete="delete"
 public const Nvl\Templates\Enums\TemplateAbility List=Nvl\Templates\Enums\TemplateAbility::List="list"
+public const Nvl\Templates\Enums\TemplateAbility Manage=Nvl\Templates\Enums\TemplateAbility::Manage="manage"
 public const Nvl\Templates\Enums\TemplateAbility Publish=Nvl\Templates\Enums\TemplateAbility::Publish="publish"
+public const Nvl\Templates\Enums\TemplateAbility Read=Nvl\Templates\Enums\TemplateAbility::Read="read"
 public const Nvl\Templates\Enums\TemplateAbility Render=Nvl\Templates\Enums\TemplateAbility::Render="render"
 public const Nvl\Templates\Enums\TemplateAbility Update=Nvl\Templates\Enums\TemplateAbility::Update="update"
 public const Nvl\Templates\Enums\TemplateAbility View=Nvl\Templates\Enums\TemplateAbility::View="view"
@@ -228,241 +161,38 @@ public static function from(string|int $value): static
 public static function tryFrom(string|int $value): ?static
 ```
 
-## Nvl\Templates\Enums\TemplateStatus
+## Nvl\Templates\Exceptions\DraftConflict
 
 ```text
-enum Nvl\Templates\Enums\TemplateStatus implements BackedEnum, UnitEnum: string
-public const Nvl\Templates\Enums\TemplateStatus Active=Nvl\Templates\Enums\TemplateStatus::Active="active"
-public const Nvl\Templates\Enums\TemplateStatus Archived=Nvl\Templates\Enums\TemplateStatus::Archived="archived"
-public const Nvl\Templates\Enums\TemplateStatus Inactive=Nvl\Templates\Enums\TemplateStatus::Inactive="inactive"
-public readonly string $name
-public static function cases(): array
-public readonly string $value
-public static function from(string|int $value): static
-public static function tryFrom(string|int $value): ?static
+final class Nvl\Templates\Exceptions\DraftConflict extends RuntimeException
+public function __construct(): mixed
 ```
 
-## Nvl\Templates\Enums\TemplatesResponseCode
+## Nvl\Templates\Exceptions\RenderConflict
 
 ```text
-enum Nvl\Templates\Enums\TemplatesResponseCode implements BackedEnum, Nvl\Support\Contracts\ResponseCode, UnitEnum: string
-public const Nvl\Templates\Enums\TemplatesResponseCode OperationFailed=Nvl\Templates\Enums\TemplatesResponseCode::OperationFailed="operation_failed"
-public const Nvl\Templates\Enums\TemplatesResponseCode PdfDependencyUnavailable=Nvl\Templates\Enums\TemplatesResponseCode::PdfDependencyUnavailable="pdf_dependency_unavailable"
-public const Nvl\Templates\Enums\TemplatesResponseCode StaleTemplate=Nvl\Templates\Enums\TemplatesResponseCode::StaleTemplate="stale_template"
-public const Nvl\Templates\Enums\TemplatesResponseCode TemplateResolutionFailed=Nvl\Templates\Enums\TemplatesResponseCode::TemplateResolutionFailed="template_resolution_failed"
-public readonly string $name
-public static function cases(): array
-public readonly string $value
-public static function from(string|int $value): static
-public static function tryFrom(string|int $value): ?static
+final class Nvl\Templates\Exceptions\RenderConflict extends RuntimeException
+public function __construct(): mixed
 ```
 
-## Nvl\Templates\Events\TemplateChanged
+## Nvl\Templates\Exceptions\RenderUnavailable
 
 ```text
-final class Nvl\Templates\Events\TemplateChanged implements Nvl\Support\Contracts\DomainEvent, Nvl\Support\Ownership\Contracts\OwnershipQueuedJob
-public function __construct(string $templateId, string $operation, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, int $schemaVersion=1): mixed
-public function ownershipJobEnvelope(): Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope
-public function schemaVersion(): int
-public readonly Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor
-public readonly string $operation
-public readonly int $schemaVersion
-public readonly string $templateId
+final class Nvl\Templates\Exceptions\RenderUnavailable extends RuntimeException
 ```
 
-## Nvl\Templates\Events\TemplateRendered
+## Nvl\Templates\Exceptions\RetryableRenderException
 
 ```text
-final class Nvl\Templates\Events\TemplateRendered implements Nvl\Support\Contracts\DomainEvent, Nvl\Support\Ownership\Contracts\OwnershipQueuedJob
-public function __construct(string $renderId, string $templateId, string $versionId, int $schemaVersion=1): mixed
-public function ownershipJobEnvelope(): Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope
-public function schemaVersion(): int
-public readonly string $renderId
-public readonly int $schemaVersion
-public readonly string $templateId
-public readonly string $versionId
+final class Nvl\Templates\Exceptions\RetryableRenderException extends RuntimeException
+public function __construct(string $reason): mixed
+public readonly string $reason
 ```
 
-## Nvl\Templates\Exceptions\StaleTemplateException
+## Nvl\Templates\Models\FamilyChange
 
 ```text
-final class Nvl\Templates\Exceptions\StaleTemplateException extends Nvl\Templates\Exceptions\TemplatesException
-public static function forResource(string $resource, string $identifier): self
-public function package(): string
-public function publicContext(): array
-@return array<string, mixed>
-public function responseCode(): ?string
-public function responseHeaders(): array
-@return array<string, string>
-public function suggestedStatus(): int
-public function translationKey(): ?string
-public function translationParameters(): array
-@return array<string, (scalar | null)>
-```
-
-## Nvl\Templates\Exceptions\TemplateDependencyUnavailableException
-
-```text
-final class Nvl\Templates\Exceptions\TemplateDependencyUnavailableException extends Nvl\Templates\Exceptions\TemplatesException
-public function package(): string
-public function publicContext(): array
-@return array<string, mixed>
-public function responseCode(): ?string
-public function responseHeaders(): array
-@return array<string, string>
-public function suggestedStatus(): int
-public function translationKey(): ?string
-public function translationParameters(): array
-@return array<string, (scalar | null)>
-```
-
-## Nvl\Templates\Exceptions\TemplateResolutionException
-
-```text
-final class Nvl\Templates\Exceptions\TemplateResolutionException extends Nvl\Templates\Exceptions\TemplatesException
-public function package(): string
-public function publicContext(): array
-@return array<string, mixed>
-public function responseCode(): ?string
-public function responseHeaders(): array
-@return array<string, string>
-public function suggestedStatus(): int
-public function translationKey(): ?string
-public function translationParameters(): array
-@return array<string, (scalar | null)>
-```
-
-## Nvl\Templates\Exceptions\TemplatesException
-
-```text
-class Nvl\Templates\Exceptions\TemplatesException extends RuntimeException implements Nvl\Support\Contracts\RespondableException
-public function package(): string
-public function publicContext(): array
-@return array<string, mixed>
-public function responseCode(): ?string
-public function responseHeaders(): array
-@return array<string, string>
-public function suggestedStatus(): int
-public function translationKey(): ?string
-public function translationParameters(): array
-@return array<string, (scalar | null)>
-```
-
-## Nvl\Templates\Models\Template
-
-```text
-class Nvl\Templates\Models\Template extends Illuminate\Database\Eloquent\Model implements Nvl\Support\Ownership\Contracts\Ownable, Nvl\Translatable\Contracts\TranslatableModel
-public static function allowsCentralCatalog(): bool
-public function assignments(): Illuminate\Database\Eloquent\Relations\HasMany
-@return HasMany<TemplateAssignment, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\HasMany<Nvl\Templates\Models\TemplateAssignment, $this>
-public function delete(): ?bool
-public function fresh(mixed $with=[]): ?static
-@param (array<array-key, mixed> | string) $with
-public function getAllTranslations(): Illuminate\Database\Eloquent\Collection
-@return Collection<int, Model>
-resolved @return Illuminate\Database\Eloquent\Collection<int, Illuminate\Database\Eloquent\Model>
-public function getAvailableLocales(): array
-@return list<string>
-public function getConnectionName(): ?string
-public function getCurrentLocale(): string
-public function getRelationValue(mixed $key): mixed
-@param string $key
-public function getTable(): string
-public function getTranslatedAttributes(?string $locale=null): array
-@return array<string, mixed>
-public function getTranslation(?string $locale=null, bool $withFallback=true): ?Illuminate\Database\Eloquent\Model
-public function hasTranslation(?string $locale=null): bool
-public function isTranslatableAttribute(string $key): bool
-public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
-@param (int | string | array<array-key, (int | string)>) $ids
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
-public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
-public function refresh(): static
-public function refreshForUpdate(): static
-public function resolveRouteBinding(mixed $value, mixed $field=null): ?Nvl\Templates\Models\Template
-@param mixed $value
-@param (string | null) $field
-public function resolveTranslation(string $field, ?string $locale=null): Nvl\Translatable\TranslationResolution
-public function save(array $options=[]): bool
-@param array<string, mixed> $options
-public function scopeOrderByTranslated(Illuminate\Database\Eloquent\Builder $query, string $field, string $direction="asc", ?string $locale=null): Illuminate\Database\Eloquent\Builder
-@param Builder<static> $query
-resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> $query
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
-public function scopeWhereTranslated(Illuminate\Database\Eloquent\Builder $query, string $field, mixed $operator, mixed $value=\Nvl\Translatable\Enums\TranslationComparisonValue::Omitted, ?string $locale=null): Illuminate\Database\Eloquent\Builder
-@param Builder<static> $query
-resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> $query
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
-public function scopeWhereTranslationNotNull(Illuminate\Database\Eloquent\Builder $query, string $field, ?string $locale=null): Illuminate\Database\Eloquent\Builder
-@param Builder<static> $query
-resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> $query
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
-public function scopeWhereTranslationNull(Illuminate\Database\Eloquent\Builder $query, string $field, ?string $locale=null): Illuminate\Database\Eloquent\Builder
-@param Builder<static> $query
-resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> $query
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
-public function scopeWithAllTranslations(Illuminate\Database\Eloquent\Builder $query): Illuminate\Database\Eloquent\Builder
-@param Builder<static> $query
-resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> $query
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
-public function scopeWithResolvedTranslations(Illuminate\Database\Eloquent\Builder $query, ?string $locale=null): Illuminate\Database\Eloquent\Builder
-@param Builder<static> $query
-resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> $query
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
-public function setLocale(string $locale): self
-public function translated(string $field, ?string $locale=null): mixed
-public function translation(?string $locale=null): Illuminate\Database\Eloquent\Relations\HasOne
-@return HasOne<Model, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\HasOne<Illuminate\Database\Eloquent\Model, $this>
-public function translationDefinition(): Nvl\Translatable\RelatedTranslationDefinition
-public function translationResourceKey(): int|string
-public function translations(): Illuminate\Database\Eloquent\Relations\HasMany
-@return HasMany<Model, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\HasMany<Illuminate\Database\Eloquent\Model, $this>
-public function versions(): Illuminate\Database\Eloquent\Relations\HasMany
-@return HasMany<TemplateVersion, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\HasMany<Nvl\Templates\Models\TemplateVersion, $this>
-@method static Builder<static> orderByTranslated(string $field, string $direction = 'asc', ?string $locale = null)
-resolved @method static Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> orderByTranslated(string $field, string $direction = 'asc', ?string $locale = null)
-@method static Builder<static> whereTranslated(string $field, mixed $operator, mixed $value = TranslationComparisonValue::Omitted, ?string $locale = null)
-resolved @method static Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> whereTranslated(string $field, mixed $operator, mixed $value = Nvl\Translatable\Enums\TranslationComparisonValue::Omitted, ?string $locale = null)
-@method static Builder<static> whereTranslationNotNull(string $field, ?string $locale = null)
-resolved @method static Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> whereTranslationNotNull(string $field, ?string $locale = null)
-@method static Builder<static> whereTranslationNull(string $field, ?string $locale = null)
-resolved @method static Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> whereTranslationNull(string $field, ?string $locale = null)
-@method static Builder<static> withAllTranslations()
-resolved @method static Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> withAllTranslations()
-@method static Builder<static> withResolvedTranslations(?string $locale = null)
-resolved @method static Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template> withResolvedTranslations(?string $locale = null)
-@property-read Collection<int, TemplateAssignment> $assignments
-resolved @property-read Illuminate\Database\Eloquent\Collection<int, Nvl\Templates\Models\TemplateAssignment> $assignments
-@property string $id
-@property string $key
-@property (array<string, mixed> | null) $metadata
-@property (string | null) $owner_scope_key
-@property string $renderer
-@property int $revision
-@property (array<string, mixed> | null) $schema
-@property TemplateStatus $status
-resolved @property Nvl\Templates\Enums\TemplateStatus $status
-@property-read Collection<int, TemplateTranslation> $translations
-resolved @property-read Illuminate\Database\Eloquent\Collection<int, Nvl\Templates\Models\TemplateTranslation> $translations
-@property-read Collection<int, TemplateVersion> $versions
-resolved @property-read Illuminate\Database\Eloquent\Collection<int, Nvl\Templates\Models\TemplateVersion> $versions
-```
-
-## Nvl\Templates\Models\TemplateAssignment
-
-```text
-final class Nvl\Templates\Models\TemplateAssignment extends Illuminate\Database\Eloquent\Model implements Nvl\Support\Ownership\Contracts\Ownable
+final class Nvl\Templates\Models\FamilyChange extends Nvl\Templates\Models\TemplateModel
 public function delete(): ?bool
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
@@ -471,7 +201,7 @@ public function getTable(): string
 public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
 @param (int | string | array<array-key, (int | string)>) $ids
 @return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateAssignment>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\FamilyChange>
 public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
 public function refresh(): static
 public function refreshForUpdate(): static
@@ -480,23 +210,25 @@ public function save(array $options=[]): bool
 public function template(): Illuminate\Database\Eloquent\Relations\BelongsTo
 @return BelongsTo<Template, $this>
 resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\Template, $this>
-public function version(): Illuminate\Database\Eloquent\Relations\BelongsTo
-@return BelongsTo<TemplateVersion, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\TemplateVersion, $this>
+@property (int | null) $applied_version
+@property int $expected_version
 @property string $id
-@property string $owner_id
-@property string $owner_type
-@property string $profile
-@property int $revision
-@property (array<string, mixed> | null) $settings
+@property array<string, mixed> $inputs
+@property string $operation
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property (array<string, mixed> | null) $resolutions
+@property array<string, mixed> $result
+@property string $scope_id
+@property string $source_checksum
+@property string $status
 @property string $template_id
-@property (string | null) $template_version_id
 ```
 
-## Nvl\Templates\Models\TemplateOwnerGrant
+## Nvl\Templates\Models\Template
 
 ```text
-final class Nvl\Templates\Models\TemplateOwnerGrant extends Illuminate\Database\Eloquent\Model implements Nvl\Support\Ownership\Contracts\Ownable
+class Nvl\Templates\Models\Template extends Nvl\Templates\Models\TemplateModel
 public function delete(): ?bool
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
@@ -505,38 +237,161 @@ public function getTable(): string
 public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
 @param (int | string | array<array-key, (int | string)>) $ids
 @return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateOwnerGrant>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Template>
 public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
 public function refresh(): static
 public function refreshForUpdate(): static
 public function save(array $options=[]): bool
 @param array<string, mixed> $options
-public function version(): Illuminate\Database\Eloquent\Relations\BelongsTo
-@return BelongsTo<TemplateVersion, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\TemplateVersion, $this>
-@property (Carbon | null) $created_at
-resolved @property (Illuminate\Support\Carbon | null) $created_at
+@property (string | null) $current_revision_id
+@property (string | null) $group_id
 @property string $id
-@property string $owner_reference
-@property string $owner_scope_key
+@property string $key
+@property string $name
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property string $scope_id
+@property string $status
+@property int $version
+```
+
+## Nvl\Templates\Models\TemplateAsset
+
+```text
+final class Nvl\Templates\Models\TemplateAsset extends Nvl\Templates\Models\TemplateModel implements Nvl\Media\Contracts\HasNvlMedia
+public function delete(): ?bool
+public function fresh(mixed $with=[]): ?static
+@param (array<array-key, mixed> | string) $with
+public function getConnectionName(): ?string
+public function getTable(): string
+public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
+@param (int | string | array<array-key, (int | string)>) $ids
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateAsset>
+public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
+public function refresh(): static
+public function refreshForUpdate(): static
+public function registerNvlMedia(Nvl\Media\MediaRegistration $media, ?Nvl\Media\Models\Media $asset=null): void
+public function save(array $options=[]): bool
+@param array<string, mixed> $options
+public function scopeHasNvlMedia(Illuminate\Database\Eloquent\Builder $query, string $slot, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, Nvl\Media\Contracts\MediaBatchAuthorization $policy): Illuminate\Database\Eloquent\Builder
+@param Builder<static> $query
+resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateAsset> $query
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateAsset>
+@property (CarbonImmutable | null) $archived_at
+resolved @property (Carbon\CarbonImmutable | null) $archived_at
+@property string $checksum
+@property string $id
+@property (string | null) $media_id
+@property (int | null) $media_revision
+@property string $mime_type
+@property string $name
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property string $scope_id
+@property int $size
+```
+
+## Nvl\Templates\Models\TemplateDraft
+
+```text
+final class Nvl\Templates\Models\TemplateDraft extends Nvl\Templates\Models\TemplateModel
+public function delete(): ?bool
+public function fresh(mixed $with=[]): ?static
+@param (array<array-key, mixed> | string) $with
+public function getConnectionName(): ?string
+public function getTable(): string
+public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
+@param (int | string | array<array-key, (int | string)>) $ids
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateDraft>
+public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
+public function refresh(): static
+public function refreshForUpdate(): static
+public function save(array $options=[]): bool
+@param array<string, mixed> $options
+public function template(): Illuminate\Database\Eloquent\Relations\BelongsTo
+@return BelongsTo<Template, $this>
+resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\Template, $this>
+@property array<string, mixed> $document
+@property string $id
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property (array<string, mixed> | null) $proposed_basis
+@property string $scope_id
+@property string $template_id
+@property int $version
+```
+
+## Nvl\Templates\Models\TemplateGroup
+
+```text
+final class Nvl\Templates\Models\TemplateGroup extends Nvl\Templates\Models\TemplateModel
+public function delete(): ?bool
+public function fresh(mixed $with=[]): ?static
+@param (array<array-key, mixed> | string) $with
+public function getConnectionName(): ?string
+public function getTable(): string
+public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
+@param (int | string | array<array-key, (int | string)>) $ids
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateGroup>
+public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
+public function refresh(): static
+public function refreshForUpdate(): static
+public function save(array $options=[]): bool
+@param array<string, mixed> $options
+@property (string | null) $current_revision_id
+@property string $id
+@property string $key
+@property string $name
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property string $scope_id
+@property string $status
+@property int $version
+```
+
+## Nvl\Templates\Models\TemplateGroupRevision
+
+```text
+final class Nvl\Templates\Models\TemplateGroupRevision extends Nvl\Templates\Models\TemplateModel
+public static function bootImmutableRevision(): void
+public function delete(): ?bool
+public function fresh(mixed $with=[]): ?static
+@param (array<array-key, mixed> | string) $with
+public function getConnectionName(): ?string
+public function getTable(): string
+public function group(): Illuminate\Database\Eloquent\Relations\BelongsTo
+@return BelongsTo<TemplateGroup, $this>
+resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\TemplateGroup, $this>
+public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
+@param (int | string | array<array-key, (int | string)>) $ids
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateGroupRevision>
+public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
+public function refresh(): static
+public function refreshForUpdate(): static
+public function save(array $options=[]): bool
+@param array<string, mixed> $options
+@property string $checksum
+@property array<string, mixed> $document
+@property string $group_id
+@property string $id
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property Carbon $published_at
+resolved @property Illuminate\Support\Carbon $published_at
 @property int $revision
-@property (Carbon | null) $revoked_at
-resolved @property (Illuminate\Support\Carbon | null) $revoked_at
-@property int $source_revision
-@property string $template_version_id
-@property (Carbon | null) $updated_at
-resolved @property (Illuminate\Support\Carbon | null) $updated_at
-@property-read TemplateVersion $version
-resolved @property-read Nvl\Templates\Models\TemplateVersion $version
+@property string $scope_id
+@property array<string, mixed> $source
 ```
 
 ## Nvl\Templates\Models\TemplateRender
 
 ```text
-final class Nvl\Templates\Models\TemplateRender extends Illuminate\Database\Eloquent\Model implements Nvl\Support\Ownership\Contracts\Ownable
-public function assignment(): Illuminate\Database\Eloquent\Relations\BelongsTo
-@return BelongsTo<TemplateAssignment, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\TemplateAssignment, $this>
+final class Nvl\Templates\Models\TemplateRender extends Nvl\Templates\Models\TemplateModel implements Nvl\Media\Contracts\HasNvlMedia
 public function delete(): ?bool
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
@@ -549,242 +404,268 @@ resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\Templ
 public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
 public function refresh(): static
 public function refreshForUpdate(): static
+public function registerNvlMedia(Nvl\Media\MediaRegistration $media, ?Nvl\Media\Models\Media $asset=null): void
+public function revision(): Illuminate\Database\Eloquent\Relations\BelongsTo
+@return BelongsTo<TemplateRevision, $this>
+resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\TemplateRevision, $this>
 public function save(array $options=[]): bool
 @param array<string, mixed> $options
-public function template(): Illuminate\Database\Eloquent\Relations\BelongsTo
-@return BelongsTo<Template, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\Template, $this>
-public function version(): Illuminate\Database\Eloquent\Relations\BelongsTo
-@return BelongsTo<TemplateVersion, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\TemplateVersion, $this>
-@property-read (TemplateAssignment | null) $assignment
-resolved @property-read (Nvl\Templates\Models\TemplateAssignment | null) $assignment
+public function scopeHasNvlMedia(Illuminate\Database\Eloquent\Builder $query, string $slot, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, Nvl\Media\Contracts\MediaBatchAuthorization $policy): Illuminate\Database\Eloquent\Builder
+@param Builder<static> $query
+resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateRender> $query
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateRender>
 @property int $attempts
+@property (Carbon | null) $available_at
+resolved @property (Illuminate\Support\Carbon | null) $available_at
 @property (Carbon | null) $completed_at
 resolved @property (Illuminate\Support\Carbon | null) $completed_at
-@property (Carbon | null) $created_at
-resolved @property (Illuminate\Support\Carbon | null) $created_at
-@property int $dispatch_generation
+@property (Carbon | null) $dispatch_requested_at
+resolved @property (Illuminate\Support\Carbon | null) $dispatch_requested_at
+@property (Carbon | null) $dispatched_at
+resolved @property (Illuminate\Support\Carbon | null) $dispatched_at
+@property (string | null) $error
+@property (Carbon | null) $expires_at
+resolved @property (Illuminate\Support\Carbon | null) $expires_at
 @property (Carbon | null) $failed_at
 resolved @property (Illuminate\Support\Carbon | null) $failed_at
-@property (string | null) $failure
+@property string $fingerprint
+@property int $generation
 @property string $id
 @property (string | null) $idempotency_key
 @property (Carbon | null) $lease_expires_at
 resolved @property (Illuminate\Support\Carbon | null) $lease_expires_at
-@property string $locale
-@property (string | null) $output_mime_type
-@property (string | null) $output_name
-@property (array<string, mixed> | null) $payload
-@property string $payload_digest
-@property (string | null) $processing_token
-@property string $profile
-@property (string | null) $requested_by
-@property (string | null) $requested_by_type
-@property (array<string, mixed> | null) $settings
-@property (Carbon | null) $started_at
-resolved @property (Illuminate\Support\Carbon | null) $started_at
-@property TemplateRenderStatus $status
-resolved @property Nvl\Templates\Enums\TemplateRenderStatus $status
-@property-read Template $template
-resolved @property-read Nvl\Templates\Models\Template $template
-@property (string | null) $template_assignment_id
-@property string $template_id
-@property string $template_version_id
-@property (Carbon | null) $updated_at
-resolved @property (Illuminate\Support\Carbon | null) $updated_at
-@property-read TemplateVersion $version
-resolved @property-read Nvl\Templates\Models\TemplateVersion $version
-```
-
-## Nvl\Templates\Models\TemplateTranslation
-
-```text
-final class Nvl\Templates\Models\TemplateTranslation extends Illuminate\Database\Eloquent\Model implements Nvl\Support\Ownership\Contracts\Ownable
-public function delete(): ?bool
-public function fresh(mixed $with=[]): ?static
-@param (array<array-key, mixed> | string) $with
-public function getConnectionName(): ?string
-public function getTable(): string
-public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
-@param (int | string | array<array-key, (int | string)>) $ids
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateTranslation>
-public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
-public function refresh(): static
-public function refreshForUpdate(): static
-public function save(array $options=[]): bool
-@param array<string, mixed> $options
-public function template(): Illuminate\Database\Eloquent\Relations\BelongsTo
-@return BelongsTo<Template, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\Template, $this>
-@property (string | null) $description
-@property string $id
-@property string $locale
-@property-read Template $template
-resolved @property-read Nvl\Templates\Models\Template $template
-@property string $template_id
-@property string $title
-```
-
-## Nvl\Templates\Models\TemplateVersion
-
-```text
-final class Nvl\Templates\Models\TemplateVersion extends Illuminate\Database\Eloquent\Model implements Nvl\Support\Ownership\Contracts\Ownable
-public const string CONTENT_GROUP="document"
-public const string CONTENT_OWNER_TYPE="nvl-template-version"
-public function contentGroups(): array
-@return list<string>
-public function contentPlacements(): Illuminate\Database\Eloquent\Relations\MorphMany
-@return MorphMany<ContentPlacement, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\MorphMany<Nvl\Content\Models\ContentPlacement, $this>
-public function delete(): ?bool
-public function fresh(mixed $with=[]): ?static
-@param (array<array-key, mixed> | string) $with
-public function getConnectionName(): ?string
-public function getTable(): string
-public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
-@param (int | string | array<array-key, (int | string)>) $ids
-@return Builder<static>
-resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateVersion>
-public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
-public function refresh(): static
-public function refreshForUpdate(): static
-public function save(array $options=[]): bool
-@param array<string, mixed> $options
-public function scopePublished(Illuminate\Database\Eloquent\Builder $query): void
-@param Builder<static> $query
-resolved @param Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateVersion> $query
-public function template(): Illuminate\Database\Eloquent\Relations\BelongsTo
-@return BelongsTo<Template, $this>
-resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\Template, $this>
-@property (string | null) $catalog_grant_id
-@property (string | null) $catalog_import_key
-@property (string | null) $catalog_source_hash
-@property (int | null) $catalog_source_revision
-@property (string | null) $catalog_source_version_id
-@property (string | null) $content_hash
-@property (array{ownerType: string, ownerId: string, group: string, blocks: list<array{placementId: string, parentId: (string | null), key: string, region: string, sortOrder: int, blockId: string, definitionKey: string, definitionSchema: array<string, mixed>, definitionView: (string | null), visibility: string, values: array<string, mixed>, translations: array<string, array<string, mixed>>, overrides: array<string, mixed>, blockRevision: int, placementRevision: int}>, version: string, tenantId: (string | null), formatVersion: int, ownershipContext: (array<string, mixed> | null)} | null) $content_snapshot
-@property string $id
-@property (array<string, mixed> | null) $metadata
+@property string $output
+@property (string | null) $owner_reference
 @property (string | null) $owner_scope_key
-@property (Carbon | null) $published_at
-resolved @property (Illuminate\Support\Carbon | null) $published_at
-@property (string | null) $published_by
-@property (string | null) $published_by_type
-@property int $revision
-@property TemplateVersionStatus $status
-resolved @property Nvl\Templates\Enums\TemplateVersionStatus $status
-@property-read Template $template
-resolved @property-read Nvl\Templates\Models\Template $template
-@property string $template_id
+@property (string | null) $processing_token
+@property (Carbon | null) $purged_at
+resolved @property (Illuminate\Support\Carbon | null) $purged_at
+@property (array<string, mixed> | null) $result
+@property string $scope_id
+@property (array<string, mixed> | null) $snapshot
+@property (string | null) $snapshot_checksum
+@property string $status
+@property string $template_revision_id
+```
+
+## Nvl\Templates\Models\TemplateResource
+
+```text
+final class Nvl\Templates\Models\TemplateResource extends Nvl\Templates\Models\TemplateModel
+public function delete(): ?bool
+public function fresh(mixed $with=[]): ?static
+@param (array<array-key, mixed> | string) $with
+public function getConnectionName(): ?string
+public function getTable(): string
+public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
+@param (int | string | array<array-key, (int | string)>) $ids
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateResource>
+public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
+public function refresh(): static
+public function refreshForUpdate(): static
+public function save(array $options=[]): bool
+@param array<string, mixed> $options
+@property (string | null) $current_revision_id
+@property (string | null) $group_id
+@property string $id
+@property string $key
+@property string $kind
+@property string $name
+@property string $owner_key
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property (array<string, mixed> | null) $restrictions
+@property string $scope
+@property string $scope_id
+@property string $status
+@property (string | null) $template_id
 @property int $version
 ```
 
-## Nvl\Templates\Ownership\TemplateOwnerCatalog
+## Nvl\Templates\Models\TemplateResourceRevision
 
 ```text
-final readonly class Nvl\Templates\Ownership\TemplateOwnerCatalog
-public function __construct(Nvl\Templates\Ownership\TemplateCatalogSource $sources, Nvl\Templates\Contracts\TemplateCatalogAccess $access, Nvl\Templates\Services\TemplateDefinitionRegistry $definitions, Nvl\Templates\Services\CanonicalJson $json, Nvl\Content\Services\ContentReader $content, Nvl\Media\Contracts\MediaCatalogImport $media, Nvl\Content\Contracts\ContentStorage $storage): mixed
-public function grant(string $sourceId, int $revision): Nvl\Templates\Models\TemplateOwnerGrant
-public function import(array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateVersion
-@param array{grantId: string, expectedGrantRevision: int, expectedSourceRevision: int, targetKey: string, idempotency_key: string, mediaGrantIds: array<string, string>} $data
-public function revoke(string $grantId, int $revision): Nvl\Templates\Models\TemplateOwnerGrant
+final class Nvl\Templates\Models\TemplateResourceRevision extends Nvl\Templates\Models\TemplateModel
+public static function bootImmutableRevision(): void
+public function delete(): ?bool
+public function fresh(mixed $with=[]): ?static
+@param (array<array-key, mixed> | string) $with
+public function getConnectionName(): ?string
+public function getTable(): string
+public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
+@param (int | string | array<array-key, (int | string)>) $ids
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateResourceRevision>
+public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
+public function refresh(): static
+public function refreshForUpdate(): static
+public function resource(): Illuminate\Database\Eloquent\Relations\BelongsTo
+@return BelongsTo<TemplateResource, $this>
+resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\TemplateResource, $this>
+public function save(array $options=[]): bool
+@param array<string, mixed> $options
+@property string $checksum
+@property array<string, mixed> $document
+@property string $id
+@property (string | null) $origin_revision_id
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property (array<string, mixed> | null) $provenance
+@property string $resource_id
+@property int $revision
+@property string $scope_id
 ```
 
-## Nvl\Templates\Rendering\TemplateRenderContext
+## Nvl\Templates\Models\TemplateRevision
 
 ```text
-final readonly class Nvl\Templates\Rendering\TemplateRenderContext
-public function __construct(Nvl\Templates\Template $template, string $view, string $renderer, string $locale, ?string $subject, ?string $filename, ?array $pdf, array $rendererOptions): mixed
-@param array<string, mixed> $rendererOptions
-@param (array{pageSize?: (PdfPageSize | null), orientation?: (PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null) $pdf
-resolved @param (array{pageSize?: (Nvl\Templates\Enums\PdfPageSize | null), orientation?: (Nvl\Templates\Enums\PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null) $pdf
-public function blocks(): array
+final class Nvl\Templates\Models\TemplateRevision extends Nvl\Templates\Models\TemplateModel
+public static function bootImmutableRevision(): void
+public function delete(): ?bool
+public function fresh(mixed $with=[]): ?static
+@param (array<array-key, mixed> | string) $with
+public function getConnectionName(): ?string
+public function getTable(): string
+public function newQueryForRestoration(mixed $ids): Illuminate\Database\Eloquent\Builder
+@param (int | string | array<array-key, (int | string)>) $ids
+@return Builder<static>
+resolved @return Illuminate\Database\Eloquent\Builder<Nvl\Templates\Models\TemplateRevision>
+public static function ownershipDefinition(): Nvl\Support\Ownership\ValueObjects\OwnershipDefinition
+public function refresh(): static
+public function refreshForUpdate(): static
+public function save(array $options=[]): bool
+@param array<string, mixed> $options
+public function template(): Illuminate\Database\Eloquent\Relations\BelongsTo
+@return BelongsTo<Template, $this>
+resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\Models\Template, $this>
+@property string $checksum
+@property array<array-key, mixed> $dependencies
+@property array<string, mixed> $document
+@property (string | null) $group_id
+@property (string | null) $group_revision_id
+@property string $id
+@property (string | null) $owner_reference
+@property (string | null) $owner_scope_key
+@property Carbon $published_at
+resolved @property Illuminate\Support\Carbon $published_at
+@property int $revision
+@property string $scope_id
+@property array<string, mixed> $source
+@property string $template_id
+```
+
+## Nvl\Templates\Services\FamilyLifecycle
+
+```text
+final class Nvl\Templates\Services\FamilyLifecycle
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation, Nvl\Templates\Services\DocumentResolver $documents, Nvl\Templates\Services\ResourceManager $resources, Nvl\Templates\Services\ResourceCloner $cloner, Nvl\Templates\Services\FamilyMaterializer $materializer, Nvl\Templates\Services\AssetManager $assets): mixed
+public function apply(string $templateId, string $candidateId, array $resolutions, int $expectedVersion, string $sourceChecksum, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param array<string, ('local' | 'family')> $resolutions
+@return array{version: int, sourceChecksum: string, source: array<array-key, mixed>, candidate: array<string, mixed>}
+public function get(string $templateId, string $candidateId, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@return array<string, mixed>
+public function listing(string $templateId, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
 @return list<array<string, mixed>>
-public function composition(): ?array
-@return (array{blocks: list<array<string, mixed>>, regions: array<string, list<array<string, mixed>>>, locale: string, ...} | null)
-public function data(): array
+public function prepare(string $templateId, string $operation, ?array $target, int $expectedVersion, string $sourceChecksum, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param (array{groupId: string, revision: int} | null) $target
 @return array<string, mixed>
-public function regions(): array
-@return array<string, list<array<string, mixed>>>
-public function settings(): array
+public function review(string $templateId, string $candidateId, array $resolutions, int $expectedVersion, string $sourceChecksum, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param array<string, ('local' | 'family')> $resolutions
 @return array<string, mixed>
-public function viewData(): array
-@return array{template: Template, options: self, composition: (array<string, mixed> | null), blocks: list<array<string, mixed>>, regions: array<string, list<array<string, mixed>>>, data: array<string, mixed>, settings: array<string, mixed>}
-resolved @return array{template: Nvl\Templates\Template, options: Nvl\Templates\Rendering\TemplateRenderContext, composition: (array<string, mixed> | null), blocks: list<array<string, mixed>>, regions: array<string, list<array<string, mixed>>>, data: array<string, mixed>, settings: array<string, mixed>}
-public readonly ?string $filename
-public readonly string $locale
-public readonly ?array $pdf
-@param (array{pageSize?: (PdfPageSize | null), orientation?: (PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null) $pdf
-resolved @param (array{pageSize?: (Nvl\Templates\Enums\PdfPageSize | null), orientation?: (Nvl\Templates\Enums\PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null) $pdf
-public readonly string $renderer
-public readonly array $rendererOptions
-@param array<string, mixed> $rendererOptions
-public readonly ?string $subject
-public readonly Nvl\Templates\Template $template
-public readonly string $view
 ```
 
-## Nvl\Templates\Services\TemplateAssignments
+## Nvl\Templates\Services\RenderRequests
 
 ```text
-final readonly class Nvl\Templates\Services\TemplateAssignments
-public function __construct(Nvl\Templates\Contracts\TemplateAuthorization $authorization, Nvl\Templates\Services\TemplateOwnerRegistry $owners, Nvl\Templates\Services\TemplateDefinitionRegistry $definitions, Nvl\Templates\Services\TemplateContentGuard $guard, Nvl\Templates\Services\TemplateVersionResolver $versions, Nvl\Support\Ownership\Contracts\OwnershipBoundary $boundary, Nvl\Support\Events\DomainEventDispatcher $domainEvents): mixed
-public function assign(Nvl\Templates\Models\Template|string $template, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateAssignment
-@param array<string, mixed> $data
-public function unassign(Nvl\Templates\Models\TemplateAssignment|string $assignment, int $expectedRevision, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): bool
+final class Nvl\Templates\Services\RenderRequests
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation, Nvl\Templates\Services\RenderPipeline $pipeline, Nvl\Templates\Services\RenderDispatcher $dispatcher, Nvl\Templates\Services\RenderProcessor $processor, Nvl\Templates\Services\RenderMaintenance $maintenance, Nvl\Templates\Services\RenderArtifacts $artifacts, Nvl\Templates\Contracts\RenderExecutionContext $execution): mixed
+public function accept(string $revisionId, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
+@param array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>, inputs?: array<array-key, mixed>, settings?: array<array-key, mixed>, output?: ('html' | 'pdf'), options?: array{filename?: string, expectedPages?: int, maxPages?: int}, idempotency_key?: ?string, owner?: ?array<array-key, mixed>, request_identity?: ?string} $data
+public function byKey(string $key, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
+public function bytes(string $id, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): string
+public function dispatch(string $id, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
+public function get(string $id, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
+public function process(string $id, ?int $generation, ?string $token, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
+public function prune(int $limit, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): int
+public function queue(string $revisionId, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
+@param array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>, inputs?: array<array-key, mixed>, settings?: array<array-key, mixed>, output?: ('html' | 'pdf'), options?: array{filename?: string, expectedPages?: int, maxPages?: int}, idempotency_key?: ?string, owner?: ?array<array-key, mixed>, request_identity?: ?string} $data
+public function recover(int $limit, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): int
+public function result(string $id, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@return array{html: string, css: string, subject: ?string, text: ?string, revisionId: string, checksum: string, inlineAssets: list<array{cid: string, name: string, mimeType: string, content: string}>}
 ```
 
-## Nvl\Templates\Services\TemplateDefinitionRegistry
+## Nvl\Templates\Services\ResourceManager
 
 ```text
-final class Nvl\Templates\Services\TemplateDefinitionRegistry
-public function __construct(Nvl\Templates\Services\TemplateContentGuard $guard, Nvl\Templates\Contracts\TemplatePayloadValidator $payloadValidator, Nvl\Templates\Services\StoredTemplateOptionsFactory $optionsFactory, Nvl\Templates\Services\TemplateRendererRegistry $renderers): mixed
-public function all(): array
-@return array<string, array{key: string, renderer: string, view: string, profiles: list<string>, schema: array<string, mixed>, rendererOptions: array<string, mixed>, subjectPath: (string | null), requiredRegions: list<string>, allowedContentDefinitions: list<string>}>
-public function get(string $key): array
-@return array{key: string, renderer: string, view: string, profiles: list<string>, schema: array<string, mixed>, rendererOptions: array<string, mixed>, subjectPath: (string | null), requiredRegions: list<string>, allowedContentDefinitions: list<string>}
-public function register(array $definition): void
-@param array{key: string, renderer: string, view: string, profiles?: list<string>, schema?: array<string, mixed>, rendererOptions?: array<string, mixed>, subjectPath?: (string | null), requiredRegions?: list<string>, allowedContentDefinitions?: list<string>} $definition
+final class Nvl\Templates\Services\ResourceManager
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation): mixed
+public function catalog(string $templateId, ?string $kind, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Illuminate\Database\Eloquent\Collection
+@return Collection<int, TemplateResource>
+resolved @return Illuminate\Database\Eloquent\Collection<int, Nvl\Templates\Models\TemplateResource>
+public function create(string $key, string $name, string $kind, string $scope, ?string $ownerId, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateResource
+public function publish(string $id, array $document, int $expectedRevision, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateResourceRevision
+@param array<array-key, mixed> $document
+public function revisionFor(string $templateId, string $resourceId, int $revision, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateResourceRevision
 ```
 
-## Nvl\Templates\Services\TemplateDefinitions
+## Nvl\Templates\Services\TemplateAssets
 
 ```text
-final readonly class Nvl\Templates\Services\TemplateDefinitions
-public function __construct(Nvl\Templates\Services\TemplateDefinitionRegistry $definitions, Nvl\Templates\Contracts\TemplateAuthorization $authorization): mixed
-public function sync(Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, bool $dryRun=false): Illuminate\Support\Collection
-@return Collection<int, array{key: string, operation: string}>
-resolved @return Illuminate\Support\Collection<int, array{key: string, operation: string}>
+final readonly class Nvl\Templates\Services\TemplateAssets
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation, Nvl\Templates\Services\AssetManager $assets): mixed
+public function contents(string $id, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@return array{0: TemplateAsset, 1: string}
+resolved @return array{0: Nvl\Templates\Models\TemplateAsset, 1: string}
+public function fromStorage(string $source, string $key, string $name, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateAsset
+public function fromUrl(string $url, string $name, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateAsset
+public function resolve(string $id, string $target, bool $embedEmail, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@return array{id: string, checksum: string, mimeType: string, url: string, attachment: ?array{cid: string, name: string, mimeType: string, content: string}}
+public function upload(Illuminate\Http\UploadedFile $file, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateAsset
 ```
 
-## Nvl\Templates\Services\TemplateImporter
+## Nvl\Templates\Services\TemplateCatalog
 
 ```text
-final readonly class Nvl\Templates\Services\TemplateImporter
-public function __construct(Nvl\Templates\Services\TemplateLifecycle $templates, Nvl\Templates\Services\TemplateAdoptionManifest $manifests, Nvl\Templates\Services\TemplateAdoptionSchema $schemas, Nvl\Templates\Services\MediaTemplateAssetRegistry $assets): mixed
-public function adopt(array $manifest, bool $prepare=false, bool $apply=false): array
-@param array<array-key, mixed> $manifest
-@return array<string, mixed>
+final readonly class Nvl\Templates\Services\TemplateCatalog
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation): mixed
+public function assets(array $query, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Illuminate\Pagination\LengthAwarePaginator
+@param array<array-key, mixed> $query
+@return LengthAwarePaginator<int, TemplateAsset>
+resolved @return Illuminate\Pagination\LengthAwarePaginator<int, Nvl\Templates\Models\TemplateAsset>
+public function groupRevision(string $groupId, int $revision, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateGroupRevision
+public function groups(array $query, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Illuminate\Pagination\LengthAwarePaginator
+@param array<array-key, mixed> $query
+@return LengthAwarePaginator<int, TemplateGroup>
+resolved @return Illuminate\Pagination\LengthAwarePaginator<int, Nvl\Templates\Models\TemplateGroup>
+public function templates(array $query, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Illuminate\Pagination\LengthAwarePaginator
+@param array<array-key, mixed> $query
+@return LengthAwarePaginator<int, Template>
+resolved @return Illuminate\Pagination\LengthAwarePaginator<int, Nvl\Templates\Models\Template>
+```
+
+## Nvl\Templates\Services\TemplateFamilies
+
+```text
+final class Nvl\Templates\Services\TemplateFamilies
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation, Nvl\Templates\Services\FamilyMaterializer $materializer, Nvl\Templates\Services\ResourceManager $resources, Nvl\Templates\Services\DocumentValidator $validator, Nvl\Templates\Services\FamilyLifecycle $families): mixed
+public function create(array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateGroup
+@param array{key: string, name: string} $data
+public function publish(string $groupId, array $document, int $expectedRevision, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateGroupRevision
+@param array<array-key, mixed> $document
 ```
 
 ## Nvl\Templates\Services\TemplateLifecycle
 
 ```text
-final readonly class Nvl\Templates\Services\TemplateLifecycle
-public function __construct(Nvl\Templates\Contracts\TemplateAuthorization $authorization, Nvl\Templates\Services\TemplateDefinitionRegistry $definitions, Nvl\Templates\Services\TemplateContentGuard $guard, Nvl\Translatable\Services\RelatedTranslationStore $translations, Nvl\Support\Ownership\Contracts\OwnershipBoundary $boundary, Nvl\Support\Events\DomainEventDispatcher $domainEvents): mixed
+final class Nvl\Templates\Services\TemplateLifecycle
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation, Nvl\Templates\Services\DocumentResolver $documents, Nvl\Templates\Services\DocumentValidator $validator, Nvl\Templates\Services\ResourceManager $resources): mixed
 public function create(array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\Template
-@param array<string, mixed> $data
-public function createVersion(Nvl\Templates\Models\Template|string $template, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateVersion
-@param array<string, mixed> $data
-public function delete(Nvl\Templates\Models\Template|string $template, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): void
-public function publishVersion(Nvl\Templates\Models\TemplateVersion|string $version, int $expectedRevision, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateVersion
-public function update(Nvl\Templates\Models\Template|string $template, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, Nvl\Translatable\Enums\TranslationSyncMode $translationMode=\Nvl\Translatable\Enums\TranslationSyncMode::Replace): Nvl\Templates\Models\Template
-@param array{status: (TemplateStatus | string), expected_revision: (int | string), metadata?: array<string, mixed>, translations?: array<string, array{title: string, description?: (string | null)}>} $data
-resolved @param array{status: (Nvl\Templates\Enums\TemplateStatus | string), expected_revision: (int | string), metadata?: array<string, mixed>, translations?: array<string, array{title: string, description?: (string | null)}>} $data
-public function updateVersion(Nvl\Templates\Models\TemplateVersion|string $version, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateVersion
-@param array{expected_revision: (int | string), metadata?: array<string, mixed>} $data
+@param array{key: string, name: string, groupId?: (string | null)} $data
+public function publish(string $templateId, int $expectedVersion, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRevision
+public function saveDraft(string $templateId, array $document, int $expectedVersion, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateDraft
+@param array<array-key, mixed> $document
 ```
 
 ## Nvl\Templates\Services\TemplateModelRegistry
@@ -800,88 +681,57 @@ public function templateClass(): string
 resolved @return class-string<Nvl\Templates\Models\Template>
 ```
 
-## Nvl\Templates\Services\TemplateOwnerRegistry
-
-```text
-final class Nvl\Templates\Services\TemplateOwnerRegistry
-public function __construct(Illuminate\Contracts\Container\Container $container, Nvl\Support\Ownership\Contracts\OwnershipBoundary $boundary, Nvl\Support\OwnerRegistry $identities): mixed
-public function aliases(): array
-@return list<string>
-public function has(string $alias): bool
-public function register(string $alias, string $resolver, ?string $owner=null): void
-public function resolve(string $alias, string $identifier): Illuminate\Database\Eloquent\Model
-```
-
 ## Nvl\Templates\Services\TemplateReader
 
 ```text
-final readonly class Nvl\Templates\Services\TemplateReader
-public function __construct(Nvl\Templates\Contracts\TemplateAuthorization $authorization, Nvl\Support\Ownership\Contracts\OwnershipBoundary $boundary): mixed
-public function get(Nvl\Templates\Models\Template|string $template, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\Template
-public function getRender(Nvl\Templates\Models\TemplateRender|string $render, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
-public function paginate(array $criteria, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, ?int $perPage=null): Illuminate\Contracts\Pagination\LengthAwarePaginator
-@param array<string, mixed> $criteria
-@return LengthAwarePaginator<int, Template>
-resolved @return Illuminate\Contracts\Pagination\LengthAwarePaginator<int, Nvl\Templates\Models\Template>
-public function renders(array $criteria, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor, ?int $perPage=null): Illuminate\Contracts\Pagination\LengthAwarePaginator
-@param array<string, mixed> $criteria
-@return LengthAwarePaginator<int, TemplateRender>
-resolved @return Illuminate\Contracts\Pagination\LengthAwarePaginator<int, Nvl\Templates\Models\TemplateRender>
+final class Nvl\Templates\Services\TemplateReader
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation, Nvl\Templates\Services\DocumentResolver $documents, Nvl\Templates\Services\ResourceManager $resources, Nvl\Templates\Services\FamilyLifecycle $families, Nvl\Templates\Services\AssetManager $assets): mixed
+public function get(string $id, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\Template
+public function load(string $id, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@return array{template: array{id: string, key: string, name: string, groupId: ?string, status: string}, version: int, source: (array<array-key, mixed> | null), document: (array<array-key, mixed> | null), sourceChecksum: ?string, family: (array{id: string, revisionId: string, revision: int, source: array<array-key, mixed>, document: array<array-key, mixed>} | null), proposedGroupId: ?string, hasProposedBasis: bool, familyChanges: list<array<array-key, mixed>>, currentRevisionId: ?string, capabilities: array<array-key, mixed>, previewAssets: object, issues: list<array{path: string, message: string}>}
 ```
 
 ## Nvl\Templates\Services\TemplateRenderer
 
 ```text
-final readonly class Nvl\Templates\Services\TemplateRenderer
-public function __construct(Nvl\Templates\Services\TemplateContextFactory $contexts, Nvl\Templates\Services\TemplateRendererRegistry $renderers, Nvl\Templates\Services\TemplateOutputGuard $outputGuard, Nvl\Templates\Contracts\TemplateAuthorization $authorization, Nvl\Templates\Services\StoredTemplateRenderResolver $resolver, Nvl\Support\Ownership\Contracts\OwnershipBoundary $boundary, Nvl\Templates\Services\CanonicalJson $canonicalJson, Nvl\Templates\Services\TemplateRenderDispatcher $dispatcher, Nvl\Support\Events\DomainEventDispatcher $domainEvents): mixed
-public function process(Nvl\Templates\Models\TemplateRender|string $render, ?string $processingToken=null, ?int $dispatchGeneration=null): Nvl\Templates\Models\TemplateRender
-public function queue(Nvl\Templates\Models\Template|string $template, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\Models\TemplateRender
-@param array<string, mixed> $data
-public function recover(Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Illuminate\Database\Eloquent\Collection
-@return Collection<int, TemplateRender>
-resolved @return Illuminate\Database\Eloquent\Collection<int, Nvl\Templates\Models\TemplateRender>
-public function render(Nvl\Templates\Template|Nvl\Templates\Models\Template|string $template, array $context, array $options, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
-@param array<string, mixed> $context
-@param array<string, mixed> $options
-@return array{content: string, mime_type: string, renderer: string, byte_size: int, checksum: string, subject: (string | null), suggested_filename: (string | null)}
+final class Nvl\Templates\Services\TemplateRenderer
+public function __construct(Nvl\Templates\Services\TemplateOperation $operation, Nvl\Templates\Services\DocumentResolver $documents, Nvl\Templates\Services\DocumentValidator $validator, Nvl\Templates\Services\ResourceManager $resources, Nvl\Templates\Services\RenderPipeline $pipeline, Nvl\Templates\Services\RuntimeDataResolver $runtime, Nvl\Templates\Services\AssetManager $assets, Nvl\Templates\Rendering\EmailProfile $email): mixed
+public function pdf(string $revisionId, array $data, array $options, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): Nvl\Templates\ValueObjects\PdfOutput
+@param array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>, inputs?: array<array-key, mixed>, settings?: array<array-key, mixed>} $data
+@param array{filename?: string, expectedPages?: int, maxPages?: int} $options
+public function prepare(string $revisionId, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>, inputs?: array<array-key, mixed>, settings?: array<array-key, mixed>} $data
+@return array{revisionId: string, document: array<array-key, mixed>, data: mixed, previewAssets: object}
+public function preview(string $templateId, array $document, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param array<array-key, mixed> $document
+@param array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>, inputs?: array<array-key, mixed>, settings?: array<array-key, mixed>} $data
+@return array{html: string, css: string, subject: ?string, text: ?string, revisionId: string, checksum: string, inlineAssets: list<array{cid: string, name: string, mimeType: string, content: string}>}
+public function previewForBrowser(string $templateId, array $document, array $data, bool $includeInlineAssets, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param array<array-key, mixed> $document
+@param array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>, inputs?: array<array-key, mixed>, settings?: array<array-key, mixed>} $data
+@return array{html: string, css: string, subject: ?string, text: ?string, revisionId: string, checksum: string, inlineAssets: list<array{cid: string, name: string, mimeType: string, content: string}>, previewHtml: string}
+public function render(string $revisionId, array $data, Illuminate\Contracts\Auth\Authenticatable|Nvl\Support\Enums\SystemActor $actor): array
+@param array{facts?: array<array-key, mixed>, context?: array<array-key, mixed>, inputs?: array<array-key, mixed>, settings?: array<array-key, mixed>} $data
+@return array{html: string, css: string, subject: ?string, text: ?string, revisionId: string, checksum: string, inlineAssets: list<array{cid: string, name: string, mimeType: string, content: string}>}
 ```
 
-## Nvl\Templates\Services\TemplateRendererRegistry
+## Nvl\Templates\Support\Capabilities
 
 ```text
-final class Nvl\Templates\Services\TemplateRendererRegistry
-public function __construct(Illuminate\Contracts\Container\Container $container): mixed
-public function all(): array
-@return array<string, class-string<TemplateRenderer>>
-resolved @return array<string, class-string<Nvl\Templates\Contracts\TemplateRenderer>>
-public function get(string $alias): Nvl\Templates\Contracts\TemplateRenderer
-public function has(string $alias): bool
-public function register(string $alias, string $renderer): void
-@param class-string $renderer
+final class Nvl\Templates\Support\Capabilities
+public static function assetTypesByTarget(): array
+@return array{email: list<string>, document: list<string>}
+public static function document(): array
+@return array<string, mixed>
 ```
 
-## Nvl\Templates\Template
+## Nvl\Templates\ValueObjects\PdfOutput
 
 ```text
-class Nvl\Templates\Template
-public function __construct(string $key, string $view="", array $data=[], ?array $options=null, ?array $composition=null, array $schema=[], array $settings=[]): mixed
-@param array<string, mixed> $data
-@param array<string, mixed> $schema
-@param array<string, mixed> $settings
-@param (array{renderer?: (string | null), locale?: (string | null), subject?: (string | null), filename?: (string | null), pdf?: (array{pageSize?: (PdfPageSize | null), orientation?: (PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null), rendererOptions?: array<string, mixed>} | null) $options
-resolved @param (array{renderer?: (string | null), locale?: (string | null), subject?: (string | null), filename?: (string | null), pdf?: (array{pageSize?: (Nvl\Templates\Enums\PdfPageSize | null), orientation?: (Nvl\Templates\Enums\PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null), rendererOptions?: array<string, mixed>} | null) $options
-@param (array{blocks: list<array<string, mixed>>, regions: array<string, list<array<string, mixed>>>, locale: string, ...} | null) $composition
-public readonly ?array $composition
-@param (array{blocks: list<array<string, mixed>>, regions: array<string, list<array<string, mixed>>>, locale: string, ...} | null) $composition
-public readonly array $data
-@param array<string, mixed> $data
-public readonly string $key
-public readonly ?array $options
-@param (array{renderer?: (string | null), locale?: (string | null), subject?: (string | null), filename?: (string | null), pdf?: (array{pageSize?: (PdfPageSize | null), orientation?: (PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null), rendererOptions?: array<string, mixed>} | null) $options
-resolved @param (array{renderer?: (string | null), locale?: (string | null), subject?: (string | null), filename?: (string | null), pdf?: (array{pageSize?: (Nvl\Templates\Enums\PdfPageSize | null), orientation?: (Nvl\Templates\Enums\PdfOrientation | null), margins?: (array{left?: (float | null), right?: (float | null), top?: (float | null), bottom?: (float | null), header?: (float | null), footer?: (float | null)} | null), defaultFont?: (string | null), defaultFontSize?: (float | null), dpi?: (int | null), imageDpi?: (int | null), imageQuality?: (int | null), showImageErrors?: (bool | null), temporaryDirectory?: (string | null), title?: (string | null), author?: (string | null), creator?: (string | null), subject?: (string | null), keywords?: (string | null), headerView?: (string | null), headerHtml?: (string | null), headerData?: array<string, mixed>, footerView?: (string | null), footerHtml?: (string | null), footerData?: array<string, mixed>, watermark?: (string | null), watermarkOpacity?: (float | null), compress?: (bool | null), pdfa?: (bool | null), pdfaAuto?: (bool | null), protectionPermissions?: list<string>, userPassword?: (string | null), ownerPassword?: (string | null)} | null), rendererOptions?: array<string, mixed>} | null) $options
-public readonly array $schema
-@param array<string, mixed> $schema
-public readonly array $settings
-@param array<string, mixed> $settings
-public readonly string $view
+final readonly class Nvl\Templates\ValueObjects\PdfOutput
+public function __construct(string $bytes, string $filename="document.pdf"): mixed
+public readonly string $bytes
+public readonly string $checksum
+public readonly string $filename
+public readonly int $size
 ```

@@ -1,0 +1,257 @@
+{
+  "template": {
+    "format": "gct-template-revision",
+    "schemaVersion": 1,
+    "templateId": "invoice_example",
+    "revision": 1,
+    "publishedAt": "2026-10-22T00:00:00.000Z",
+    "template": {
+      "format": "gct-template",
+      "schemaVersion": 1,
+      "id": "invoice_example",
+      "name": "Invoice example",
+      "description": "",
+      "locale": "en-GB",
+      "page": {
+        "widthMm": 210,
+        "heightMm": 297,
+        "margins": {
+          "top": 16,
+          "right": 16,
+          "bottom": 16,
+          "left": 16
+        }
+      },
+      "roots": [
+        "document"
+      ],
+      "nodes": {
+        "document": {
+          "id": "document",
+          "name": "Invoice",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "section",
+          "classes": [
+            "invoice"
+          ],
+          "attributes": {},
+          "attributeBindings": {},
+          "style": {},
+          "children": [
+            "heading",
+            "customer",
+            "number",
+            "total"
+          ]
+        },
+        "heading": {
+          "id": "heading",
+          "name": "Title",
+          "permissions": {
+            "content": true,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "literal",
+                "value": "Invoice"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        },
+        "customer": {
+          "id": "customer",
+          "name": "Customer",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "customerName"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        },
+        "number": {
+          "id": "number",
+          "name": "Number",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "invoiceNumber"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        },
+        "total": {
+          "id": "total",
+          "name": "Total",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "total"
+              },
+              "format": "currency",
+              "currency": "EUR"
+            }
+          ]
+        }
+      },
+      "fields": [
+        {
+          "id": "customerName",
+          "path": "customer.name",
+          "label": "Customer name",
+          "description": "",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required": true,
+          "editable": true,
+          "sample": "Marlow & Co."
+        },
+        {
+          "id": "invoiceNumber",
+          "path": "invoice.number",
+          "label": "Invoice number",
+          "description": "",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required": true,
+          "editable": true,
+          "sample": "INV-001"
+        },
+        {
+          "id": "total",
+          "path": "invoice.total",
+          "label": "Total",
+          "description": "",
+          "schema": {
+            "type": "number",
+            "minimum": 0
+          },
+          "required": true,
+          "editable": false,
+          "sample": 125,
+          "defaultValue": 0
+        }
+      ],
+      "blocks": [],
+      "assets": [],
+      "styles": {
+        "theme": "",
+        "css": ".invoice { display: grid; gap: 12px; }"
+      }
+    },
+    "dataContract": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "customer": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Customer name",
+              "description": "",
+              "examples": [
+                "Marlow & Co."
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "invoice": {
+          "type": "object",
+          "properties": {
+            "number": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Invoice number",
+              "description": "",
+              "examples": [
+                "INV-001"
+              ]
+            },
+            "total": {
+              "type": "number",
+              "minimum": 0,
+              "title": "Total",
+              "description": "",
+              "default": 0,
+              "examples": [
+                125
+              ],
+              "readOnly": true
+            }
+          },
+          "required": [
+            "number",
+            "total"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "customer",
+        "invoice"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "personalization": {
+    "format": "gct-personalization",
+    "schemaVersion": 1,
+    "templateId": "invoice_example",
+    "revision": 1,
+    "data": {
+      "customer": {
+        "name": "Marlow & Co."
+      },
+      "invoice": {
+        "number": "INV-001",
+        "total": 125
+      }
+    },
+    "overrides": {
+      "heading": {
+        "text": "Your invoice"
+      }
+    }
+  }
+}

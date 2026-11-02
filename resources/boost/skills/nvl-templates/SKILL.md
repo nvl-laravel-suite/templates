@@ -1,70 +1,38 @@
 ---
 name: nvl-templates
-description: Use when integrating source-controlled Blade/PDF templates, stored template lifecycle, localized versions, assignments, queued rendering, safe assets or template adoption with nvl/templates.
+description: Use when integrating nvl/templates document builders, versioned family variants, reusable resources, managed Media images, personalized email with CID attachments, PDF output, durable render requests or native Ownership installation in Laravel.
 ---
 
 # NVL Templates
 
-Templates targets PHP 8.4 and Laravel 13 and exposes native services and useful models.
-Consumers own DTOs, Actions, controllers, routes, views and download/filesystem responses.
-Blade-only rendering boots without Content, Media or mPDF.
+Use the native document/family services with an explicit actor last. The host owns controllers, routes, DTOs, business facts, private responses and mail delivery. Preserve portable `template-document` v1, `gct-template` and `urn:gct` values.
 
-## Portable references
+Read [usage](references/usage.md) for the complete integration sequence and examples. Use [API](references/api.md) to confirm exact signatures and native array keys; use [installation](references/installation.md) for Composer discovery, publish tags and migration ownership. Copy this entire skill tree when publishing it.
 
-- [Installation](references/installation.md): providers, exact publish tags, migration ownership and optional setup.
-- [Native API](references/api.md): signatures, renderer/PDF shapes, contracts, models and domain values.
-- [Usage](references/usage.md): class versus stored templates, allowed fields, policies and end-to-end examples.
+## Choose the workflow
 
-Read usage for capability selection and API before constructing options or mutation arrays.
-Read installation for a new host, published schema or adoption change.
-The local reference tree remains complete after Laravel Boost publication.
+| Need | Native entry point / usage section |
+| --- | --- |
+| New host and private retained bytes | [Dependencies and storage](references/usage.md#dependencies-and-storage) |
+| Owned application graph | [Native Ownership](references/usage.md#native-ownership) |
+| Publish React components and CSS | [React builder](references/usage.md#react-builder) |
+| Shared server compiler | [Node compiler](references/usage.md#node-compiler) |
+| Create, save, publish, reopen | `TemplateLifecycle`, `TemplateReader`; [documents](references/usage.md#document-lifecycle) |
+| Family pins and structural variants | `TemplateFamilies`, `FamilyLifecycle`; [families](references/usage.md#families-and-structural-changes) |
+| Bounded templates/families/assets and exact pins | `TemplateCatalog`; [catalogs](references/usage.md#bounded-catalogs) |
+| Scoped reusable content/design | `ResourceManager`; [resources](references/usage.md#scoped-reusable-resources) |
+| Import and authorize images | `TemplateAssets`; [assets](references/usage.md#managed-assets-and-private-routes) |
+| Customer inputs, preview and rendering | `TemplateRenderer`; [rendering](references/usage.md#personalization-and-previews) |
+| Deliver finalized email with CID bytes | [Mail handoff](references/usage.md#email-delivery-and-cid-attachments) |
+| Durable HTML/email/PDF and maintenance | `RenderRequests`; [durable requests](references/usage.md#durable-renders-and-maintenance) |
 
-## Choose the operation
+All service classes above are in `Nvl\Templates\Services`. `nvl/media` is required. These workflows do not use Content blocks, Blade template definitions, assignments or the former stored-version lifecycle.
 
-- `Nvl\Templates\Template`: source-controlled view/data/options, requiring no stored-template row.
-- `TemplateDefinitionRegistry` / `TemplateDefinitions`: register and synchronize code definitions.
-- `TemplateLifecycle`: create/update/delete templates, create/update drafts and publish immutable versions.
-- `TemplateAssignments`: assign/unassign registered host owners and profiles.
-- `TemplateReader`: authorized aggregate/detail/pages and requester-scoped render history.
-- `TemplateRenderer`: immediate bytes, durable queued render records, processing and recovery.
-- Asset/renderer registries: integrate explicitly selected renderers and revision-aware Media aliases.
-- `TemplateImporter`: plan/prepare/apply reviewed legacy adoption manifests.
+## Preserve authority and concurrency
 
-## Supply explicit authorization
-
-Bind `TemplateAuthorization`; register `TemplateOwnerResolver` capabilities when
-using owner assignments or owner-based stored rendering.
-Pass a persisted Eloquent actor or deliberately authorized SystemActor.
-The native guard reloads Eloquent actors before policies; background identity grants nothing.
-Code-definition synchronization uses `TemplateAbility::Update` with the exact context
-`operation => synchronize_definitions` and `definitions => <validated registry snapshot>`.
-That admitted snapshot is the persisted one; constrain the grant to source synchronization.
-Native Ownership admission and assignment owner identity remain separate from business permission.
-
-## Preserve native validation and revisions
-
-Use exact native array keys, retaining camelCase owner/version fields and snake_case controls.
-Unknown/protected fields reject, including unknown localized title/description fields.
-Expected revisions are mandatory where declared; initial assignment revision is zero.
-Omitted update metadata/translations retain stored values.
-Explicit empty arrays clear metadata and, in replacement mode, translations.
-Published/retired versions are immutable; publication requires synchronized Content composition.
-Renderer/schema/profile checks remain enforced even for direct PHP calls.
-
-## Keep rendering boundaries intact
-
-Results are bounded arrays of content, MIME type, renderer, size, checksum and optional names/subject.
-Queued results are TemplateRender models with durable identity, leases and recovery.
-Preserve requester checks, source outer commit and idempotency digest conflicts.
-Enable Content, Media assets/output and PDF capabilities explicitly.
-Keep HTML/URL/asset/output limits, safe paths, remote host allowlists and private delivery guards.
-Base models do not inherit optional integration interfaces.
-
-## Models and operations
-
-Configure `models.template` before boot using a compatible concrete stored Template subclass.
-Retain native keys, casts, canonical ownership and query/persistence capabilities.
-Use the package storage configuration for its source graph and reviewed adoption for existing data.
-Operational commands include sync, render recovery, view publication, doctor and adoption.
-The usage reference supplies exact command names and verified direct/native lifecycle examples.
-The deprecated Tenancy bridge and forwarding/fluent PDF API are absent.
+- Bind `Nvl\Templates\Contracts\TemplateAuthorization`; default policy denies. Bind native Media policy separately. Persisted actors are reloaded; `SystemActor::Background` grants no permission by itself.
+- Configure the concrete Template model before provider boot. Enter admitted native Ownership context when configured. Neither request `scope` nor descriptive `owner` data establishes authority.
+- Save `TemplateReader::load()['source']` as raw authoring authority. Its `document` is a materialized preview, not replacement source. Keep exact family/resource revision pins and the server's draft `version` / `sourceChecksum` evidence.
+- Review family conflicts explicitly; apply changes to the draft, then publish. A newer family never silently updates existing publications.
+- Server loads trusted `facts`/`context`; customers supply only declared exposed `inputs`/`settings`. Browser preview HTML and data URLs are not delivery artifacts.
+- Keep bounded byte limits, private Media identity/checksums and same-connection transactions. Existing Blade/Content data needs reviewed migration; fresh Ownership adoption is not a converter.

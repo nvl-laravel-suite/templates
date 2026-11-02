@@ -1,6 +1,6 @@
 {
     "name": "nvl/templates",
-    "description": "Composable Blade and PDF template abstractions and renderers for Laravel",
+    "description": "Versioned document composition, template families, email-safe HTML, native Media assets and rendering for Laravel",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -12,29 +12,34 @@
         "media"
     ],
     "require": {
+        "ext-ctype": "*",
+        "ext-curl": "*",
+        "ext-dom": "*",
         "ext-fileinfo": "*",
         "ext-filter": "*",
         "ext-json": "*",
+        "ext-libxml": "*",
         "ext-mbstring": "*",
         "laravel/framework": "^13.0",
+        "league/flysystem": "^3.25",
         "nvl/core": "^7.0",
+        "nvl/media": "^7.0",
         "nvl/translatable": "^7.0",
-        "php": "^8.4"
+        "opis/json-schema": "^2.6",
+        "php": "^8.4",
+        "symfony/css-selector": "^7.4 || ^8.0",
+        "symfony/mime": "^7.4.22 || ^8.1.10",
+        "symfony/process": "^7.4 || ^8.0",
+        "tijsverkoyen/css-to-inline-styles": "^2.2.5"
     },
     "require-dev": {
         "larastan/larastan": "^3.10",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
-        "mpdf/mpdf": "^8.3.0",
         "nvl/ownership": "^7.0",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.0",
-        "pestphp/pest-plugin-laravel": "^4.0",
-        "symfony/process": "^7.0 || ^8.0",
-        "nvl/content": "^7.0",
-        "nvl/media": "^7.0",
-        "nvl/filterable": "^7.0",
-        "spatie/laravel-data": "^4.23"
+        "pestphp/pest-plugin-laravel": "^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -91,21 +96,16 @@
             "/.gitignore",
             "/**/.gitignore",
             "/**/.gitkeep",
-            ".DS_Store"
+            ".DS_Store",
+            "/frontend"
         ]
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
     "suggest": {
-        "mpdf/mpdf": "Built-in PDF renderer: composer require mpdf/mpdf:^8.3.0 --with-all-dependencies (requires GD and mbstring).",
-        "nvl/ownership": "Adds optional model-declared ownership, isolation, adoption and captured worker contexts.",
-        "nvl/content": "Optional stored-template composition and publication integration.",
-        "nvl/media": "Optional private render output and asset integration."
+        "nvl/ownership": "Optional native ownership isolation and captured queue execution for document roots."
     },
     "conflict": {
-        "mpdf/mpdf": "<8.3.0 || >=9.0",
-        "nvl/content": "<7.0 || >=8.0",
-        "nvl/media": "<7.0 || >=8.0",
         "nvl/ownership": "<7.0 || >=8.0"
     },
     "homepage": "https://github.com/nvl-laravel-suite/templates",

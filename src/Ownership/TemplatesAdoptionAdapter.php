@@ -4,223 +4,32 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Ownership;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Schema\Blueprint;
-use Nvl\Content\Contracts\ContentSnapshotIntegrity;
-use Nvl\Ownership\Contracts\OwnershipAdoptionAdapter;
-use Nvl\Ownership\Services\OwnershipAdoptionStore;
-use Nvl\Ownership\Services\OwnershipDatabaseConstraints;
-use Nvl\Ownership\Services\OwnershipResourceBackfill;
-use Nvl\Ownership\Services\OwnershipSchema;
-use Nvl\Ownership\ValueObjects\OwnershipAdoptionPlan;
-use Nvl\Ownership\ValueObjects\OwnershipBackfillResult;
-use Nvl\Ownership\ValueObjects\OwnershipMapping;
-use Nvl\Ownership\ValueObjects\OwnershipVerification;
-use Nvl\Support\Ownership\Exceptions\OwnershipConfigurationInvalid;
-use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
-use Nvl\Templates\Models\TemplateVersion;
-use stdClass;
+use Nvl\Ownership\Services\FreshHostOwnershipAdoptionAdapter;
 
 /**
- * Adopts exact reviewed Templates records without guessing primary owners from associations.
+ * Installs the fresh native document graph through real Ownership adoption.
+ *
+ * The native helper refuses populated resources in every phase; legacy Blade
+ * or Content graphs require a separately reviewed migration and are not converted.
  *
  * @internal
  */
-final readonly class TemplatesAdoptionAdapter implements OwnershipAdoptionAdapter
+final class TemplatesAdoptionAdapter extends FreshHostOwnershipAdoptionAdapter
 {
-    /** Retain the canonical services and immutable inputs for this workflow. */
-    public function __construct(
-        private OwnershipResourceRegistry $resources,
-        private OwnershipAdoptionStore $mappings,
-        private OwnershipSchema $schema,
-        private OwnershipDatabaseConstraints $constraints,
-    ) {}
-
-    /** @return list<string> */
+    /** @return list<string> Canonical roots before their inherited children. */
     public function resources(): array
     {
-        return ['templates.templates', 'templates.translations', 'templates.versions', 'templates.assignments', 'templates.renders', 'templates.catalog-grants'];
-    }
-
-    /** Prepare additive partitions and replace only the package's known global receipt identity. */
-    public function prepare(OwnershipAdoptionPlan $plan): void
-    {
-        $root = new ($this->resources->get('templates.templates')->model);
-        $connection = $root->getConnection();
-        $schema = $connection->getSchemaBuilder();
-        $version = new ($this->resources->get('templates.versions')->model);
-        $grant = new ($this->resources->get('templates.catalog-grants')->model);
-        if (! $schema->hasTable($grant->getTable())) {
-            $schema->create($grant->getTable(), static function (Blueprint $table): void {
-                $table->uuid('id')->primary();
-                $table->uuid('template_version_id');
-                $table->unsignedBigInteger('source_revision');
-                $table->unsignedBigInteger('revision')->default(1);
-                $table->timestampTz('revoked_at')->nullable();
-                $table->timestampsTz();
-            });
-        }
-        foreach (['catalog_grant_id', 'catalog_source_version_id', 'catalog_source_revision', 'catalog_source_hash', 'catalog_import_key', 'catalog_import_request_hash'] as $column) {
-            if (! $schema->hasColumn($version->getTable(), $column)) {
-                $schema->table($version->getTable(), static function (Blueprint $table) use ($column): void {
-                    if ($column === 'catalog_source_revision') {
-                        $table->unsignedBigInteger($column)->nullable();
-                    } elseif (in_array($column, ['catalog_grant_id', 'catalog_source_version_id'], true)) {
-                        $table->uuid($column)->nullable();
-                    } else {
-                        $table->string($column, $column === 'catalog_import_key' ? 191 : 64)->nullable();
-                    }
-                });
-            }
-        }
-        foreach ($this->resources() as $key) {
-            $model = new ($this->resources->get($key)->model);
-            foreach (['tenant_id', 'ownership_key'] as $column) {
-                if ($schema->hasColumn($model->getTable(), $column)) {
-                    $schema->table($model->getTable(), static fn (Blueprint $table) => ($column === 'tenant_id' ? $table->uuid($column) : $table->string($column, 191))->nullable()->change());
-                }
-            }
-            $this->schema->prepare($key);
-        }
-        foreach (['templates.translations', 'templates.versions', 'templates.assignments', 'templates.renders'] as $key) {
-            $child = new ($this->resources->get($key)->model);
-            $column = 'template_id';
-            $found = false;
-            foreach ($schema->getForeignKeys($child->getTable()) as $foreign) {
-                if ($foreign['columns'] === [$column] && $foreign['foreign_table'] === $root->getConnection()->getTablePrefix().$root->getTable() && $foreign['foreign_columns'] === ['id']) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (! $found) {
-                $name = 'templates_native_'.substr(hash('sha256', $child->getTable().$column), 0, 24);
-                $schema->table($child->getTable(), static fn (Blueprint $table) => $table->foreign([$column], $name)->references(['id'])->on($root->getTable())->restrictOnDelete());
-            }
-        }
-        $assignment = new ($this->resources->get('templates.assignments')->model);
-        $render = new ($this->resources->get('templates.renders')->model);
-        foreach ([[$root, [['key'], ['ownership_key', 'key']]], [$assignment, [['owner_type', 'owner_id', 'profile'], ['tenant_id', 'owner_type', 'owner_id', 'profile']]], [$render, [['idempotency_key'], ['tenant_id', 'idempotency_key']]]] as [$model, $identities]) {
-            foreach ($schema->getIndexes($model->getTable()) as $index) {
-                if ($index['unique'] && in_array($index['columns'], $identities, true)) {
-                    $schema->table($model->getTable(), static fn (Blueprint $table) => $table->dropUnique($index['name']));
-                }
-            }
-        }
-        $this->unique($root, ['owner_scope_key', 'key'], 'templates_native_owner_key_unique');
-        $this->unique($assignment, ['owner_scope_key', 'owner_type', 'owner_id', 'profile'], 'templates_native_assignment_unique');
-        $this->unique($render, ['owner_scope_key', 'idempotency_key'], 'templates_native_render_unique');
-        $this->unique($version, ['owner_scope_key', 'catalog_import_key'], 'templates_native_import_unique');
-        $this->unique($grant, ['owner_scope_key', 'template_version_id'], 'templates_native_grant_unique');
-        foreach ([['templates.assignments', 'template_version_id', 'templates.versions'], ['templates.renders', 'template_version_id', 'templates.versions']] as [$childKey,$column,$parentKey]) {
-            $child = new ($this->resources->get($childKey)->model);
-            $parent = new ($this->resources->get($parentKey)->model);
-            $this->unique($parent, ['id', 'template_id'], 'templates_tuple_'.substr(hash('sha256', $parent->getTable()), 0, 20));
-            $found = false;
-            foreach ($schema->getForeignKeys($child->getTable()) as $foreign) {
-                if ($foreign['columns'] === [$column, 'template_id'] && $foreign['foreign_table'] === $parent->getConnection()->getTablePrefix().$parent->getTable()) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (! $found) {
-                $name = 'templates_tuple_'.substr(hash('sha256', $child->getTable().$column), 0, 20);
-                $schema->table($child->getTable(), static fn (Blueprint $table) => $table->foreign([$column, 'template_id'], $name)->references(['id', 'template_id'])->on($parent->getTable())->restrictOnDelete());
-            }
-        }
-    }
-
-    /** @param list<string> $columns */
-    private function unique(Model $model, array $columns, string $name): void
-    {
-        $schema = $model->getConnection()->getSchemaBuilder();
-        foreach ($schema->getIndexes($model->getTable()) as $index) {
-            if ($index['unique'] && $index['columns'] === $columns) {
-                return;
-            }
-        }
-        $schema->table($model->getTable(), static fn (Blueprint $table) => $table->unique($columns, $name));
-    }
-
-    /** Backfill bounded actual records from explicit immutable per-record mappings. */
-    public function backfill(OwnershipAdoptionPlan $plan, ?string $cursor, int $limit): OwnershipBackfillResult
-    {
-        return (new OwnershipResourceBackfill($this->resources, $this->mappings))->run($plan, $this->resources(), $cursor, $limit, 'Templates', function (string $key, Model $model, stdClass $row, OwnershipMapping $mapping): array {
-            $owner = $mapping->owner;
-            $attributes = [];
-            if ($key === 'templates.versions' && $row->content_snapshot !== null) {
-                if (! is_string($row->content_snapshot)) {
-                    throw new OwnershipConfigurationInvalid('Stored Template snapshots must contain canonical JSON.');
-                }
-                $payload = json_decode($row->content_snapshot, true, flags: JSON_THROW_ON_ERROR);
-                if (! is_array($payload)) {
-                    throw new OwnershipConfigurationInvalid('Stored Template snapshot is malformed.');
-                }
-                /** @var array{ownerType:string,ownerId:string,group:string,blocks:list<array{placementId:string,parentId:string|null,key:string,region:string,sortOrder:int,blockId:string,definitionKey:string,definitionSchema:array<string,mixed>,definitionView:string|null,visibility:string,values:array<string, mixed>,translations:array<string, array<string, mixed>>,overrides:array<string, mixed>,blockRevision:int,placementRevision:int}>,version:string,tenantId:string|null,formatVersion:int,ownershipContext:array<string,mixed>|null} $snapshot */
-                $snapshot = $payload;
-                $context = ['mode' => $owner === null ? 'central' : 'owner', 'owner' => $owner?->toArray()];
-                if ($snapshot['ownerId'] !== $row->id || $snapshot['ownerType'] !== $model->getMorphClass() || $snapshot['group'] !== TemplateVersion::CONTENT_GROUP || $snapshot['version'] !== $row->content_hash || ($snapshot['formatVersion'] === 2 && ($mapping->legacyTenantId === null || $snapshot['tenantId'] !== $mapping->legacyTenantId)) || ($snapshot['formatVersion'] === 3 && $snapshot['ownershipContext'] !== $context)) {
-                    throw new OwnershipConfigurationInvalid('Reviewed Template snapshots must preserve canonical source identity and checksum.');
-                }
-                $snapshot = app(ContentSnapshotIntegrity::class)->rebind($snapshot, $snapshot['ownerType'], $snapshot['ownerId'], $context);
-                $attributes['content_snapshot'] = json_encode($snapshot, JSON_THROW_ON_ERROR);
-                $attributes['content_hash'] = $snapshot['version'];
-            }
-
-            return $attributes;
-        });
-    }
-
-    /** Verify persisted partitions and the complete canonical domain graph. */
-    public function verify(OwnershipAdoptionPlan $plan): OwnershipVerification
-    {
-        foreach ($this->resources() as $key) {
-            $this->schema->verify($key);
-        }
-
-        foreach ([['templates.assignments', 'template_version_id', 'templates.versions'], ['templates.renders', 'template_version_id', 'templates.versions'], ['templates.renders', 'template_assignment_id', 'templates.assignments']] as [$childKey,$column,$parentKey]) {
-            $child = new ($this->resources->get($childKey)->model);
-            $parent = new ($this->resources->get($parentKey)->model);
-            $bad = $child->getConnection()->table($child->getTable().' as child')->leftJoin($parent->getTable().' as parent', 'parent.id', '=', 'child.'.$column)->whereNotNull('child.'.$column)->where(static fn (Builder $q) => $q->whereNull('parent.id')->orWhereColumn('parent.owner_scope_key', '!=', 'child.owner_scope_key')->orWhereColumn('parent.template_id', '!=', 'child.template_id'))->exists();
-            if ($bad) {
-                throw new OwnershipConfigurationInvalid('Template graph must retain the exact canonical root and owner.');
-            }
-        }
-
-        return new OwnershipVerification([]);
-    }
-
-    /** Install native graph constraints before activation can commit. */
-    public function activate(OwnershipAdoptionPlan $plan): void
-    {
-        foreach ($this->resources() as $key) {
-            $this->schema->constrain($key);
-        }
-        foreach ([['templates.assignments', 'template_version_id', 'templates.versions', true], ['templates.renders', 'template_version_id', 'templates.versions', false], ['templates.renders', 'template_assignment_id', 'templates.assignments', true]] as [$childKey,$column,$parentKey,$nullable]) {
-            $child = new ($this->resources->get($childKey)->model);
-            $parent = new ($this->resources->get($parentKey)->model);
-            $this->constraints->reference($child->getConnection(), $child->getTable(), $column, $parent->getTable(), 'id', $nullable, ['template_id']);
-        }
-        $version = new ($this->resources->get('templates.versions')->model);
-        $this->constraints->freeze($version->getConnection(), $version->getTable(), ['metadata', 'content_snapshot', 'content_hash', 'published_by_type', 'published_by', 'published_at'], afterStatuses: ['published', 'retired'], retainStatuses: true);
-        $render = new ($this->resources->get('templates.renders')->model);
-        $this->constraints->freeze($render->getConnection(), $render->getTable(), ['payload', 'settings'], eraseStatuses: ['completed', 'failed']);
-        $this->constraints->freeze($render->getConnection(), $render->getTable(), ['template_assignment_id'], eraseStatuses: ['pending', 'processing', 'completed', 'failed']);
-        $targets = [];
-        $hosts = config('nvl-templates.ownership.owner_resources', []);
-        if (! is_array($hosts)) {
-            throw new OwnershipConfigurationInvalid('Template hosts must be an alias to resource map.');
-        }
-        foreach ($hosts as $alias => $key) {
-            if (! is_string($alias) || ! is_string($key)) {
-                throw new OwnershipConfigurationInvalid('Template host aliases and resources must be strings.');
-            }
-            $parent = new ($this->resources->get($key)->model);
-            $targets[] = ['type' => $alias, 'table' => $parent->getTable(), 'key' => $parent->getKeyName()];
-        }
-
-        $assignment = new ($this->resources->get('templates.assignments')->model);
-        $this->constraints->polymorphicReference($assignment->getConnection(), $assignment->getTable(), 'owner_type', 'owner_id', $targets);
-
+        return [
+            'templates.templates',
+            'templates.groups',
+            'templates.resources',
+            'templates.assets',
+            'templates.drafts',
+            'templates.revisions',
+            'templates.family-changes',
+            'templates.group-revisions',
+            'templates.resource-revisions',
+            'templates.renders',
+        ];
     }
 }

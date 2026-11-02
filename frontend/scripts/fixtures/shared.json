@@ -1,0 +1,279 @@
+{
+  "format": "template-document",
+  "schemaVersion": 1,
+  "target": "document",
+  "source": {
+    "mode": "standalone",
+    "definition": {
+      "format": "gct-template",
+      "schemaVersion": 1,
+      "id": "experience",
+      "name": "Experience voucher",
+      "description": "",
+      "locale": "en-GB",
+      "page": {
+        "widthMm": 210,
+        "heightMm": 297,
+        "margins": {
+          "top": 16,
+          "right": 16,
+          "bottom": 16,
+          "left": 16
+        }
+      },
+      "roots": [
+        "condition"
+      ],
+      "nodes": {
+        "message": {
+          "id": "message",
+          "name": "Message",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "p",
+          "classes": [],
+          "attributes": {},
+          "attributeBindings": {},
+          "style": {},
+          "children": [
+            "copy"
+          ]
+        },
+        "copy": {
+          "id": "copy",
+          "name": "Copy",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "code"
+              },
+              "format": "text",
+              "currency": "EUR"
+            },
+            {
+              "value": {
+                "source": "literal",
+                "value": " — "
+              },
+              "format": "text",
+              "currency": "EUR"
+            },
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "message"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        },
+        "condition": {
+          "id": "condition",
+          "name": "Conditional message",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "condition",
+          "binding": {
+            "source": "field",
+            "fieldId": "message"
+          },
+          "operator": "truthy",
+          "children": [
+            "message"
+          ]
+        }
+      },
+      "fields": [
+        {
+          "id": "code",
+          "path": "facts.code",
+          "label": "Code",
+          "description": "",
+          "schema": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required": true,
+          "editable": false
+        },
+        {
+          "id": "message",
+          "path": "inputs.message",
+          "label": "Message",
+          "description": "",
+          "schema": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "required": true,
+          "editable": true,
+          "defaultValue": "Enjoy your experience!"
+        }
+      ],
+      "blocks": [],
+      "assets": [],
+      "styles": {
+        "theme": "",
+        "css": ""
+      }
+    }
+  },
+  "dataSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "facts": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Code",
+            "description": "",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Message",
+            "description": "",
+            "default": "Enjoy your experience!"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "context": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "content": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "settings": {
+        "type": "object",
+        "properties": {
+          "textSize": {
+            "type": "number",
+            "minimum": 12,
+            "maximum": 24
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "textSize"
+        ]
+      }
+    },
+    "required": [
+      "facts",
+      "inputs"
+    ],
+    "additionalProperties": false
+  },
+  "content": {},
+  "inputDefaults": {
+    "message": "Enjoy your experience!"
+  },
+  "settingsDefaults": {
+    "textSize": 16
+  },
+  "settingsSpec": [
+    {
+      "id": "textSize",
+      "label": "Text size",
+      "schema": {
+        "type": "number",
+        "minimum": 12,
+        "maximum": 24
+      },
+      "defaultValue": 16,
+      "exposed": true,
+      "unit": "px",
+      "targets": [
+        {
+          "nodeId": "message",
+          "property": "font-size"
+        }
+      ]
+    }
+  ],
+  "theme": {
+    "colors": {
+      "primary": "#275B49",
+      "primaryForeground": "#FFFFFF",
+      "background": "#FFFFFF",
+      "foreground": "#202722",
+      "muted": "#EFF3EF",
+      "mutedForeground": "#637067"
+    },
+    "typography": {
+      "fontFamily": "Arial, sans-serif",
+      "text": 14,
+      "small": 12,
+      "h1": 28,
+      "h2": 22,
+      "lineHeight": 1.5
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "actions": {
+      "height": 40,
+      "paddingInline": 16,
+      "radius": 6
+    }
+  },
+  "exposedInputs": [
+    "message"
+  ],
+  "exposedSettings": [
+    "textSize"
+  ],
+  "dependencies": [],
+  "managedAssets": {},
+  "compilerVersion": "template-platform/1",
+  "rendering": {
+    "engine": "shared",
+    "subject": "Experience voucher",
+    "text": "Your voucher is ready."
+  },
+  "artifacts": {
+    "engine": "shared",
+    "html": "",
+    "css": "",
+    "bindings": [],
+    "subject": "Experience voucher",
+    "text": "Your voucher is ready."
+  }
+}

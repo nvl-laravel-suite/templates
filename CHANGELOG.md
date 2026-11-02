@@ -7,13 +7,19 @@ All notable changes to `nvl/templates` are documented here.
 
 ### Changed
 
-- Align NVL peers and consumer contracts on the coordinated 7.x line. Review [UPGRADING.md](UPGRADING.md) for adoption and application-owned integration requirements.
+- Replace the former Blade/Content definition, assignment and version engine with portable document sources, pinned template families, structural variation points and reviewed upgrade/rebase/detach/regroup workflows.
+- Require NVL Media for immutable retained assets and complete durable HTML/email or PDF output; preserve native actor/owner admission, source transactions, current grants, leases, retries, output bounds and recovery.
+- Publish the existing complete React/Themelia builder as application-buildable source, with shared schemas, dependency manifest and bundled Node renderer. Applications own transport, routes and delivery.
+- Expose focused native services, bounded catalog pagination, exact family revision reads and bounded editor/browser projections. Laravel Mail adaptation consumes native output arrays and preserves CID attachments/plain text.
+- Adopt canonical NVL document table identities and fresh-only native Ownership activation. Retain all eight legacy migration files unchanged; existing installations require explicit staged migration. See [UPGRADING.md](UPGRADING.md).
+- Replace legacy integration guidance, configuration, factories and consumer skills. Retire obsolete Blade/mPDF/Content APIs and their named lifecycle events.
 
 ### Fixed
 
-- Normalize adoption locale keys and reject canonical duplicates before writing. Reapplying null or omitted descriptions preserves unchanged revisions and events.
-- Compare adoption JSON without numeric-string coercion, and reconcile localized Content against its stored translation projection.
-- Remove the obsolete render `media` property declaration; stored outputs are read through the optional Media reader's private `output` slot.
+- Honor the actual package/suite database connection in all document migrations and native Media composition.
+- Preserve raw variant authority, numeric JSON object keys, scoped resource visibility and immutable revision evidence across the full family lifecycle.
+- Revalidate canonical actors, Media permissions/bytes and queued business ownership; reject malformed publication data through native validation.
+- Filter email media before pagination; enforce complete preview/email output budgets, matching CID bytes, outer-transaction rollback cleanup and retained output integrity.
 
 ## [6.1.0] - 2026-10-23
 

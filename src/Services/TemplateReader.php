@@ -6,178 +6,154 @@ namespace Nvl\Templates\Services;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
 use Nvl\Support\Enums\SystemActor;
-use Nvl\Support\Ownership\Contracts\OwnershipBoundary;
-use Nvl\Templates\Contracts\TemplateAuthorization;
-use Nvl\Templates\Enums\TemplateAbility;
 use Nvl\Templates\Models\Template;
-use Nvl\Templates\Models\TemplateRender;
-use Nvl\Templates\Support\TemplatesConfiguration;
+use Nvl\Templates\Models\TemplateDraft;
+use Nvl\Templates\Models\TemplateGroup;
+use Nvl\Templates\Models\TemplateGroupRevision;
+use Nvl\Templates\Models\TemplateResource;
+use Nvl\Templates\Models\TemplateRevision;
+use Nvl\Templates\Support\Access;
+use Nvl\Templates\Support\CanonicalJson;
+use Nvl\Templates\Support\Capabilities;
+use Nvl\Templates\Support\JsonWire;
+use Nvl\Templates\Support\PreviewPayload;
 
 /**
- * Complete native template operations.
+ * Authorized editor and catalog reads.
  *
  * @api
  */
-final readonly class TemplateReader
+final class TemplateReader
 {
-    public function __construct(private TemplateAuthorization $authorization, private OwnershipBoundary $boundary) {}
+    public function __construct(
+        private readonly TemplateOperation $operation,
+        private readonly DocumentResolver $documents,
+        private readonly ResourceManager $resources,
+        private readonly FamilyLifecycle $families,
+        private readonly AssetManager $assets,
+    ) {}
 
-    /** Resolve the exact admitted template and authorize its read. */
-    public function get(Template|string $template, Authenticatable|SystemActor $actor): Template
+    /** Read an editor projection with raw source authority, effective document and review candidates.
+     * @return array{template: array{id: string,key: string,name: string,groupId: ?string,status: string}, version: int, source: array<array-key,mixed>|null, document: array<array-key,mixed>|null, sourceChecksum: ?string, family: array{id: string,revisionId: string,revision: int,source: array<array-key,mixed>,document: array<array-key,mixed>}|null, proposedGroupId: ?string, hasProposedBasis: bool, familyChanges: list<array<array-key,mixed>>, currentRevisionId: ?string, capabilities: array<array-key,mixed>, previewAssets: object, issues: list<array{path: string,message: string}>}
+     */
+    public function load(string $id, Authenticatable|SystemActor $actor): array
     {
-        $templateId = $template instanceof Template ? $template->id : $template;
-        $model = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
-            ->with([
-                'translations',
-                'versions',
-                'assignments',
-            ])
-            ->findOrFail($templateId);
-        $actor = app(TemplateContentGuard::class)->actor($actor);
-        $this->authorization->authorize(
-            TemplateAbility::View,
-            $actor,
-            ['template_id' => $model->id],
-        );
-
-        return $model;
-    }
-
-    /**
-     * Return one configured and deterministically sorted template page.
-     *
-     * @param  array<string,mixed>  $criteria
-     * @return LengthAwarePaginator<int, Template>
-     */
-    public function paginate(
-        array $criteria,
-        Authenticatable|SystemActor $actor,
-        ?int $perPage = null,
-    ): LengthAwarePaginator {
-        $actor = app(TemplateContentGuard::class)->actor($actor);
-        $this->authorization->authorize(TemplateAbility::List, $actor);
-        $query = $this->boundary->query(TemplateModelRegistry::query(), 'templates.templates')
-            ->with('translations');
-        $columns = ['status' => 'status', 'renderer' => 'renderer'];
-        if (array_diff(array_keys($criteria), [...array_keys($columns), 'sort', 'page']) !== []) {
-            throw new \InvalidArgumentException('Unknown template query criterion.');
-        }
-        foreach ($columns as $alias => $column) {
-            if (array_key_exists($alias, $criteria)) {
-                $value = $criteria[$alias];
-                is_array($value) ? $query->whereIn($column, $value) : $query->where($column, $value);
+        return $this->operation->run($actor, function () use ($id) {
+            $api = $this->documents;
+            $template = TemplateModelRegistry::query()->findOrFail($id);
+            Access::authorize('read', $template);
+            Access::authorize('manage', $template);
+            $draft = TemplateDraft::query()->where('template_id', $id)->first();
+            $release = $template->current_revision_id ? TemplateRevision::query()->findOrFail($template->current_revision_id) : null;
+            $source = $draft->document ?? $release?->source;
+            if ($source === null && $template->group_id) {
+                $group = TemplateGroup::query()->findOrFail($template->group_id);
+                if ($group->current_revision_id) {
+                    $family = TemplateGroupRevision::query()->findOrFail($group->current_revision_id);
+                    $source = ['format' => 'template-document', 'schemaVersion' => 1, 'target' => $family->document['target'], 'source' => ['mode' => 'group-variant', 'group' => ['id' => $group->id, 'revision' => $family->revision], 'overrides' => []]];
+                }
             }
-        }
-        $sorts = ['key' => 'key', 'created' => 'created_at', 'updated' => 'updated_at', 'id' => 'id'];
-        $sort = $criteria['sort'] ?? 'key';
-        if (! is_string($sort) || ! isset($sorts[ltrim($sort, '-')])) {
-            throw new \InvalidArgumentException('Unknown template sort.');
-        }
-        $query->orderBy($sorts[ltrim($sort, '-')], str_starts_with($sort, '-') ? 'desc' : 'asc')->orderBy('id');
-        $perPage ??= TemplatesConfiguration::limit('per_page', 25);
-
-        return $query->paginate(max(
-            1,
-            min(TemplatesConfiguration::limit('maximum_per_page', 100), $perPage),
-        ), page: isset($criteria['page']) && (is_int($criteria['page']) || is_string($criteria['page'])) ? max(1, (int) $criteria['page']) : 1);
-    }
-
-    /**
-     * Resolve and authorize one durable render record.
-     */
-    public function getRender(
-        TemplateRender|string $render,
-        Authenticatable|SystemActor $actor,
-    ): TemplateRender {
-        $renderId = $render instanceof TemplateRender ? $render->id : $render;
-        $model = $this->boundary->query(TemplateRender::query(), 'templates.renders')
-            ->findOrFail($renderId);
-        $actor = app(TemplateContentGuard::class)->actor($actor);
-        $this->authorization->authorize(
-            TemplateAbility::View,
-            $actor,
-            [
-                'resource' => 'template_render',
-                'render_id' => $model->id,
-                'template_id' => $model->template_id,
-                'requested_by_type' => $model->requested_by_type,
-                'requested_by' => $model->requested_by,
-            ],
-        );
-        $this->assertOwnership($model, $actor);
-
-        return $model;
-    }
-
-    private function assertOwnership(
-        TemplateRender $render,
-        Authenticatable|SystemActor $actor,
-    ): void {
-        if (! ($actor instanceof SystemActor)
-            && (($actor instanceof Model ? $actor->getMorphClass() : null) === null
-                || TemplateContentGuard::actorId($actor) === null
-                || $render->requested_by_type !== ($actor instanceof Model ? $actor->getMorphClass() : null)
-                || $render->requested_by !== TemplateContentGuard::actorId($actor))) {
-            throw new AuthorizationException(
-                'The actor may only view its own template renders.',
-            );
-        }
-    }
-
-    /**
-     * Return one deterministic page of durable render history.
-     *
-     * @param  array<string,mixed>  $criteria
-     * @return LengthAwarePaginator<int, TemplateRender>
-     */
-    public function renders(
-        array $criteria,
-        Authenticatable|SystemActor $actor,
-        ?int $perPage = null,
-    ): LengthAwarePaginator {
-        $actor = app(TemplateContentGuard::class)->actor($actor);
-        $this->authorization->authorize(
-            TemplateAbility::View,
-            $actor,
-            ['resource' => 'template_render_history'],
-        );
-        $query = $this->boundary->query(TemplateRender::query(), 'templates.renders');
-
-        if (! ($actor instanceof SystemActor)) {
-            if (($actor instanceof Model ? $actor->getMorphClass() : null) === null || TemplateContentGuard::actorId($actor) === null) {
-                throw new AuthorizationException(
-                    'Template render history requires a stable actor identifier.',
-                );
+            $sourceDefinition = $source === null ? [] : DocumentInputs::map($source['source'] ?? null, 'source');
+            $document = null;
+            $family = null;
+            $issues = [];
+            if ($source !== null) {
+                try {
+                    [$document,$family] = $api->prepareSource($template, $source, resolveResources: false);
+                    $document = $this->resources->snapshot($api->authoringTemplate($template), $document);
+                } catch (ValidationException $e) {
+                    foreach ($e->errors() as $path => $messages) {
+                        if (! is_string($path) || ! is_array($messages)) {
+                            throw $e;
+                        }
+                        foreach ($messages as $message) {
+                            if (! is_string($message)) {
+                                throw $e;
+                            }
+                            $issues[] = ['path' => $path, 'message' => $message];
+                        }
+                    }
+                } catch (ModelNotFoundException) {
+                    $issues[] = ['path' => 'resources', 'message' => 'A referenced family or reusable resource is unavailable. Repair or replace its reference.'];
+                }
+                if ($document === null && ($sourceDefinition['mode'] ?? null) === 'standalone') {
+                    $document = $source;
+                }
+            }
+            $previewAssets = [];
+            $raw = $source === null ? null : JsonWire::document($source, $family?->source);
+            if ($source !== null && $raw !== null && ($sourceDefinition['mode'] ?? null) === 'group-variant') {
+                $rawSource = DocumentInputs::map($raw['source'] ?? null, 'source');
+                $wireOverrides = $rawSource['overrides'] ?? [];
+                $overrides = DocumentInputs::map(is_object($wireOverrides) ? get_object_vars($wireOverrides) : $wireOverrides, 'source.overrides');
+                $sourceOverrides = DocumentInputs::map($sourceDefinition['overrides'] ?? [], 'source.overrides');
+                $schema = DocumentInputs::map($document['dataSchema'] ?? [], 'dataSchema');
+                $properties = DocumentInputs::map($schema['properties'] ?? [], 'dataSchema.properties');
+                foreach (['content' => 'content', 'settingsDefaults' => 'settings'] as $key => $namespace) {
+                    if (isset($overrides[$key])) {
+                        $overrides[$key] = JsonWire::value($sourceOverrides[$key] ?? null, DocumentInputs::map($properties[$namespace] ?? ['type' => 'object'], 'dataSchema.properties.'.$namespace));
+                    }
+                }
+                $rawSource['overrides'] = (object) $overrides;
+                $raw['source'] = $rawSource;
+            }
+            $proposedGroupId = $draft->proposed_basis['groupId'] ?? null;
+            if ($proposedGroupId !== null && ! is_string($proposedGroupId)) {
+                throw ValidationException::withMessages(['source' => ['The proposed family identity is invalid.']]);
             }
 
-            $query->where('requested_by_type', ($actor instanceof Model ? $actor->getMorphClass() : null))
-                ->where('requested_by', TemplateContentGuard::actorId($actor));
-        }
-
-        $columns = ['status' => 'status', 'template' => 'template_id'];
-        if (array_diff(array_keys($criteria), [...array_keys($columns), 'sort', 'page']) !== []) {
-            throw new \InvalidArgumentException('Unknown template query criterion.');
-        }
-        foreach ($columns as $alias => $column) {
-            if (array_key_exists($alias, $criteria)) {
-                $value = $criteria[$alias];
-                is_array($value) ? $query->whereIn($column, $value) : $query->where($column, $value);
+            $payload = ['template' => ['id' => $template->id, 'key' => $template->key, 'name' => $template->name, 'groupId' => $template->group_id, 'status' => $template->status],
+                'version' => $draft->version ?? 0, 'source' => $raw, 'document' => $document === null ? null : JsonWire::document($document),
+                'sourceChecksum' => $source === null ? null : CanonicalJson::hash($source),
+                'family' => $family ? ['id' => $family->group_id, 'revisionId' => $family->id, 'revision' => $family->revision, 'source' => JsonWire::document($family->source), 'document' => JsonWire::document($this->familyPreview($family))] : null,
+                'proposedGroupId' => $proposedGroupId, 'hasProposedBasis' => $draft?->proposed_basis !== null, 'familyChanges' => $this->families->listing($id, $this->operation->actor()), 'currentRevisionId' => $release?->id, 'capabilities' => DocumentInputs::map(Capabilities::document(), 'capabilities'), 'previewAssets' => (object) $previewAssets, 'issues' => $issues];
+            PreviewPayload::check($payload);
+            foreach (DocumentInputs::map($document['managedAssets'] ?? [], 'managedAssets') as $key => $assetId) {
+                if (! is_string($assetId)) {
+                    throw ValidationException::withMessages(['managedAssets' => ['A managed asset identity must be a string.']]);
+                }
+                $previewAssets[$key] = $this->assets->resolve($assetId)['url'];
+                $payload['previewAssets'] = (object) $previewAssets;
+                PreviewPayload::check($payload);
             }
-        }
-        $sorts = ['created' => 'created_at', 'started' => 'started_at', 'completed' => 'completed_at', 'id' => 'id'];
-        $sort = $criteria['sort'] ?? '-created';
-        if (! is_string($sort) || ! isset($sorts[ltrim($sort, '-')])) {
-            throw new \InvalidArgumentException('Unknown template sort.');
-        }
-        $query->orderBy($sorts[ltrim($sort, '-')], str_starts_with($sort, '-') ? 'desc' : 'asc')->orderBy('id');
-        $perPage ??= TemplatesConfiguration::limit('per_page', 25);
 
-        return $query->paginate(max(
-            1,
-            min(TemplatesConfiguration::limit('maximum_per_page', 100), $perPage),
-        ), page: isset($criteria['page']) && (is_int($criteria['page']) || is_string($criteria['page'])) ? max(1, (int) $criteria['page']) : 1);
+            return $payload;
+        });
+    }
+
+    /** Read one authorized configured template root. */
+    public function get(string $id, Authenticatable|SystemActor $actor): Template
+    {
+        return $this->operation->run($actor, function () use ($id): Template {
+            $template = TemplateModelRegistry::query()->findOrFail($id);
+            Access::authorize('read', $template);
+
+            return $template;
+        });
+    }
+
+    /** @return array<array-key,mixed> */
+    private function familyPreview(TemplateGroupRevision $family): array
+    {
+        try {
+            $dependencies = $family->document['dependencies'] ?? [];
+            if (! is_array($dependencies)) {
+                throw ValidationException::withMessages(['dependencies' => ['A dependency list is required.']]);
+            }
+            foreach ($dependencies as $pin) {
+                if (! is_array($pin) || ! is_string($pin['resourceId'] ?? null)) {
+                    throw ValidationException::withMessages(['dependencies' => ['A pinned resource identity is required.']]);
+                }
+                Access::authorize('read', TemplateResource::query()->findOrFail($pin['resourceId']));
+            }
+
+            return $family->document;
+        } catch (AuthorizationException|ModelNotFoundException) {
+            // Local overrides can remove a dependency without granting access to its old snapshot.
+            return $family->source;
+        }
     }
 }

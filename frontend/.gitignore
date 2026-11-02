@@ -1,0 +1,20 @@
+node_modules
+dist
+dist-browser
+.worktrees/
+
+# Session / tool caches
+.cache/
+.superpowers/
+.claude/sessions/
+
+# OS cruft
+.DS_Store
+**/.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Isolated UI preview builds and verification scratch files
+/.ui-geometry-*

@@ -7,39 +7,43 @@ namespace Nvl\Templates\Ownership;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Ownership\ValueObjects\OwnershipDefinition;
 use Nvl\Support\Ownership\ValueObjects\OwnershipResourceDefinition;
-use Nvl\Templates\Models\TemplateAssignment;
-use Nvl\Templates\Models\TemplateOwnerGrant;
+use Nvl\Templates\Models\FamilyChange;
+use Nvl\Templates\Models\TemplateAsset;
+use Nvl\Templates\Models\TemplateDraft;
+use Nvl\Templates\Models\TemplateGroup;
+use Nvl\Templates\Models\TemplateGroupRevision;
 use Nvl\Templates\Models\TemplateRender;
-use Nvl\Templates\Models\TemplateTranslation;
-use Nvl\Templates\Models\TemplateVersion;
+use Nvl\Templates\Models\TemplateResource;
+use Nvl\Templates\Models\TemplateResourceRevision;
+use Nvl\Templates\Models\TemplateRevision;
 use Nvl\Templates\Services\TemplateModelRegistry;
 
 /**
- * Compiles one exact root and canonical version, assignment and durable-render graph.
+ * Registers one canonical document/family/resource Ownership graph.
  *
  * @internal
  */
 final readonly class TemplatesResourceRegistrar
 {
-    /** Retain the canonical services and immutable inputs for this workflow. */
     public function __construct(private TemplateModelRegistry $models) {}
 
-    /** Register the canonical capabilities without capturing current admission. */
     public function register(OwnershipResourceRegistry $resources): void
     {
         $class = $this->models->templateClass();
         $owned = $class::ownershipDefinition()->strategy !== 'unscoped';
-        $central = $owned && $class::allowsCentralCatalog();
-        $resources->register(new OwnershipResourceDefinition('templates.templates', 'templates', $class, $class::ownershipDefinition(), allowsCentral: $central));
-        $resources->register(new OwnershipResourceDefinition('templates.catalog-grants', 'templates', TemplateOwnerGrant::class, $owned ? OwnershipDefinition::captured() : OwnershipDefinition::unscoped(), immutableFields: $owned ? ['template_version_id', 'source_revision'] : []));
-        foreach (['templates.translations' => TemplateTranslation::class, 'templates.versions' => TemplateVersion::class, 'templates.assignments' => TemplateAssignment::class, 'templates.renders' => TemplateRender::class] as $key => $model) {
-            $immutable = match ($key) {
-                'templates.assignments' => ['owner_type', 'owner_id', 'profile'],
-                'templates.renders' => ['template_version_id', 'locale', 'profile', 'payload_digest', 'requested_by_type', 'requested_by', 'idempotency_key'],
-                'templates.versions' => ['version', 'catalog_grant_id', 'catalog_source_version_id', 'catalog_source_revision', 'catalog_source_hash', 'catalog_import_key', 'catalog_import_request_hash'],
-                default => [],
-            };
-            $resources->register(new OwnershipResourceDefinition($key, 'templates', $model, $owned ? OwnershipDefinition::inherited('template') : OwnershipDefinition::unscoped(), parentResource: $owned ? 'templates.templates' : null, allowsCentral: $central, immutableFields: $owned ? $immutable : []));
+        $resources->register(new OwnershipResourceDefinition('templates.templates', 'templates', $class, $class::ownershipDefinition()));
+        foreach (['groups' => TemplateGroup::class, 'resources' => TemplateResource::class, 'assets' => TemplateAsset::class] as $key => $model) {
+            $resources->register(new OwnershipResourceDefinition('templates.'.$key, 'templates', $model, $owned ? OwnershipDefinition::captured() : OwnershipDefinition::unscoped()));
+        }
+        foreach ([
+            'drafts' => [TemplateDraft::class, 'template', 'templates.templates'],
+            'revisions' => [TemplateRevision::class, 'template', 'templates.templates'],
+            'family-changes' => [FamilyChange::class, 'template', 'templates.templates'],
+            'group-revisions' => [TemplateGroupRevision::class, 'group', 'templates.groups'],
+            'resource-revisions' => [TemplateResourceRevision::class, 'resource', 'templates.resources'],
+            'renders' => [TemplateRender::class, 'revision', 'templates.revisions'],
+        ] as $key => [$model, $relation, $parent]) {
+            $resources->register(new OwnershipResourceDefinition('templates.'.$key, 'templates', $model, $owned ? OwnershipDefinition::inherited($relation) : OwnershipDefinition::unscoped(), parentResource: $owned ? $parent : null));
         }
     }
 }

@@ -1,0 +1,17 @@
+# Published Template Maker frontend
+
+This folder contains reusable React/Themelia components and pure schema/rendering helpers. It is source for your application's build pipeline. It does not create a page or connect to a backend automatically.
+
+Import `TemplateWorkspace`, `GroupVariantWorkspace`, `TemplateCreator` or `TemplateEditor` from `./template-creator`. Use `./template-schema` for types/validation and `./template-renderer` for local HTML/CSS composition. `./index` exports the complete UI. Use focused entries for headless consumers so they do not import UI code.
+
+Your app supplies React 19, React DOM, Themelia ^2.0.5 and the dependencies listed in `dependencies.json`. Merge the listed dependencies into your application's existing package manifest, resolve a single Themelia installation and retain your normal lockfile. The `devDependencies` describe the Tailwind 4 build and React types. No Template Maker npm package or package-specific import alias is required. Internal imports are relative, and the portable browser CSS parser is already included.
+
+Mount one `UIProvider` from `themelia-react-ui/ui-provider` at your app root. Import `./styles.css` through your Tailwind 4 CSS pipeline once; it includes the editor geometry, theme and explicit source scanning. Keep your host theme overrides after this import. The app controls its shell, editor height and responsive container.
+
+Components receive JSON, asset references, permissions and callbacks. The host handles loading, authentication, scope, uploads, API requests, saving, previews, publication and delivery. Keep application-specific adapters and extensions outside this generated folder so package updates are straightforward. The NVL package supplies native PHP services; components can also use another backend or local state.
+
+`integrations/laravel` contains optional reference staff, family and published-customer screens plus an injected HTTP repository and session helpers. These screens describe a host-owned HTTP contract; the NVL package does not register their routes. Native service calls and actor admission belong to your application adapter. They are separate from the pure entry points. Import these explicitly when adapting a host HTTP API, supply your own base URL/request function and trusted route props, or implement the same `TemplateRepository` interface for another backend. Importing the core components never starts these connections.
+
+Configure the exact final directory with `nvl-templates.frontend.path` (default `resources/js/components/template-maker`). Absolute paths and paths relative to the Laravel app are supported; publication copies this folder's contents directly there, without appending another directory. Adjust your host imports for a custom destination. Clear cached configuration after changing the path. Republish with `php artisan nvl:templates:frontend:publish --dry-run`. Source-overlapping destinations and symlinks are rejected. Identical files are skipped; differing files block publication before writes. Review or back up edits before using `--force`. Files no longer shipped by a package release are not deleted automatically; review them when upgrading. Update the PHP backend, published source and optional bundled renderer together.
+
+The package renderer returns template HTML/CSS and issues; the optional Laravel email profile prepares delivery HTML and inline assets. The consuming application chooses its sender, PDF conversion and business workflow. Browser/editor assets do not belong in exported document HTML.

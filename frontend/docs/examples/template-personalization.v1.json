@@ -1,0 +1,20 @@
+{
+  "format": "gct-personalization",
+  "schemaVersion": 1,
+  "templateId": "invoice_example",
+  "revision": 1,
+  "data": {
+    "customer": {
+      "name": "Marlow & Co."
+    },
+    "invoice": {
+      "number": "INV-001",
+      "total": 125
+    }
+  },
+  "overrides": {
+    "heading": {
+      "text": "Your invoice"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["src/main.tsx", "**/*.test.ts", "**/*.test.tsx"],
+  "compilerOptions": {
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist/types",
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false
+  }
+}

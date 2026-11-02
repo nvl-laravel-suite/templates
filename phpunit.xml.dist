@@ -12,7 +12,7 @@
     <testsuites>
         <testsuite name="NVL Templates">
             <directory>tests</directory>
-            <exclude>tests/Fixtures/RetiredApi</exclude>
+            <exclude>tests/Fixtures</exclude>
         </testsuite>
     </testsuites>
     <php>

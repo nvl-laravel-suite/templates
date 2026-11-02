@@ -4,188 +4,29 @@ declare(strict_types=1);
 
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Models\Template;
-use Nvl\Templates\Rendering\BladeTemplateRenderer;
-use Nvl\Templates\Rendering\MpdfTemplateRenderer;
 use Nvl\Templates\Services\ConfiguredTemplateAuthorization;
 
-/** Complete runtime defaults; publication sections are declared in ../resources/config/sections.json. */
 return [
-    'integrations' => ['content' => false],
-    'ownership' => ['owner_resources' => []],
-    'models' => ['template' => Template::class],
     'connection' => null,
-
+    'scope' => 'app',
+    'models' => ['template' => Template::class],
+    'media' => ['disk' => null],
+    'authorization' => ['class' => ConfiguredTemplateAuthorization::class],
+    'context_provider' => null,
+    'render_context' => null,
+    'migrations' => ['enabled' => true],
+    // Exact destination directory for the publishable React source.
+    'frontend' => ['path' => resource_path('js/components/template-maker')],
     'tables' => [
-        'owner_grants' => TemplatesTables::OwnerGrants,
-        'templates' => TemplatesTables::Templates,
-        'i18n' => TemplatesTables::I18n,
-        'versions' => TemplatesTables::Versions,
-        'assignments' => TemplatesTables::Assignments,
-        'renders' => TemplatesTables::Renders,
+        'groups' => TemplatesTables::Groups, 'group_revisions' => TemplatesTables::GroupRevisions,
+        'templates' => TemplatesTables::Templates, 'drafts' => TemplatesTables::Drafts, 'revisions' => TemplatesTables::Revisions,
+        'resources' => TemplatesTables::Resources, 'resource_revisions' => TemplatesTables::ResourceRevisions,
+        'assets' => TemplatesTables::Assets, 'renders' => TemplatesTables::Renders, 'family_changes' => TemplatesTables::FamilyChanges,
     ],
-
-    'migrations' => [
-        'enabled' => true,
-    ],
-
-    'adoption' => [
-        'maximum_manifest_bytes' => 1_048_576,
-        'maximum_records' => 10_000,
-    ],
-
-    'authorization' => [
-        'class' => ConfiguredTemplateAuthorization::class,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Source-controlled stored-template definitions
-    |--------------------------------------------------------------------------
-    |
-    | These definitions drive the database implementation. The public
-    | Nvl\Templates\Template class can also be rendered directly without rows.
-    |
-    */
-    'definitions' => [],
-    'owners' => [],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Template defaults and renderer implementations
-    |--------------------------------------------------------------------------
-    |
-    | A Template may override these defaults through TemplateOptions. Custom
-    | renderer aliases must implement the TemplateRenderer contract.
-    |
-    */
-    'default_renderer' => 'blade',
-    'default_locale' => null,
-    'renderers' => [
-        'blade' => BladeTemplateRenderer::class,
-        'pdf' => MpdfTemplateRenderer::class,
-    ],
-
-    'limits' => [
-        'schema_bytes' => 262_144,
-        'schema_depth' => 16,
-        'schema_items' => 2_000,
-        'data_bytes' => 1_048_576,
-        'data_depth' => 24,
-        'data_items' => 10_000,
-        'renderer_options_bytes' => 65_536,
-        'renderer_options_depth' => 12,
-        'renderer_options_items' => 1_000,
-        'payload_bytes' => 262_144,
-        'payload_depth' => 16,
-        'payload_items' => 2_000,
-        'settings_bytes' => 65_536,
-        'metadata_bytes' => 65_536,
-        'per_page' => 25,
-        'maximum_per_page' => 100,
-        'output_bytes' => 25_165_824,
-    ],
-
-    'views' => [
-        'namespace' => 'nvl-templates',
-        'defaults' => [
-            'blade' => 'nvl-templates::html.document',
-            'pdf' => 'nvl-templates::pdf.document',
-        ],
-        'publish_path' => resource_path('views/vendor/nvl-templates'),
-        'allowed_publish_roots' => [resource_path('views')],
-    ],
-
-    'rendering' => [
-        'tries' => 3,
-        'timeout' => 60,
-        'lease_seconds' => 75,
-        'unique_for' => 600,
-        'pending_recovery_seconds' => 660,
-        'backoff' => [10, 30, 90],
-        'recovery_batch_size' => 100,
-        'store_payload' => true,
-        'output' => [
-            'persist' => false,
-            'disk' => 'local',
-            'filename_prefix' => 'template-render',
-            'allowed_local_roots' => [storage_path()],
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Class-template asset aliases
-    |--------------------------------------------------------------------------
-    |
-    | The null driver preserves the dependency-free default. The media driver
-    | resolves explicit aliases through NVL Media using safe URLs or local paths.
-    |
-    */
-    'assets' => [
-        'allowed_local_roots' => [resource_path(), storage_path('app')],
-        'maximum_bytes' => 5_242_880,
-        'maximum_inline_bytes' => 2_097_152,
-        'driver' => 'null',
-        'media' => [
-            'aliases' => [],
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Bundled PDF renderer
-    |--------------------------------------------------------------------------
-    |
-    | PDF definitions use the source-controlled `renderer_options` array.
-    | Remote assets fail closed and require an exact host allowlist.
-    |
-    */
-    'pdf' => [
-        'temp_path' => storage_path('framework/cache/nvl-templates/mpdf'),
-        'allowed_temp_roots' => [storage_path()],
-        'maximum_html_bytes' => 1_048_576,
-        'assets' => [
-            'maximum_count' => 64,
-            'maximum_total_bytes' => 20_971_520,
-        ],
-        'remote_assets' => [
-            'enabled' => false,
-            'allow_http' => false,
-            'allowed_hosts' => [],
-        ],
-        'data_images' => [
-            'enabled' => true,
-            'maximum_bytes' => 2_097_152,
-        ],
-        'allow_debug_image_errors' => false,
-        'defaults' => [
-            'page_size' => 'A4',
-            'orientation' => 'portrait',
-            'margins' => [
-                'left' => 15,
-                'right' => 15,
-                'top' => 16,
-                'bottom' => 16,
-                'header' => 8,
-                'footer' => 8,
-            ],
-            'default_font' => 'dejavusans',
-            'default_font_size' => 10,
-            'dpi' => 96,
-            'image_dpi' => 96,
-            'image_quality' => 85,
-            'show_image_errors' => false,
-            'author' => '',
-            'creator' => 'NVL Templates',
-            'keywords' => '',
-            'header_view' => null,
-            'footer_view' => null,
-            'watermark' => null,
-            'watermark_opacity' => 0.1,
-            'compress' => true,
-            'pdfa' => false,
-            'pdfa_auto' => false,
-        ],
-    ],
-    'queue' => ['connection' => null, 'name' => null],
+    'storage' => ['max_bytes' => 10485760],
+    'imports' => ['sources' => [], 'allowed_hosts' => [], 'timeout' => 10],
+    'limits' => ['document_bytes' => 2097152, 'output_bytes' => 10485760, 'preview_bytes' => 8388608, 'bindings' => 500, 'depth' => 32],
+    'compiler' => ['driver' => null, 'command' => [], 'cwd' => null, 'timeout' => 30, 'identity' => null],
+    'rendering' => ['queue' => ['enabled' => false, 'connection' => null, 'name' => 'templates'], 'attempts' => 3, 'backoff' => [10, 30, 90], 'lease_seconds' => 120, 'dispatch_timeout' => 600, 'retention_seconds' => 604800],
+    'pdf' => ['driver' => null, 'url' => null, 'token' => null, 'api_key' => null, 'timeout' => 20, 'identity' => 'v1', 'input_bytes' => 2097152],
 ];

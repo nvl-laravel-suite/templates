@@ -11,6 +11,9 @@ namespace Nvl\Templates\Enums;
  */
 enum TemplateAbility: string
 {
+    case Manage = 'manage';
+    case Read = 'read';
+    case Copy = 'copy';
     case List = 'list';
     case View = 'view';
     case Create = 'create';

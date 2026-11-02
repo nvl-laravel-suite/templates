@@ -15,4 +15,7 @@
 /**/.gitignore export-ignore
 /**/.gitkeep export-ignore
 .DS_Store export-ignore
+/frontend export-ignore
 # END NVL COMPOSER EXPORTS
+
+*.pdf binary

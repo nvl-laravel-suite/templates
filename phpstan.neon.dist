@@ -4,6 +4,7 @@ includes:
 
 parameters:
     phpVersion: 80400
+    treatPhpDocTypesAsCertain: false
     excludePaths:
         analyseAndScan:
             - .temp/*

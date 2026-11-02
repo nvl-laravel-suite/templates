@@ -1,0 +1,473 @@
+{
+  "format": "template-document",
+  "schemaVersion": 1,
+  "target": "email",
+  "source": {
+    "mode": "standalone",
+    "definition": {
+      "format": "gct-template",
+      "schemaVersion": 1,
+      "id": "building_blocks",
+      "name": "Column template",
+      "description": "",
+      "locale": "en-GB",
+      "page": {
+        "widthMm": 210,
+        "heightMm": 297,
+        "margins": {
+          "top": 16,
+          "right": 16,
+          "bottom": 16,
+          "left": 16
+        }
+      },
+      "roots": [
+        "layout"
+      ],
+      "nodes": {
+        "copy_0": {
+          "id": "copy_0",
+          "name": "Column 1 content",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "field",
+                "fieldId": "message"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        },
+        "column_0": {
+          "id": "column_0",
+          "name": "Column 1",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "td",
+          "classes": [],
+          "attributes": {},
+          "attributeBindings": {},
+          "style": {
+            "width": "30%",
+            "padding": "0",
+            "vertical-align": "top"
+          },
+          "children": [
+            "copy_0"
+          ]
+        },
+        "column_1": {
+          "id": "column_1",
+          "name": "Column 2",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "td",
+          "classes": [],
+          "attributes": {},
+          "attributeBindings": {},
+          "style": {
+            "width": "70%",
+            "padding": "0",
+            "vertical-align": "top"
+          },
+          "children": [
+            "items"
+          ]
+        },
+        "row": {
+          "id": "row",
+          "name": "Column row",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "tr",
+          "classes": [],
+          "attributes": {},
+          "attributeBindings": {},
+          "style": {},
+          "children": [
+            "column_0",
+            "column_1"
+          ]
+        },
+        "body": {
+          "id": "body",
+          "name": "Column body",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "tbody",
+          "classes": [],
+          "attributes": {},
+          "attributeBindings": {},
+          "style": {},
+          "children": [
+            "row"
+          ]
+        },
+        "layout": {
+          "id": "layout",
+          "name": "2 columns",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "element",
+          "tag": "table",
+          "classes": [],
+          "attributes": {
+            "role": "presentation",
+            "data-template-layout": "columns"
+          },
+          "attributeBindings": {},
+          "style": {
+            "width": "100%",
+            "table-layout": "fixed",
+            "border-collapse": "separate",
+            "border-spacing": "16px 0"
+          },
+          "children": [
+            "body"
+          ]
+        },
+        "items": {
+          "id": "items",
+          "name": "items",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "repeat",
+          "binding": {
+            "source": "field",
+            "fieldId": "items"
+          },
+          "children": [
+            "item_name",
+            "tags"
+          ]
+        },
+        "item_name": {
+          "id": "item_name",
+          "name": "item_name",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "item",
+                "path": "name"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        },
+        "tags": {
+          "id": "tags",
+          "name": "tags",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "repeat",
+          "binding": {
+            "source": "item",
+            "path": "tags"
+          },
+          "children": [
+            "tag"
+          ]
+        },
+        "tag": {
+          "id": "tag",
+          "name": "tag",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "item",
+                "path": ""
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        }
+      },
+      "fields": [
+        {
+          "id": "message",
+          "path": "inputs.message",
+          "label": "Message",
+          "description": "",
+          "schema": {
+            "type": "string"
+          },
+          "required": true,
+          "editable": true,
+          "defaultValue": "Enjoy!"
+        },
+        {
+          "id": "actionValue",
+          "path": "inputs.action.value",
+          "label": "Action label",
+          "description": "",
+          "schema": {
+            "type": "string"
+          },
+          "required": true,
+          "editable": true,
+          "defaultValue": "Redeem"
+        },
+        {
+          "id": "actionLink",
+          "path": "inputs.action.link",
+          "label": "Action destination",
+          "description": "",
+          "schema": {
+            "type": "string",
+            "format": "uri"
+          },
+          "required": true,
+          "editable": true,
+          "defaultValue": "https://example.com"
+        },
+        {
+          "id": "items",
+          "path": "facts.items",
+          "label": "Items",
+          "description": "",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "tags"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": true,
+          "editable": false,
+          "sample": [
+            {
+              "name": "Preview",
+              "tags": [
+                "Sample"
+              ]
+            }
+          ]
+        }
+      ],
+      "blocks": [],
+      "assets": [],
+      "styles": {
+        "theme": "",
+        "css": ""
+      }
+    }
+  },
+  "dataSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "",
+            "default": "Enjoy!"
+          },
+          "action": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "string",
+                "title": "Action label",
+                "description": "",
+                "default": "Redeem"
+              },
+              "link": {
+                "type": "string",
+                "format": "uri",
+                "title": "Action destination",
+                "description": "",
+                "default": "https://example.com"
+              }
+            },
+            "required": [
+              "value",
+              "link"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "message",
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "facts": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "tags"
+              ],
+              "additionalProperties": false
+            },
+            "title": "Items",
+            "description": "",
+            "examples": [
+              [
+                {
+                  "name": "Preview",
+                  "tags": [
+                    "Sample"
+                  ]
+                }
+              ]
+            ],
+            "readOnly": true
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "context": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "content": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "settings": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "inputs",
+      "facts"
+    ],
+    "additionalProperties": false
+  },
+  "content": {},
+  "inputDefaults": {
+    "message": "Enjoy!",
+    "action": {
+      "value": "Redeem",
+      "link": "https://example.com"
+    }
+  },
+  "settingsDefaults": {},
+  "settingsSpec": [],
+  "theme": {
+    "colors": {
+      "primary": "#275B49",
+      "primaryForeground": "#FFFFFF",
+      "background": "#FFFFFF",
+      "foreground": "#202722",
+      "muted": "#EFF3EF",
+      "mutedForeground": "#637067"
+    },
+    "typography": {
+      "fontFamily": "Arial, sans-serif",
+      "text": 14,
+      "small": 12,
+      "h1": 28,
+      "h2": 22,
+      "lineHeight": 1.5
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "actions": {
+      "height": 40,
+      "paddingInline": 16,
+      "radius": 6
+    }
+  },
+  "exposedInputs": [
+    "message",
+    "action.value",
+    "action.link"
+  ],
+  "exposedSettings": [],
+  "dependencies": [],
+  "managedAssets": {},
+  "compilerVersion": "template-platform/1",
+  "rendering": {
+    "engine": "shared"
+  },
+  "artifacts": {
+    "engine": "shared",
+    "html": "",
+    "css": "",
+    "bindings": []
+  }
+}

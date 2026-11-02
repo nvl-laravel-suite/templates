@@ -1,4 +1,4 @@
 interface:
   display_name: "NVL Templates"
-  short_description: "Compose and render Blade, PDF, and stored templates"
-  default_prompt: "Use $nvl-templates to implement or review directly constructed templates, typed options, Blade/PDF rendering, stored versions, Content/Media composition, assignments, queues, responses, and diagnostics."
+  short_description: "Compose documents, family variants and personalized email"
+  default_prompt: "Use $nvl-templates to integrate native document/family lifecycles, published React builders, scoped reusable resources, private Media images, bounded previews, personalized email with CID attachments, PDF output, durable render requests and native Ownership installation. Read the bundled usage, API and installation references. Preserve explicit actors, raw source authority and exact revision pins; keep HTTP transport, business facts and mail delivery in the consuming application."

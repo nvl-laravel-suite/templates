@@ -1,0 +1,21 @@
+[
+ {"property":"font-size","value":16,"unit":"px","output":"16px"},
+ {"property":"font-size","value":"16","unit":"px","output":"16px"},
+ {"property":"line-height","value":"1e2","invalid":true},
+ {"property":"line-height","value":"-0","invalid":true},
+ {"property":"font-size","value":"1.25rem","output":"1.25rem"},
+ {"property":"font-weight","value":"bold","output":"bold"},
+ {"property":"font-weight","value":700,"output":"700"},
+ {"property":"line-height","value":1.5,"output":"1.5"},
+ {"property":"padding","value":"12px 24px","output":"12px 24px"},
+ {"property":"margin","value":"-4px auto","output":"-4px auto"},
+ {"property":"width","value":"50%","output":"50%"},
+ {"property":"color","value":"transparent","output":"transparent"},
+ {"property":"color","value":"#abc","output":"#abc"},
+ {"property":"color","value":16,"invalid":true},
+ {"property":"padding","value":"calc(1px + 2px)","invalid":true},
+ {"property":"font-size","value":12,"invalid":true},
+ {"property":"padding","value":"-1px","invalid":true},
+ {"property":"color","value":"red;display:none","invalid":true},
+ {"property":"font-weight","value":"900px","invalid":true}
+]

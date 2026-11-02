@@ -1,0 +1,169 @@
+{
+  "format": "gct-template",
+  "schemaVersion": 1,
+  "id": "invoice_example",
+  "name": "Invoice example",
+  "description": "",
+  "locale": "en-GB",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "margins": {
+      "top": 16,
+      "right": 16,
+      "bottom": 16,
+      "left": 16
+    }
+  },
+  "roots": [
+    "document"
+  ],
+  "nodes": {
+    "document": {
+      "id": "document",
+      "name": "Invoice",
+      "permissions": {
+        "content": false,
+        "style": false
+      },
+      "kind": "element",
+      "tag": "section",
+      "classes": [
+        "invoice"
+      ],
+      "attributes": {},
+      "attributeBindings": {},
+      "style": {},
+      "children": [
+        "heading",
+        "customer",
+        "number",
+        "total"
+      ]
+    },
+    "heading": {
+      "id": "heading",
+      "name": "Title",
+      "permissions": {
+        "content": true,
+        "style": false
+      },
+      "kind": "text",
+      "parts": [
+        {
+          "value": {
+            "source": "literal",
+            "value": "Invoice"
+          },
+          "format": "text",
+          "currency": "EUR"
+        }
+      ]
+    },
+    "customer": {
+      "id": "customer",
+      "name": "Customer",
+      "permissions": {
+        "content": false,
+        "style": false
+      },
+      "kind": "text",
+      "parts": [
+        {
+          "value": {
+            "source": "field",
+            "fieldId": "customerName"
+          },
+          "format": "text",
+          "currency": "EUR"
+        }
+      ]
+    },
+    "number": {
+      "id": "number",
+      "name": "Number",
+      "permissions": {
+        "content": false,
+        "style": false
+      },
+      "kind": "text",
+      "parts": [
+        {
+          "value": {
+            "source": "field",
+            "fieldId": "invoiceNumber"
+          },
+          "format": "text",
+          "currency": "EUR"
+        }
+      ]
+    },
+    "total": {
+      "id": "total",
+      "name": "Total",
+      "permissions": {
+        "content": false,
+        "style": false
+      },
+      "kind": "text",
+      "parts": [
+        {
+          "value": {
+            "source": "field",
+            "fieldId": "total"
+          },
+          "format": "currency",
+          "currency": "EUR"
+        }
+      ]
+    }
+  },
+  "fields": [
+    {
+      "id": "customerName",
+      "path": "customer.name",
+      "label": "Customer name",
+      "description": "",
+      "schema": {
+        "type": "string",
+        "minLength": 1
+      },
+      "required": true,
+      "editable": true,
+      "sample": "Marlow & Co."
+    },
+    {
+      "id": "invoiceNumber",
+      "path": "invoice.number",
+      "label": "Invoice number",
+      "description": "",
+      "schema": {
+        "type": "string",
+        "minLength": 1
+      },
+      "required": true,
+      "editable": true,
+      "sample": "INV-001"
+    },
+    {
+      "id": "total",
+      "path": "invoice.total",
+      "label": "Total",
+      "description": "",
+      "schema": {
+        "type": "number",
+        "minimum": 0
+      },
+      "required": true,
+      "editable": false,
+      "sample": 125,
+      "defaultValue": 0
+    }
+  ],
+  "blocks": [],
+  "assets": [],
+  "styles": {
+    "theme": "",
+    "css": ".invoice { display: grid; gap: 12px; }"
+  }
+}

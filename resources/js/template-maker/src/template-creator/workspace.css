@@ -1,0 +1,496 @@
+/* App-owned canvas geometry. Themelia owns controls, typography and overlays. */
+.tc-shell {
+  container: template-workspace / inline-size;
+  width: 100%;
+  min-width: 0;
+}
+.tc-workspace {
+  position: relative;
+  height: var(--template-workspace-height, 100dvh);
+  min-height: 500px;
+  color: var(--foreground);
+  background: var(--muted);
+  isolation: isolate;
+  --tc-bg: var(--muted);
+  --tc-panel: var(--background);
+  --tc-ink: var(--foreground);
+  --tc-muted: var(--muted-foreground);
+  --tc-line: var(--border);
+  --tc-accent: var(--primary);
+  --tc-soft: var(--accent);
+  color-scheme: light;
+}
+.tc-workspace.dark {
+  color-scheme: dark;
+}
+.tc-page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tc-page > :first-child {
+  flex: 1;
+  min-height: 0;
+}
+.tc-page-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tc-body {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr) 320px;
+  flex: 1;
+  min-height: 0;
+}
+.tc-workspace-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.tc-workspace-panel-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.tc-sidebar,
+.tc-inspector {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: var(--card);
+}
+/* Work-area tools and their body share one persistent sidebar session. */
+.tc-panel-navigation {
+  padding: calc(var(--surface-y) * var(--space-scale) / 2) calc(var(--surface-x) * var(--space-scale) / 2);
+  border-block-end: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tc-panel-view:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.tc-panel-heading {
+  min-height: calc(var(--height-action) * var(--density-scale) + var(--surface-y) * var(--space-scale));
+  padding: calc(var(--surface-y) * var(--space-scale) / 2) calc(var(--surface-x) * var(--space-scale));
+  flex-shrink: 0;
+}
+.tc-panel-intro {
+  padding: 0 calc(var(--surface-x) * var(--space-scale)) calc(var(--surface-y) * var(--space-scale));
+}
+.tc-panel-content {
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+  overflow: auto;
+  min-height: 0;
+}
+.tc-panel-content > .tc-panel-intro,
+.tc-inspector-scroll > .tc-panel-intro {
+  padding: 0;
+}
+.tc-panel-intro + .tc-panel-content {
+  padding-block-start: 0;
+}
+.tc-sidebar-bottom {
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+  margin-block-start: auto;
+  flex-shrink: 0;
+}
+.tc-tree {
+  overflow: auto;
+  flex: 1;
+  padding-inline: calc(calc(var(--surface-x) * var(--space-scale)) / 2);
+}
+.tc-list {
+  padding: 0 calc(var(--surface-x) * var(--space-scale));
+  overflow: auto;
+  min-height: 0;
+}
+.tc-design {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  background: var(--muted);
+}
+.tc-toolbar {
+  min-height: calc(var(--height-action) * var(--density-scale) + var(--surface-y) * var(--space-scale));
+  padding: calc(calc(var(--surface-y) * var(--space-scale)) / 2) calc(var(--surface-x) * var(--space-scale));
+  background: var(--card);
+  border-block-end: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tc-toolbar-context {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tc-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  padding: 0 calc(var(--surface-x) * var(--space-scale)) calc(var(--surface-y) * var(--space-scale) * 2);
+}
+.tc-canvas::-webkit-scrollbar {
+  display: none;
+}
+.tc-canvas-ruler {
+  height: calc(var(--height-action) * var(--density-scale) + var(--gap-normal) * var(--space-scale));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 900px;
+  margin: auto;
+  font-variant-numeric: tabular-nums;
+}
+/* Output paper has a fixed white print surface, independent of the app theme. */
+.tc-paper-stage {
+  position: relative;
+  margin-inline: auto;
+  margin-top: calc(var(--surface-y) * var(--space-scale));
+  background: white;
+  box-shadow:
+    0 2px 12px #0001,
+    0 0 0 1px #0001;
+}
+.tc-paper-stage iframe {
+  display: block;
+  position: absolute;
+  inset: 0 auto auto 0;
+  transform-origin: top left;
+  border: 0;
+  background: white;
+}
+/* Purpose-made editor chrome. These siblings never enter the document's DOM/CSS. */
+.tc-element-frame,
+.tc-element-hover {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+.tc-element-frame::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 1px dashed var(--muted-foreground);
+  border-radius: var(--radius);
+}
+.tc-element-hover::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: var(--radius);
+  border: 1px dashed color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+}
+.tc-element-toolbar {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--muted);
+  color: var(--foreground);
+  box-shadow: var(--shadow-md);
+  font: 500 12px/1.2 var(--font-sans, sans-serif);
+}
+.tc-element-identity {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding-inline: 8px;
+  min-width: 0;
+}
+.tc-element-identity::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  align-self: center;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.tc-element-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+.tc-element-kind {
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 400;
+}
+.tc-element-actions,
+.tc-element-access {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-inline-start: 4px;
+  margin-inline-start: 3px;
+  box-shadow: -1px 0 0 color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+.tc-element-access {
+  gap: 4px;
+  padding-inline: 6px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.tc-element-command {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 26px;
+  border: 0;
+  border-radius: calc(var(--radius) * .67);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+.tc-element-command svg,
+.tc-element-access svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  stroke-width: 1.6px;
+}
+@media (hover: hover) {
+  .tc-element-command:hover:not(:disabled) {
+    background: var(--background);
+    color: var(--primary);
+  }
+  .tc-element-command.is-destructive:hover:not(:disabled) {
+    color: var(--destructive);
+    background: color-mix(in oklab, var(--destructive) 9%, transparent);
+  }
+}
+.tc-element-command:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.tc-element-command:disabled {
+  color: var(--muted-foreground);
+  opacity: .35;
+  cursor: default;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tc-element-command {
+    transition: background-color 120ms ease-out, color 120ms ease-out, scale 150ms ease-out;
+  }
+  .tc-element-command:active:not(:disabled) {
+    scale: .96;
+  }
+}
+@media (forced-colors: active) {
+  .tc-element-frame::before {
+    border-color: Highlight;
+  }
+  .tc-element-command:focus-visible {
+    outline-color: Highlight;
+  }
+}
+.tc-canvas-error {
+  margin-block: 32px;
+}
+.tc-footer {
+  padding: calc(calc(var(--surface-y) * var(--space-scale)) / 2) calc(var(--surface-x) * var(--space-scale));
+  border-block-start: 1px solid var(--border);
+  background: var(--card);
+  flex-shrink: 0;
+}
+.tc-inspector-scroll {
+  padding: calc(var(--surface-y) * var(--space-scale) / 2) calc(var(--surface-x) * var(--space-scale)) calc(var(--surface-y) * var(--space-scale));
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+.tc-tree,
+.tc-list,
+.tc-panel-content,
+.tc-inspector-scroll,
+.tc-field-navigation,
+.tc-canvas {
+  overscroll-behavior: contain;
+}
+.tc-field,
+.tc-input {
+  min-width: 0;
+  width: 100%;
+}
+.tc-error-text {
+  color: var(--destructive);
+}
+.tc-mono,
+.tc-code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+.tc-binding-part {
+  min-width: 0;
+}
+.tc-css-editor {
+  tab-size: 2;
+}
+.tc-toast {
+  position: absolute;
+  inset: auto 20px 20px;
+  z-index: 50;
+}
+.tc-sr-only {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.tc-checks {
+  min-width: 0;
+  max-height: 25dvh;
+  overflow: auto;
+}
+.tc-check-item {
+  align-items: start;
+}
+.tc-check-item p {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tc-check-item code {
+  display: block;
+}
+.tc-data-field {
+  min-width: 0;
+}
+.tc-array-item,
+.tc-constraints {
+  min-width: 0;
+}
+.tc-demo-nav {
+  min-height: 64px;
+  padding: calc(var(--surface-y) * var(--space-scale) / 2) calc(var(--surface-x) * var(--space-scale));
+  border-block-end: 1px solid var(--border);
+  background: var(--background);
+}
+@container template-workspace (min-width: 1600px) {
+  .tc-body {
+    grid-template-columns: 260px minmax(0, 1fr) 360px;
+  }
+}
+/* Narrow embeddings retain the same panel instances and every editing control. */
+@container template-workspace (max-width: 1100px) {
+  .tc-workspace {
+    height: auto;
+    min-height: var(--template-workspace-height, 100dvh);
+  }
+  .tc-body {
+    grid-template-columns: 220px minmax(0, 1fr);
+    overflow: visible;
+  }
+  .tc-inspector-panel {
+    grid-column: 1 / -1;
+  }
+  .tc-inspector-scroll {
+    overflow: visible;
+  }
+  .tc-design {
+    min-height: 620px;
+  }
+  /* Keep a variation's controls next to its selector before the preview. */
+  .tc-body[data-controls-first] .tc-inspector-panel {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .tc-body[data-controls-first] .tc-design-panel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .tc-sidebar {
+    max-height: 620px;
+  }
+  .tc-canvas {
+    max-height: 700px;
+  }
+}
+@container template-workspace (max-width: 700px) {
+  .tc-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .tc-sidebar {
+    max-height: 420px;
+  }
+  .tc-design {
+    min-height: 480px;
+  }
+  .tc-canvas {
+    padding-inline: 16px;
+    max-height: 540px;
+  }
+  .tc-toolbar-context {
+    display: none;
+  }
+  .tc-footer > span {
+    overflow-wrap: anywhere;
+  }
+}
+
+.tc-field-navigation {
+  padding-inline: calc(var(--surface-x) * var(--space-scale));
+  overflow: auto;
+  min-height: 0;
+}
+
+/* Placement of the host output-profile control in the existing Page header. */
+.tc-target-select { width: 180px; max-width: 100%; }
+
+/* Compact placement owns only the editor frame; native owners retain their anatomy. */
+.tc-compact-scope,
+.tc-compact-canvas,
+.tc-compact-host,
+.tc-compact-dock,
+.tc-compact-card,
+.tc-compact-dock-content,
+.tc-compact-desktop,
+.tc-compact-drawer-slot {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.tc-compact-scope { width: 100%; }
+.tc-body.tc-body-compact { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
+.tc-compact-region:not([hidden]) { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.tc-compact-region:not([hidden]):has(+ .tc-compact-region:not([hidden])) { flex: 0 1 auto; max-height: 40%; }
+.tc-compact-region > .tc-workspace-panel { flex: 1; }
+.tc-compact-canvas > .tc-workspace-panel { flex: 1; }
+.tc-compact-dock .tc-sidebar { max-height: none; }
+.tc-compact-dock .tc-inspector-scroll { overflow: auto; }
+.tc-compact-canvas .tc-design { min-height: 0; }
+.tc-compact-canvas .tc-canvas { max-height: none; }
+.tc-compact-canvas .tc-toolbar { flex-wrap: wrap; }
+.tc-compact-launcher { display: flex; justify-content: flex-end; padding-block-end: calc(var(--gap-normal) * var(--space-scale)); }
+.tc-compact-drawer-body { display: flex; flex-direction: column; min-height: 0; }
+.tc-body-compact[data-compact-mobile] { display: flex; flex-direction: column; }
+.tc-workspace:has(.tc-body-compact) { height: var(--template-workspace-height, 100dvh); min-height: 500px; }
+.tc-compact-desktop[hidden], .tc-compact-region[hidden] { display: none; }

@@ -1,0 +1,5 @@
+{
+  "apiTemplateEndpoint": "https://api.example.com/templates",
+  "localTemplatePath": "/templates/",
+  "pdfExportEndpoint": "https://pdf.example.com/render"
+}

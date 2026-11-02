@@ -1,0 +1,810 @@
+{
+  "base": {
+    "format": "template-document",
+    "schemaVersion": 1,
+    "target": "document",
+    "source": {
+      "mode": "standalone",
+      "definition": {
+        "format": "gct-template",
+        "schemaVersion": 1,
+        "id": "family",
+        "name": "Family",
+        "description": "",
+        "locale": "en-GB",
+        "page": {
+          "widthMm": 210,
+          "heightMm": 297,
+          "margins": {
+            "top": 16,
+            "right": 16,
+            "bottom": 16,
+            "left": 16
+          }
+        },
+        "roots": [
+          "heading",
+          "region",
+          "footer",
+          "card"
+        ],
+        "nodes": {
+          "heading": {
+            "id": "heading",
+            "name": "heading",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "element",
+            "tag": "div",
+            "classes": [],
+            "attributes": {},
+            "attributeBindings": {},
+            "style": {
+              "color": "#111"
+            },
+            "children": [
+              "title"
+            ]
+          },
+          "title": {
+            "id": "title",
+            "name": "title",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "text",
+            "parts": [
+              {
+                "value": {
+                  "source": "literal",
+                  "value": "Default"
+                },
+                "format": "text",
+                "currency": "EUR"
+              }
+            ]
+          },
+          "region": {
+            "id": "region",
+            "name": "region",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "element",
+            "tag": "div",
+            "classes": [],
+            "attributes": {},
+            "attributeBindings": {},
+            "style": {},
+            "children": [
+              "first",
+              "second"
+            ]
+          },
+          "first": {
+            "id": "first",
+            "name": "first",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "text",
+            "parts": [
+              {
+                "value": {
+                  "source": "literal",
+                  "value": "First"
+                },
+                "format": "text",
+                "currency": "EUR"
+              }
+            ]
+          },
+          "second": {
+            "id": "second",
+            "name": "second",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "text",
+            "parts": [
+              {
+                "value": {
+                  "source": "literal",
+                  "value": "Second"
+                },
+                "format": "text",
+                "currency": "EUR"
+              }
+            ]
+          },
+          "footer": {
+            "id": "footer",
+            "name": "footer",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "element",
+            "tag": "div",
+            "classes": [],
+            "attributes": {},
+            "attributeBindings": {},
+            "style": {},
+            "children": [
+              "footcopy"
+            ]
+          },
+          "footcopy": {
+            "id": "footcopy",
+            "name": "footcopy",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "text",
+            "parts": [
+              {
+                "value": {
+                  "source": "literal",
+                  "value": "Footer"
+                },
+                "format": "text",
+                "currency": "EUR"
+              }
+            ]
+          },
+          "card": {
+            "id": "card",
+            "name": "Card",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "block",
+            "blockId": "card",
+            "version": 1,
+            "props": {
+              "caption": {
+                "source": "literal",
+                "value": "Card"
+              }
+            },
+            "slots": {}
+          }
+        },
+        "fields": [],
+        "blocks": [
+          {
+            "id": "card",
+            "version": 1,
+            "name": "Card",
+            "roots": [
+              "block-root"
+            ],
+            "nodes": {
+              "block-root": {
+                "id": "block-root",
+                "name": "block-root",
+                "permissions": {
+                  "content": false,
+                  "style": false
+                },
+                "kind": "element",
+                "tag": "div",
+                "classes": [],
+                "attributes": {},
+                "attributeBindings": {},
+                "style": {},
+                "children": [
+                  "block-title",
+                  "slot"
+                ]
+              },
+              "block-title": {
+                "id": "block-title",
+                "name": "Block title",
+                "permissions": {
+                  "content": false,
+                  "style": false
+                },
+                "kind": "text",
+                "parts": [
+                  {
+                    "value": {
+                      "source": "prop",
+                      "name": "caption"
+                    },
+                    "format": "text",
+                    "currency": "EUR"
+                  }
+                ]
+              },
+              "slot": {
+                "id": "slot",
+                "name": "Slot",
+                "permissions": {
+                  "content": false,
+                  "style": false
+                },
+                "kind": "slot",
+                "slot": "body",
+                "children": []
+              }
+            },
+            "props": {
+              "caption": {
+                "type": "string"
+              }
+            },
+            "requiredProps": [
+              "caption"
+            ],
+            "css": ""
+          }
+        ],
+        "assets": [],
+        "styles": {
+          "css": "",
+          "theme": ""
+        }
+      }
+    },
+    "dataSchema": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "inputs": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "settings": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "facts": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "content": {},
+    "inputDefaults": {},
+    "settingsDefaults": {},
+    "settingsSpec": [],
+    "theme": {
+      "colors": {
+        "primary": "#275B49",
+        "primaryForeground": "#FFFFFF",
+        "background": "#FFFFFF",
+        "foreground": "#202722",
+        "muted": "#EFF3EF",
+        "mutedForeground": "#637067"
+      },
+      "typography": {
+        "fontFamily": "Arial, sans-serif",
+        "text": 14,
+        "small": 12,
+        "h1": 28,
+        "h2": 22,
+        "lineHeight": 1.5
+      },
+      "spacing": {
+        "xs": 4,
+        "sm": 8,
+        "md": 16,
+        "lg": 24,
+        "xl": 32
+      },
+      "actions": {
+        "height": 40,
+        "paddingInline": 16,
+        "radius": 6
+      }
+    },
+    "exposedInputs": [],
+    "exposedSettings": [],
+    "dependencies": [],
+    "managedAssets": {},
+    "compilerVersion": "template-platform/1",
+    "rendering": {
+      "engine": "shared"
+    },
+    "artifacts": {
+      "engine": "shared",
+      "html": "STALE",
+      "css": "STALE",
+      "bindings": []
+    },
+    "variationPoints": [
+      {
+        "id": "title",
+        "label": "Title",
+        "kind": "node-property",
+        "nodeId": "title",
+        "property": "parts",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "literal"
+                    ]
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "source",
+                  "value"
+                ],
+                "additionalProperties": false
+              },
+              "format": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "value",
+              "format",
+              "currency"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      {
+        "id": "accent",
+        "label": "Accent",
+        "kind": "node-style",
+        "nodeId": "heading",
+        "property": "color",
+        "schema": {
+          "type": "string",
+          "maxLength": 30
+        }
+      },
+      {
+        "id": "region",
+        "label": "Content",
+        "kind": "children",
+        "target": {
+          "kind": "children",
+          "nodeId": "region"
+        },
+        "minItems": 0,
+        "maxItems": 4,
+        "allowedKinds": [
+          "text",
+          "element"
+        ],
+        "requiredIds": [
+          "first"
+        ]
+      },
+      {
+        "id": "footer",
+        "label": "Footer",
+        "kind": "placement",
+        "nodeId": "footer",
+        "allowedKinds": [
+          "element",
+          "text"
+        ]
+      },
+      {
+        "id": "caption",
+        "label": "Caption",
+        "kind": "block-property",
+        "nodeId": "card",
+        "property": "caption",
+        "allowedSources": [
+          "literal",
+          "field"
+        ]
+      },
+      {
+        "id": "body",
+        "label": "Card body",
+        "kind": "children",
+        "target": {
+          "kind": "block-slot",
+          "nodeId": "card",
+          "slot": "body"
+        },
+        "minItems": 0,
+        "maxItems": 3,
+        "allowedKinds": [
+          "text"
+        ]
+      }
+    ]
+  },
+  "overrides": {
+    "variations": {
+      "title": {
+        "kind": "node-property",
+        "value": [
+          {
+            "value": {
+              "source": "literal",
+              "value": "Local"
+            },
+            "format": "text",
+            "currency": "EUR"
+          }
+        ]
+      },
+      "accent": {
+        "kind": "node-style",
+        "value": null
+      },
+      "region": {
+        "kind": "children",
+        "order": [
+          "first",
+          "local"
+        ],
+        "nodes": {
+          "local": {
+            "id": "local",
+            "name": "local",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "text",
+            "parts": [
+              {
+                "value": {
+                  "source": "literal",
+                  "value": "Local content"
+                },
+                "format": "text",
+                "currency": "EUR"
+              }
+            ]
+          }
+        }
+      },
+      "footer": {
+        "kind": "placement",
+        "node": {
+          "id": "footer",
+          "name": "footer",
+          "permissions": {
+            "content": false,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "literal",
+                "value": "Local footer"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        }
+      },
+      "caption": {
+        "kind": "block-property",
+        "value": {
+          "source": "literal",
+          "value": "Variant card"
+        }
+      },
+      "body": {
+        "kind": "children",
+        "order": [
+          "bodycopy"
+        ],
+        "nodes": {
+          "bodycopy": {
+            "id": "bodycopy",
+            "name": "bodycopy",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "text",
+            "parts": [
+              {
+                "value": {
+                  "source": "literal",
+                  "value": "Body"
+                },
+                "format": "text",
+                "currency": "EUR"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "expectedDefinition": {
+    "format": "gct-template",
+    "schemaVersion": 1,
+    "id": "family",
+    "name": "Family",
+    "description": "",
+    "locale": "en-GB",
+    "page": {
+      "widthMm": 210,
+      "heightMm": 297,
+      "margins": {
+        "top": 16,
+        "right": 16,
+        "bottom": 16,
+        "left": 16
+      }
+    },
+    "roots": [
+      "heading",
+      "region",
+      "footer",
+      "card"
+    ],
+    "nodes": {
+      "heading": {
+        "id": "heading",
+        "name": "heading",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "element",
+        "tag": "div",
+        "classes": [],
+        "attributes": {},
+        "attributeBindings": {},
+        "style": {},
+        "children": [
+          "title"
+        ]
+      },
+      "title": {
+        "id": "title",
+        "name": "title",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "text",
+        "parts": [
+          {
+            "value": {
+              "source": "literal",
+              "value": "Local"
+            },
+            "format": "text",
+            "currency": "EUR"
+          }
+        ]
+      },
+      "region": {
+        "id": "region",
+        "name": "region",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "element",
+        "tag": "div",
+        "classes": [],
+        "attributes": {},
+        "attributeBindings": {},
+        "style": {},
+        "children": [
+          "first",
+          "local"
+        ]
+      },
+      "first": {
+        "id": "first",
+        "name": "first",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "text",
+        "parts": [
+          {
+            "value": {
+              "source": "literal",
+              "value": "First"
+            },
+            "format": "text",
+            "currency": "EUR"
+          }
+        ]
+      },
+      "footer": {
+        "id": "footer",
+        "name": "footer",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "text",
+        "parts": [
+          {
+            "value": {
+              "source": "literal",
+              "value": "Local footer"
+            },
+            "format": "text",
+            "currency": "EUR"
+          }
+        ]
+      },
+      "card": {
+        "id": "card",
+        "name": "Card",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "block",
+        "blockId": "card",
+        "version": 1,
+        "props": {
+          "caption": {
+            "source": "literal",
+            "value": "Variant card"
+          }
+        },
+        "slots": {
+          "body": [
+            "bodycopy"
+          ]
+        }
+      },
+      "local": {
+        "id": "local",
+        "name": "local",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "text",
+        "parts": [
+          {
+            "value": {
+              "source": "literal",
+              "value": "Local content"
+            },
+            "format": "text",
+            "currency": "EUR"
+          }
+        ]
+      },
+      "bodycopy": {
+        "id": "bodycopy",
+        "name": "bodycopy",
+        "permissions": {
+          "content": false,
+          "style": false
+        },
+        "kind": "text",
+        "parts": [
+          {
+            "value": {
+              "source": "literal",
+              "value": "Body"
+            },
+            "format": "text",
+            "currency": "EUR"
+          }
+        ]
+      }
+    },
+    "fields": [],
+    "blocks": [
+      {
+        "id": "card",
+        "version": 1,
+        "name": "Card",
+        "roots": [
+          "block-root"
+        ],
+        "nodes": {
+          "block-root": {
+            "id": "block-root",
+            "name": "block-root",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "element",
+            "tag": "div",
+            "classes": [],
+            "attributes": {},
+            "attributeBindings": {},
+            "style": {},
+            "children": [
+              "block-title",
+              "slot"
+            ]
+          },
+          "block-title": {
+            "id": "block-title",
+            "name": "Block title",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "text",
+            "parts": [
+              {
+                "value": {
+                  "source": "prop",
+                  "name": "caption"
+                },
+                "format": "text",
+                "currency": "EUR"
+              }
+            ]
+          },
+          "slot": {
+            "id": "slot",
+            "name": "Slot",
+            "permissions": {
+              "content": false,
+              "style": false
+            },
+            "kind": "slot",
+            "slot": "body",
+            "children": []
+          }
+        },
+        "props": {
+          "caption": {
+            "type": "string"
+          }
+        },
+        "requiredProps": [
+          "caption"
+        ],
+        "css": ""
+      }
+    ],
+    "assets": [],
+    "styles": {
+      "css": "",
+      "theme": ""
+    }
+  }
+}

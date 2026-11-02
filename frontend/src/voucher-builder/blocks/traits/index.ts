@@ -1,0 +1,22 @@
+export * from './registry'
+
+// Side-effect registrations
+import './rich-text'
+import './typography'
+import './heading-level'
+import './link'
+import './icon'
+import './image-source'
+import './dimension'
+import './date-format'
+import './qr-config'
+
+export { richTextTrait } from './rich-text'
+export { typographyTrait } from './typography'
+export { headingLevelTrait } from './heading-level'
+export { linkTrait } from './link'
+export { iconTrait } from './icon'
+export { imageSourceTrait } from './image-source'
+export { dimensionTrait } from './dimension'
+export { dateFormatTrait } from './date-format'
+export { qrConfigTrait } from './qr-config'

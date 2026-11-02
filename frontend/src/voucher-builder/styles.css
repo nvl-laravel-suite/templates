@@ -1,0 +1,570 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'themelia-react-ui/style.css';
+@import 'themelia-react-ui/theme.css';
+@import '@fontsource-variable/inter';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Themelia owns semantic colors and control recipes. These aliases belong to
+   the authored document canvas and the voucher settings composition. */
+:root,
+.nc-workspace {
+  --nc-canvas: var(--muted);
+  --nc-canvas-dots: var(--border);
+  --nc-selection: color-mix(in srgb, var(--primary) 40%, var(--muted-foreground));
+  --nc-selection-light: var(--accent);
+  --nc-hover-lift: 0 2px 8px color-mix(in srgb, var(--foreground) 6%, transparent);
+  --nc-paper-shadow: 0 1px 3px #0001, 0 8px 32px #0001;
+}
+
+/* Scrollbars belong to the workspace surface, never to control recipes. */
+.nc-workspace,
+.tc-workspace {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ── Canvas Background Pattern ─────────────────────────────── */
+
+.nc-docked-workspace {
+  height: var(--voucher-builder-height, 100dvh);
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.nc-workspace-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.nc-library-dock {
+  width: 236px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-inline-end: 1px solid var(--border);
+}
+.nc-inspector-dock {
+  width: 304px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-inline-start: 1px solid var(--border);
+}
+.nc-library-dock[hidden],
+.nc-inspector-dock[hidden] {
+  display: none;
+}
+.nc-retained-panel-host,
+.nc-retained-panel-scope,
+.nc-panel-drawer-slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+.nc-dock-tabs,
+.nc-inspector-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+.nc-dock-tablist {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.nc-dock-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  scrollbar-gutter: stable;
+}
+.nc-settings-area[hidden] {
+  display: none;
+}
+/* Flat choices own selected/focused states; each dock region has one inset. */
+.nc-section-navigation {
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+}
+.nc-section-navigation legend {
+  float: inline-start;
+  margin: 0;
+  padding: 0;
+}
+.nc-panel-inset {
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+}
+.nc-layer-section {
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+}
+
+.nc-library-item {
+  width: 100%;
+  text-align: start;
+  justify-content: start;
+}
+.nc-canvas-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  container-name: canvas;
+}
+.nc-viewbar {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  padding-block: calc(var(--surface-y) * var(--space-scale) / 2);
+}
+.nc-mobile-document-actions {
+  display: none;
+  padding: calc(var(--surface-y) * var(--space-scale) / 2) calc(var(--surface-x) * var(--space-scale));
+  border-bottom: 1px solid var(--border);
+}
+@container voucher-page (width < 40rem) {
+  .nc-mobile-document-actions {
+    display: flex;
+  }
+}
+.nc-empty-canvas-guide {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.nc-canvas-toolbar {
+  flex: 1;
+  min-width: 0;
+  padding-inline: calc(var(--surface-x) * var(--space-scale));
+}
+
+.nc-view-icon {
+  display: none;
+}
+@container canvas (max-width: 380px) {
+  .nc-view-label,
+  .nc-view-chevron {
+    display: none;
+  }
+  .nc-view-icon {
+    display: block;
+  }
+
+  .nc-canvas-toolbar .nc-toolbar-divider {
+    display: none;
+  }
+  .nc-canvas-toolbar .nc-zoom-value {
+    min-width: 34px;
+  }
+}
+.nc-toolbar-divider {
+  height: 16px;
+  width: 1px;
+  background: var(--border);
+  margin-inline: 5px;
+}
+.nc-zoom-value {
+  min-width: 42px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.nc-canvas-scroll {
+  scrollbar-width: none;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+  overscroll-behavior: contain;
+}
+.nc-paper-stage {
+  margin-inline: auto;
+}
+.nc-paper-stage > div > div {
+  margin-block: 0;
+}
+.nc-workspace-status {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding-inline: calc(var(--surface-x) * var(--space-scale));
+  border-top: 1px solid var(--border);
+}
+.nc-inspector-heading {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.nc-preview-scroll {
+  overflow: auto;
+  flex: 1;
+  padding: calc(var(--surface-y) * var(--space-scale)) calc(var(--surface-x) * var(--space-scale));
+}
+.nc-preview-scroll iframe {
+  display: block;
+  margin-inline: auto;
+  border: 0;
+  background: white;
+  box-shadow: var(--nc-paper-shadow);
+}
+.nc-template-preview {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 68px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: white;
+}
+
+.nc-template-preview iframe {
+  width: 794px;
+  height: 1123px;
+  transform: scale(0.06);
+  transform-origin: top left;
+  border: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .nc-workspace-mark,
+  .nc-wide-label,
+  .nc-save-label {
+    display: none;
+  }
+
+  .nc-canvas-toolbar {
+    padding-inline: calc(var(--surface-x) * var(--space-scale) / 2);
+  }
+
+  .nc-toolbar-divider {
+    margin-inline: 2px;
+  }
+  .nc-workspace-status {
+    padding-inline: calc(var(--surface-x) * var(--space-scale) / 2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nc-workspace *,
+  .nc-workspace *::before,
+  .nc-workspace *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.nc-canvas {
+  background-color: var(--nc-canvas);
+}
+
+/* ── Paper Effect ──────────────────────────────────────────── */
+
+.nc-paper {
+  background-color: white;
+  box-shadow: var(--nc-paper-shadow);
+  border-radius: 0;
+  transition: box-shadow 0.3s ease;
+}
+
+/* App-owned sanitized inline HTML field; public control roles match Textarea. */
+.nc-rich-text-field {
+  min-height: calc(var(--height-control) * var(--density-scale) * var(--nc-field-scale));
+  padding-block: calc((var(--height-control) * var(--density-scale) * var(--nc-field-scale) - 1lh) / 2 - 1px);
+  overflow-wrap: anywhere;
+}
+.nc-rich-text-field[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Selection Ring ────────────────────────────────────────── */
+
+/* Drawing marks use paired semantic colors so they remain visible over authored artwork. */
+.nc-selected {
+  outline: none;
+}
+.nc-selected::after,
+.nc-selected-light::after,
+.nc-selectable:hover::after {
+  content: '';
+  position: absolute;
+  inset: calc(-4px / var(--nc-canvas-scale, 1));
+  z-index: 35;
+  pointer-events: none;
+  border: calc(1px / var(--nc-canvas-scale, 1)) dashed color-mix(in srgb, var(--nc-selection) 70%, transparent);
+  border-radius: calc(var(--radius) / var(--nc-canvas-scale, 1));
+  filter: drop-shadow(0 0 1px var(--background));
+}
+.nc-document-section {
+  isolation: isolate;
+}
+.nc-document-section:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
+}
+.nc-section-annotation {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;
+  border: 1px dashed color-mix(in srgb, var(--nc-text) 18%, transparent);
+}
+.nc-document-section[data-selected] > .nc-section-annotation {
+  inset: calc(-4px / var(--nc-canvas-scale, 1));
+  border: calc(1px / var(--nc-canvas-scale, 1)) dashed color-mix(in srgb, var(--nc-selection) 70%, transparent);
+  border-radius: calc(var(--radius) / var(--nc-canvas-scale, 1));
+  filter: drop-shadow(0 0 1px var(--background));
+}
+.nc-dynamic-annotation {
+  position: absolute;
+  inset: 0 0 auto auto;
+  z-index: 20;
+  width: max-content;
+  max-width: 100%;
+  transform: scale(calc(1 / var(--nc-canvas-scale, 1)));
+  transform-origin: top right;
+  pointer-events: none;
+}
+.nc-section-caption {
+  width: max-content;
+  display: none;
+  position: absolute;
+  inset: calc(8px / var(--nc-canvas-scale, 1)) auto auto calc(8px / var(--nc-canvas-scale, 1));
+  transform: scale(calc(1 / var(--nc-canvas-scale, 1)));
+  transform-origin: top left;
+}
+.nc-document-section[data-selected] > .nc-section-annotation > .nc-section-caption {
+  display: block;
+}
+.nc-section-empty {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+.nc-document-hint {
+  color: color-mix(in srgb, var(--nc-text) 60%, transparent);
+  user-select: none;
+  transform: scale(calc(1 / var(--nc-canvas-scale, 1)));
+}
+@media print {
+  :where(.nc-workspace, .tc-workspace) .nc-section-annotation,
+  :where(.nc-workspace, .tc-workspace) .nc-section-empty,
+  :where(.nc-workspace, .tc-workspace) .nc-selected::after,
+  :where(.nc-workspace, .tc-workspace) .nc-selected-light::after,
+  :where(.nc-workspace, .tc-workspace) .nc-selectable:hover::after {
+    display: none !important;
+  }
+  :where(.nc-workspace, .tc-workspace) :is(.nc-selected, .nc-selected-light, .nc-document-section:focus-visible) {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+/* ── Block Hover ───────────────────────────────────────────── */
+
+.nc-block-hover:hover {
+  box-shadow: var(--nc-hover-lift);
+}
+
+/* ── Animated Indicator Dot ────────────────────────────────── */
+
+@keyframes nc-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.nc-pulse {
+  animation: nc-pulse 2s ease-in-out infinite;
+}
+
+/* ── Stagger Entrance ──────────────────────────────────────── */
+
+@keyframes nc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nc-fade-up {
+  animation: nc-fade-up 0.25s ease-out both;
+}
+
+@keyframes nc-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Column Add Button — hover only ─────────────────────── */
+[class*='border-dashed']:hover > .nc-col-add-btn {
+  opacity: 1;
+}
+
+/* ── Visibility ────────────────────────────────────────────── */
+
+:where(.nc-workspace, .tc-workspace) .hidden.print\:block {
+  display: none;
+}
+
+/* ── Print ─────────────────────────────────────────────────── */
+
+/* Exported documents own page dimensions; these rules belong to the editor. */
+@media print {
+  :where(.nc-workspace, .tc-workspace) :is(header, aside, [data-radix-popper-content-wrapper], [data-canvas-toolbar]) {
+    display: none !important;
+  }
+  :where(.nc-workspace, .tc-workspace) .print\:block {
+    display: block !important;
+  }
+  :where(.nc-workspace, .tc-workspace) main {
+    overflow: visible !important;
+    background: none !important;
+  }
+  :where(.nc-workspace, .tc-workspace) main > div {
+    transform: none !important;
+  }
+  :where(.nc-workspace, .tc-workspace) {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  :where(.nc-workspace, .tc-workspace) .group .absolute {
+    display: none !important;
+  }
+  :where(.nc-workspace, .tc-workspace) [class*='ring-blue'] {
+    --tw-ring-color: transparent !important;
+  }
+  :where(.nc-workspace, .tc-workspace) :is(p, li, td, th) {
+    orphans: 3;
+    widows: 3;
+  }
+  :where(.nc-workspace, .tc-workspace) :is(h1, h2, h3, h4, h5, h6) {
+    break-after: avoid;
+  }
+  :where(.nc-workspace, .tc-workspace) img {
+    break-inside: avoid;
+  }
+  :where(.nc-workspace, .tc-workspace) :is(section, article) {
+    break-inside: avoid;
+  }
+  :where(.nc-workspace, .tc-workspace) h3 + * {
+    break-before: avoid;
+  }
+  :where(.nc-workspace, .tc-workspace) :is(.shadow-xl, .nc-paper) {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    width: 100% !important;
+  }
+  /* The explicit security hook restricts editor content, not the host page. */
+  body.nc-print-blocked :where(.nc-workspace, .tc-workspace),
+  body.nc-print-blocked :where(.nc-workspace, .tc-workspace) * {
+    visibility: hidden !important;
+  }
+  body.nc-print-blocked :where(.nc-workspace, .tc-workspace)::after {
+    content: 'Printing is disabled. Use the export function instead.';
+    visibility: visible !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    font-size: 18px;
+    color: #666;
+  }
+}
+
+/* ── Security: DevTools detected overlay ──────────────────── */
+body.nc-devtools-detected::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--destructive);
+  border-radius: 50%;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.nc-workspace-page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.nc-workspace-page > :first-child {
+  flex: 1;
+  min-height: 0;
+}
+.nc-workspace-page-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  container-name: voucher-page;
+}
+.nc-workspace-body {
+  border: 1px solid var(--border);
+}
+
+.nc-color-sample {
+  display: block;
+  height: 1rem;
+  width: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+
+.nc-workspace {
+  position: relative;
+}
+.nc-notifications {
+  position: absolute;
+  inset: auto 16px 16px auto;
+  width: min(380px, calc(100% - 32px));
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Drawing viewport scroll stays available without an edge over the preview. */
+.nc-canvas-scroll::-webkit-scrollbar { display: none; }

@@ -1,0 +1,44 @@
+{
+  "format": "gct-template-block-library",
+  "schemaVersion": 1,
+  "entry": {
+    "blockId": "invoice_heading",
+    "version": 1
+  },
+  "blocks": [
+    {
+      "id": "invoice_heading",
+      "version": 1,
+      "name": "Invoice heading",
+      "props": {},
+      "requiredProps": [],
+      "roots": [
+        "heading"
+      ],
+      "nodes": {
+        "heading": {
+          "id": "heading",
+          "name": "Title",
+          "permissions": {
+            "content": true,
+            "style": false
+          },
+          "kind": "text",
+          "parts": [
+            {
+              "value": {
+                "source": "literal",
+                "value": "Invoice"
+              },
+              "format": "text",
+              "currency": "EUR"
+            }
+          ]
+        }
+      },
+      "css": ""
+    }
+  ],
+  "assets": [],
+  "theme": ""
+}
