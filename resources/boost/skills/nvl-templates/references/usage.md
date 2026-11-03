@@ -97,16 +97,18 @@ Extend the complete workspace with `insertPresets` (use `getTemplatePresets()` f
 Shared rendering and runtime conditions/repeats use a configured trusted `Nvl\Templates\Contracts\DocumentCompiler`; `Nvl\Templates\Drivers\Compiler\LocalNodeCompiler` runs the bundled implementation. Every structural family variation, including node-style and typography changes, requires a trusted compiler for preview and publication. Configure a trusted server argument vector, not shell text and never request-provided executable/path/cwd. Example in host `config/nvl-templates.php`:
 
 ```php
-'compiler' => [
-    'driver' => \Nvl\Templates\Drivers\Compiler\LocalNodeCompiler::class,
-    'command' => [
-        env('TEMPLATES_NODE_BINARY', '/usr/local/bin/node'), // deployment's Node 24 executable
-        base_path('vendor/nvl/templates/resources/runtime/renderer.mjs'),
+return [
+    'compiler' => [
+        'driver' => \Nvl\Templates\Drivers\Compiler\LocalNodeCompiler::class,
+        'command' => [
+            env('TEMPLATES_NODE_BINARY', '/usr/local/bin/node'), // deployment's Node 24 executable
+            base_path('vendor/nvl/templates/resources/runtime/renderer.mjs'),
+        ],
+        'cwd' => base_path(),
+        'timeout' => 30,
+        'identity' => 'host-template-runtime-v1',
     ],
-    'cwd' => base_path(),
-    'timeout' => 30,
-    'identity' => 'host-template-runtime-v1',
-],
+];
 ```
 
 Verify your configured binary is Node 24 and the installed worker path exists. The worker bundles its dependencies; the Composer host needs no Template Maker npm install or running render service. Retain third-party notices; update backend, generated source and worker together. Keep `limits.document_bytes`, `limits.output_bytes`, `limits.preview_bytes`, `limits.bindings` and `limits.depth` bounded. A missing compiler rejects shared rendering and structural-family preview/publication; valid raw structural drafts can still be saved. Native `bindings` HTML remains supported for qualified standalone documents and variants without structural variations. Keep source and artifacts matched; changing engine strings does not compile a document.
