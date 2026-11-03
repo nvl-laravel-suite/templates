@@ -164,6 +164,32 @@ final class OwnedDocumentMediaTest extends TestCase
         self::assertNull($this->app->make(OwnershipContext::class)->snapshot()->principal);
     }
 
+    public function test_activated_owned_graph_rolls_back_with_published_current_revision_pointers(): void
+    {
+        $this->activate();
+        $this->within(7, function (TestActor $actor): void {
+            $families = $this->app->make(TemplateFamilies::class);
+            $group = $families->create(['key' => 'rollback-family', 'name' => 'Rollback family'], $actor);
+            $family = $families->publish($group->id, $this->document(), 0, $actor);
+            [$template, $revision] = $this->published($actor);
+            self::assertSame($family->id, $group->fresh()->current_revision_id);
+            self::assertSame($revision->id, $template->fresh()->current_revision_id);
+        });
+        $connection = TemplateModelRegistry::newInstance()->getConnection();
+        $schema = $connection->getSchemaBuilder();
+        self::assertSame(1, $connection->selectOne('pragma foreign_keys')->foreign_keys);
+        $paths = glob(dirname(__DIR__, 3).'/database/document-migrations/*.php');
+        foreach (array_reverse($paths) as $path) {
+            (require $path)->down();
+        }
+        foreach (config('nvl-templates.tables') as $table) {
+            self::assertFalse($schema->hasTable($table));
+        }
+        self::assertTrue($schema->hasTable((new TestCompany)->getTable()));
+        self::assertTrue($schema->hasTable(MediaModelRegistry::newInstance()->getTable()));
+        self::assertSame(1, $connection->selectOne('pragma foreign_keys')->foreign_keys);
+    }
+
     public function test_owned_family_resources_and_variant_review_use_the_native_graph(): void
     {
         $this->activate();

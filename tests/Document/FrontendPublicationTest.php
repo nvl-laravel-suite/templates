@@ -66,6 +66,24 @@ final class FrontendPublicationTest extends TestCase
         self::assertDirectoryDoesNotExist($destination.'/template-maker');
     }
 
+    public function test_published_migrations_keep_timestamp_updates_and_document_bytes(): void
+    {
+        $this->travelTo('2031-01-02 03:04:05 UTC');
+        $this->artisan('vendor:publish', ['--tag' => 'nvl-templates-migrations', '--no-interaction' => true])->assertSuccessful();
+
+        $files = (new Filesystem)->files(database_path('migrations'));
+        self::assertSame([
+            '2031_01_02_030406_nvl_templates_create_document_graph.php',
+            '2031_01_02_030407_nvl_templates_add_family_workflows.php',
+            '2031_01_02_030408_nvl_templates_add_render_execution.php',
+        ], array_map(static fn ($file): string => $file->getFilename(), $files));
+        foreach ($files as $file) {
+            $sources = glob(dirname(__DIR__, 2).'/database/document-migrations/*'.substr($file->getFilename(), 18));
+            self::assertCount(1, $sources);
+            self::assertSame(file_get_contents($sources[0]), $file->getContents());
+        }
+    }
+
     public function test_absolute_destination_receives_the_complete_tree_directly_and_can_be_republished(): void
     {
         $destination = $this->destination();

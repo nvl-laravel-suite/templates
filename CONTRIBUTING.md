@@ -1,5 +1,7 @@
 # Contributing
 
+This repository is a read-only release mirror. Pull requests to the mirror are not accepted. Open a public issue with a reproducible example or proposed patch. Maintainers apply reviewed changes in the private source repository and publish immutable releases from there.
+
 Follow NVL Light conventions: complete focused domain services, constructor injection, explicit actors, native models/enums/documented arrays, and useful domain values only. Consumers own controllers, routes, Actions, DTOs and application screens. Mark every service `@api` or `@internal`; update generated consumer contracts and portable skill references when public behavior changes.
 
 Preserve portable JSON schemas, hashes, raw family pins/overrides, numeric object keys, current grants and exact revision/media evidence. Keep draft review/apply separate from publication. Use native Ownership and Media operations on the actual source connection; retain outer-commit, rollback cleanup, actor refresh and lease/generation semantics. Add meaningful regressions for behavioral defects.

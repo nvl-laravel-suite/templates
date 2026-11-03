@@ -5,6 +5,10 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+## [7.0.0] - 2026-11-03
+
+- Adopt the reviewed NVL 7 family for PHP 8.4+ and Laravel 13, with compatible required and optional NVL peers. Review the package upgrade guide before deployment.
+
 ### Changed
 
 - Replace the former Blade/Content definition, assignment and version engine with portable document sources, pinned template families, structural variation points and reviewed upgrade/rebase/detach/regroup workflows.

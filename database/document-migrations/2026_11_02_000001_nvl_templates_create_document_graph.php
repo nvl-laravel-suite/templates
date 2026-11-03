@@ -139,17 +139,23 @@ return new class extends Migration
     public function down(): void
     {
         $schema = Schema::connection($this->getConnection());
+        $dropTables = static function () use ($schema): void {
+            foreach (['renders', 'assets', 'resource_revisions', 'drafts', 'revisions', 'group_revisions', 'resources', 'templates', 'groups'] as $key) {
+                $schema->dropIfExists(Scope::table($key));
+            }
+        };
+        if ($schema->getConnection()->getDriverName() === 'sqlite') {
+            $schema->withoutForeignKeyConstraints($dropTables);
+
+            return;
+        }
         foreach (['templates', 'groups'] as $root) {
             if ($schema->hasTable(Scope::table($root))) {
-                $schema->table(Scope::table($root), static function (Blueprint $table) use ($schema, $root): void {
-                    $table->dropForeign($schema->getConnection()->getDriverName() === 'sqlite'
-                        ? ['scope_id', 'id', 'current_revision_id']
-                        : 'tpl_'.$root.'_current');
+                $schema->table(Scope::table($root), static function (Blueprint $table) use ($root): void {
+                    $table->dropForeign('tpl_'.$root.'_current');
                 });
             }
         }
-        foreach (['renders', 'assets', 'resource_revisions', 'drafts', 'revisions', 'group_revisions', 'resources', 'templates', 'groups'] as $key) {
-            $schema->dropIfExists(Scope::table($key));
-        }
+        $dropTables();
     }
 };

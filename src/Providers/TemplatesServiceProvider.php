@@ -15,6 +15,7 @@ use Nvl\Support\Ownership\Contracts\OwnershipIntegratedProvider;
 use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
 use Nvl\Support\Providers\SupportServiceProvider;
 use Nvl\Support\Traits\MergesPackageConfiguration;
+use Nvl\Support\Traits\RegistersNamespacedResources;
 use Nvl\Templates\Console\Commands\PruneTemplateRenders;
 use Nvl\Templates\Console\Commands\PublishTemplateFrontend;
 use Nvl\Templates\Console\Commands\RecoverTemplateRenders;
@@ -39,6 +40,7 @@ use Nvl\Templates\Services\TemplatesDoctor;
 final class TemplatesServiceProvider extends ServiceProvider implements OwnershipIntegratedProvider
 {
     use MergesPackageConfiguration;
+    use RegistersNamespacedResources;
 
     public function register(): void
     {
@@ -95,7 +97,7 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
         if (config('nvl-templates.migrations.enabled', true)) {
             $this->loadMigrationsFrom($root.'/database/document-migrations');
         }
-        $this->publishes([$root.'/resources/config/nvl-templates.php' => config_path('nvl-templates.php')], 'nvl-templates-config');
+        $this->publishes([$root.'/config/nvl-templates.php' => config_path('nvl-templates.php')], 'nvl-templates-config');
         $this->publishesMigrations([$root.'/database/document-migrations' => database_path('migrations')], 'nvl-templates-migrations');
         $this->publishes([$root.'/resources/boost/skills' => base_path('.agents/skills')], 'nvl-templates-skills');
         if ($this->app->runningInConsole()) {
