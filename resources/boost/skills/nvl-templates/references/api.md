@@ -193,7 +193,9 @@ public readonly string $reason
 
 ```text
 final class Nvl\Templates\Models\FamilyChange extends Nvl\Templates\Models\TemplateModel
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -229,7 +231,9 @@ resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\
 
 ```text
 class Nvl\Templates\Models\Template extends Nvl\Templates\Models\TemplateModel
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -259,7 +263,9 @@ public function save(array $options=[]): bool
 
 ```text
 final class Nvl\Templates\Models\TemplateAsset extends Nvl\Templates\Models\TemplateModel implements Nvl\Media\Contracts\HasNvlMedia
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -297,7 +303,9 @@ resolved @property (Carbon\CarbonImmutable | null) $archived_at
 
 ```text
 final class Nvl\Templates\Models\TemplateDraft extends Nvl\Templates\Models\TemplateModel
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -328,7 +336,9 @@ resolved @return Illuminate\Database\Eloquent\Relations\BelongsTo<Nvl\Templates\
 
 ```text
 final class Nvl\Templates\Models\TemplateGroup extends Nvl\Templates\Models\TemplateModel
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -358,7 +368,9 @@ public function save(array $options=[]): bool
 ```text
 final class Nvl\Templates\Models\TemplateGroupRevision extends Nvl\Templates\Models\TemplateModel
 public static function bootImmutableRevision(): void
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -392,7 +404,9 @@ resolved @property Illuminate\Support\Carbon $published_at
 
 ```text
 final class Nvl\Templates\Models\TemplateRender extends Nvl\Templates\Models\TemplateModel implements Nvl\Media\Contracts\HasNvlMedia
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -453,7 +467,9 @@ resolved @property (Illuminate\Support\Carbon | null) $purged_at
 
 ```text
 final class Nvl\Templates\Models\TemplateResource extends Nvl\Templates\Models\TemplateModel
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -489,7 +505,9 @@ public function save(array $options=[]): bool
 ```text
 final class Nvl\Templates\Models\TemplateResourceRevision extends Nvl\Templates\Models\TemplateModel
 public static function bootImmutableRevision(): void
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
@@ -523,7 +541,9 @@ public function save(array $options=[]): bool
 ```text
 final class Nvl\Templates\Models\TemplateRevision extends Nvl\Templates\Models\TemplateModel
 public static function bootImmutableRevision(): void
-public function delete(): ?bool
+public function delete(): mixed
+@return ($this is Pivot ? (bool | int | null) : (bool | null))
+resolved @return ($this is Illuminate\Database\Eloquent\Relations\Pivot ? (bool | int | null) : (bool | null))
 public function fresh(mixed $with=[]): ?static
 @param (array<array-key, mixed> | string) $with
 public function getConnectionName(): ?string
