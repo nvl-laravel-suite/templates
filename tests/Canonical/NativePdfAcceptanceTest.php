@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Mpdf\Mpdf;
 use Nvl\Media\Contracts\MediaAuthorization;
-use Nvl\Media\Enums\MediaAbility;
 use Nvl\Media\Enums\MediaVisibility;
-use Nvl\Media\Models\Media;
 use Nvl\Media\Models\MediaAssociation;
 use Nvl\Media\Services\MediaModelRegistry;
 use Nvl\Support\Enums\SystemActor;
@@ -28,6 +26,7 @@ use Nvl\Templates\Services\TemplateAssets;
 use Nvl\Templates\Services\TemplateLifecycle;
 use Nvl\Templates\Tests\CanonicalTestCase;
 use Nvl\Templates\Tests\Fixtures\NativeMpdfAcceptanceDriver;
+use Nvl\Templates\Tests\Fixtures\NativePdfAcceptanceMediaPolicy;
 use Nvl\Templates\Tests\Support\Documents;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -262,14 +261,3 @@ it('rechecks current release and private image grants before reading retained PD
     expect(app(NativeMpdfAcceptanceDriver::class)->calls)->toBe(1)
         ->and(MediaModelRegistry::query()->whereKey($completed->result['mediaId'])->exists())->toBeTrue();
 })->with(['release read grant' => ['template'], 'private image download grant' => ['asset']]);
-
-/** Mutable current permission state shared with already-resolved native Media services. */
-final class NativePdfAcceptanceMediaPolicy implements MediaAuthorization
-{
-    public ?string $deniedDownloadMediaId = null;
-
-    public function allows(Authenticatable|SystemActor $actor, MediaAbility $ability, ?Media $media = null, ?Model $owner = null): bool
-    {
-        return $this->deniedDownloadMediaId === null || $ability !== MediaAbility::Download || $media?->id !== $this->deniedDownloadMediaId;
-    }
-}
