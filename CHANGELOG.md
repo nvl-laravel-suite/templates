@@ -5,6 +5,10 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Clarify the existing PDF adapter contract: the supplied read-only `RenderedDocument` fields and `toArray()` are supported public API, while construction and retained-bundle parsing remain internal. Preserve the callback signature and runtime shapes; update the API catalog and consumer guidance.
+
 ## [7.0.1] - 2026-11-09
 
 ### Changed

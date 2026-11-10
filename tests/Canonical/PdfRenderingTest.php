@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Nvl\Templates\Drivers\Pdf\ChromiumPdfDriver;
 use Nvl\Templates\Rendering\RenderedDocument as RenderResult;
 use Nvl\Templates\Tests\CanonicalTestCase as TestCase;
+use Nvl\Templates\Tests\Fixtures\ExternalPdfDriver;
 use Nvl\Templates\Tests\Support\DocumentClient as Templates;
 use Nvl\Templates\Tests\Support\Documents;
 
@@ -138,5 +139,28 @@ final class PdfRenderingTest extends TestCase
         Http::fake(['https://pdf.example.test/v1/render' => Http::response(self::PDF, 200, ['Content-Type' => 'application/pdf'])]);
         self::assertSame(self::PDF, app(Templates::class)->pdf($revision, facts: ['code' => 'ABC'])->bytes);
         Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer 0') && ! $request->hasHeader('x-api-key'));
+    }
+
+    public function test_a_host_pdf_adapter_can_use_the_supported_provided_render_value(): void
+    {
+        $catalog = json_decode(file_get_contents(__DIR__.'/../../resources/consumer-api.json'), true, flags: JSON_THROW_ON_ERROR);
+        $value = $catalog['symbols'][RenderResult::class] ?? null;
+        self::assertIsArray($value);
+        self::assertSame(['toArray'], $value['methods']);
+        self::assertSame(['checksum', 'css', 'html', 'inlineAssets', 'revisionId', 'subject', 'text'], $value['properties']);
+
+        $revision = $this->revision();
+        config(['nvl-templates.pdf.driver' => ExternalPdfDriver::class]);
+        ExternalPdfDriver::$received = null;
+        $output = app(Templates::class)->pdf($revision, facts: ['code' => 'EXTERNAL'], inputs: ['message' => 'Literal {{keep_me}}'], options: ['filename' => 'host.pdf', 'maxPages' => 2]);
+
+        self::assertSame('host.pdf', $output->filename);
+        self::assertStringStartsWith('%PDF-', $output->bytes);
+        self::assertSame(hash('sha256', $output->bytes), $output->checksum);
+        self::assertStringContainsString('EXTERNAL', ExternalPdfDriver::$received['html']);
+        self::assertStringContainsString('Literal {{keep_me}}', ExternalPdfDriver::$received['html']);
+        self::assertSame($revision, ExternalPdfDriver::$received['revisionId']);
+        self::assertSame([], ExternalPdfDriver::$received['inlineAssets']);
+        Http::assertNothingSent();
     }
 }

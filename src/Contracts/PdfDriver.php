@@ -16,7 +16,9 @@ interface PdfDriver
 {
     public function identity(): string;
 
-    /** @param array<array-key,mixed> $document
+    /** Render the supplied finalized delivery value without repeating template evaluation.
+     *
+     * @param  array<array-key,mixed>  $document
      * @param  array<array-key,mixed>  $options
      */
     public function render(RenderedDocument $result, array $document, array $options = []): PdfOutput;

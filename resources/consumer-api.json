@@ -478,6 +478,23 @@
             ],
             "constants": []
         },
+        "Nvl\\Templates\\Rendering\\RenderedDocument": {
+            "kind": "class",
+            "file": "src/Rendering/RenderedDocument.php",
+            "methods": [
+                "toArray"
+            ],
+            "properties": [
+                "checksum",
+                "css",
+                "html",
+                "inlineAssets",
+                "revisionId",
+                "subject",
+                "text"
+            ],
+            "constants": []
+        },
         "Nvl\\Templates\\Services\\FamilyLifecycle": {
             "kind": "class",
             "file": "src/Services/FamilyLifecycle.php",

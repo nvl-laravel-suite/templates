@@ -7,19 +7,27 @@ namespace Nvl\Templates\Rendering;
 use Illuminate\Validation\ValidationException;
 
 /**
- *  Typed internal compilation result; public services expose a native array.
+ * Read-only finalized delivery value supplied to a host PDF adapter.
+ *
+ * Native render and preview services expose arrays. PDF adapters may read these
+ * fields or project them with toArray(); native rendering owns construction.
  *
  * @phpstan-type InlineAsset array{cid: string, name: string, mimeType: string, content: string}
  * @phpstan-type RenderResult array{html: string, css: string, subject: ?string, text: ?string, revisionId: string, checksum: string, inlineAssets: list<InlineAsset>}
  *
- * @internal
+ * @api
  */
 final readonly class RenderedDocument
 {
-    /** @param list<InlineAsset> $inlineAssets */
+    /** @internal Supplied by admitted native rendering rather than constructed by consumers.
+     * @param  list<InlineAsset>  $inlineAssets
+     */
     public function __construct(public string $html, public string $css, public ?string $subject, public ?string $text, public string $revisionId, public string $checksum, public array $inlineAssets = []) {}
 
-    /** Validate the retained bundle before exposing its native result shape. */
+    /** Validate the retained bundle before exposing its native result shape.
+     *
+     * @internal
+     */
     public static function fromArray(mixed $value): self
     {
         if (! is_array($value) || ! is_string($value['html'] ?? null) || ! is_string($value['css'] ?? null)

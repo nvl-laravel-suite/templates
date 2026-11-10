@@ -25,6 +25,7 @@ Read [usage](references/usage.md) for the complete integration sequence and exam
 | Customer inputs, preview and rendering | `TemplateRenderer`; [rendering](references/usage.md#personalization-and-previews) |
 | Deliver finalized email with CID bytes | [Mail handoff](references/usage.md#email-delivery-and-cid-attachments) |
 | Durable HTML/email/PDF and maintenance | `RenderRequests`; [durable requests](references/usage.md#durable-renders-and-maintenance) |
+| Custom PDF adapter callback | `PdfDriver`, provided `RenderedDocument`; [PDF adapters](references/usage.md#custom-pdf-adapters) |
 
 All service classes above are in `Nvl\Templates\Services`. `nvl/media` is required. These workflows do not use Content blocks, Blade template definitions, assignments or the former stored-version lifecycle.
 

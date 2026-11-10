@@ -31,6 +31,7 @@ Search for the relevant fully qualified service or contract and read only its ma
 - `Nvl\Templates\Models\TemplateResource`
 - `Nvl\Templates\Models\TemplateResourceRevision`
 - `Nvl\Templates\Models\TemplateRevision`
+- `Nvl\Templates\Rendering\RenderedDocument`
 - `Nvl\Templates\Services\FamilyLifecycle`
 - `Nvl\Templates\Services\RenderRequests`
 - `Nvl\Templates\Services\ResourceManager`
@@ -574,6 +575,24 @@ resolved @property Illuminate\Support\Carbon $published_at
 @property string $scope_id
 @property array<string, mixed> $source
 @property string $template_id
+```
+
+## Nvl\Templates\Rendering\RenderedDocument
+
+```text
+final readonly class Nvl\Templates\Rendering\RenderedDocument
+public function toArray(): array
+@return RenderResult
+resolved @return array{html: string, css: string, subject: ?string, text: ?string, revisionId: string, checksum: string, inlineAssets: list<array{cid: string, name: string, mimeType: string, content: string}>}
+public readonly string $checksum
+public readonly string $css
+public readonly string $html
+public readonly array $inlineAssets
+@param list<InlineAsset> $inlineAssets
+resolved @param list<array{cid: string, name: string, mimeType: string, content: string}> $inlineAssets
+public readonly string $revisionId
+public readonly ?string $subject
+public readonly ?string $text
 ```
 
 ## Nvl\Templates\Services\FamilyLifecycle

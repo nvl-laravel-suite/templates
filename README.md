@@ -106,6 +106,8 @@ The optional native-array Mailable preserves finalized HTML, plain text, Unicode
 
 For PDFs configure a `PdfDriver` such as `ChromiumPdfDriver` and call `TemplateRenderer::pdf()`. It returns validated binary `PdfOutput`; the host supplies the download/storage response. Raw PDF bytes are not a JSON body.
 
+A custom `PdfDriver::render()` receives a supported read-only `Nvl\Templates\Rendering\RenderedDocument` supplied by native rendering. Read `html`, `css`, `subject`, `text`, `revisionId`, `checksum` and `inlineAssets`, or call `toArray()` for those delivery fields. Its constructor and `fromArray()` are internal; adapters consume the supplied value and return `PdfOutput`. Preserve finalized placeholders, asset privacy and the configured remote-fetch, page and byte limits. Ordinary render/preview callers continue receiving native arrays.
+
 ## Durable rendering and maintenance
 
 `RenderRequests::accept()` captures immutable accepted evidence. `queue()` also schedules after the source outer commit when `rendering.queue.enabled=true`. Supply trusted data and a stable `idempotency_key`; incompatible replays conflict. Workers restore the captured actor/owner, recheck access and renderer/asset evidence, and use generations/leases for retries and recovery.
