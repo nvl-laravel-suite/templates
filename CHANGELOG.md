@@ -5,6 +5,8 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+## [7.0.3] - 2026-11-11
+
 ### Fixed
 
 - Pin URL asset imports to the validated public address: the request no longer uses Guzzle's stream transport, which ignored the pinned DNS result and resolved the hostname a second time. Oversized downloads are aborted as soon as they pass the byte limit.
@@ -15,6 +17,12 @@ All notable changes to `nvl/templates` are documented here.
 - Reuse an existing detached resource copy when the database returns its JSON provenance keys in another order (MySQL), instead of creating a duplicate on every copy.
 - Refuse a non-UUID processing token in `RenderRequests::process()` before the request is claimed; on PostgreSQL it permanently failed the accepted render.
 - Allow the document schema to install on MySQL and MariaDB. The resource table's composite unique key exceeded InnoDB's 3072-byte index limit under utf8mb4, so the create migration failed with error 1071. The `kind`, `scope` and `owner_key` columns are now bounded (32, 32 and 64 characters); every value the package writes fits. Installations already migrated on PostgreSQL or SQLite keep their wider columns and need no action.
+
+<!-- NVL GENERATED CHANGES START -->
+### Changed
+
+- fit MySQL index limits and harden media URL import
+<!-- NVL GENERATED CHANGES END -->
 
 ## [7.0.2] - 2026-11-10
 
