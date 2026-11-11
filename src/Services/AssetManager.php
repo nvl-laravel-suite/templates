@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -89,16 +90,30 @@ final class AssetManager
         if ((! is_int($timeout) && ! is_float($timeout)) || $timeout <= 0 || ! is_finite((float) $timeout)) {
             throw new \LogicException('Configure a positive finite import timeout.');
         }
-        $response = Http::timeout($timeout)->connectTimeout(5)->withOptions([
-            'allow_redirects' => false, 'stream' => true, 'proxy' => '',
-            'curl' => [CURLOPT_RESOLVE => [$host.':443:'.$destination]],
-        ])->get($url);
+        $limit = $this->byteLimit();
+        try {
+            // Not streamed: Guzzle serves streamed requests through PHP's stream wrapper,
+            // which ignores cURL options and would resolve the hostname a second time.
+            // The transfer callback aborts the download once it passes the limit instead.
+            $response = Http::timeout($timeout)->connectTimeout(5)->withOptions([
+                'allow_redirects' => false, 'proxy' => '',
+                'curl' => [
+                    CURLOPT_RESOLVE => [$host.':443:'.$destination],
+                    CURLOPT_NOPROGRESS => false,
+                    CURLOPT_XFERINFOFUNCTION => static fn (mixed $handle, int $expected, int $received): int => $received > $limit ? 1 : 0,
+                ],
+            ])->get($url);
+        } catch (ConnectionException $error) {
+            if (str_contains($error->getMessage(), 'cURL error '.CURLE_ABORTED_BY_CALLBACK.':')) {
+                $this->fail('Remote asset exceeds the byte limit.');
+            }
+            throw $error;
+        }
         if (! $response->successful()) {
             $this->fail('Remote asset could not be imported without redirects.');
         }
         $stream = $response->toPsrResponse()->getBody();
         $bytes = '';
-        $limit = $this->byteLimit();
         while (! $stream->eof()) {
             $bytes .= $stream->read(min(65536, $limit + 1 - strlen($bytes)));
             if (strlen($bytes) > $limit) {

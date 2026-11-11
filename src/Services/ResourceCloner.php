@@ -123,7 +123,8 @@ final class ResourceCloner
                     continue;
                 }
                 foreach (TemplateResourceRevision::query()->where('resource_id', $existing->id)->get() as $v) {
-                    if ($v->provenance === $origin && $v->checksum === $bodyHash && CanonicalJson::hash($v->document) === $bodyHash) {
+                    // JSON columns do not preserve key order on every driver.
+                    if ($v->checksum === $bodyHash && CanonicalJson::hash($v->provenance ?? []) === CanonicalJson::hash($origin) && CanonicalJson::hash($v->document) === $bodyHash) {
                         $reuse = [$existing, $v];
                         break 2;
                     }

@@ -35,6 +35,10 @@ final class RenderProcessor
 
     public function run(string $id, string $scope, int $generation, ?string $token = null): TemplateRender
     {
+        // The token column is a uuid; refuse here rather than fail the accepted request at its claim.
+        if ($token !== null && ! Str::isUuid($token)) {
+            throw ValidationException::withMessages(['token' => ['A processing token must be a UUID.']]);
+        }
         $token ??= (string) Str::uuid();
         $query = fn () => TemplateRender::withoutGlobalScope('templates_scope')->where('scope_id', $scope)->whereKey($id);
         $record = $query()->firstOrFail();

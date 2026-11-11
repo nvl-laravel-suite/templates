@@ -288,7 +288,7 @@ final class DocumentValidator
     {
         $source = $this->map($this->map($document['source'], 'source')['definition'], 'source.definition');
         $styles = $this->map($source['styles'] ?? [], 'source.definition.styles');
-        if (preg_match('/url\s*\(/i', $this->string($styles['css'] ?? '', 'styles.css').$this->string($styles['theme'] ?? '', 'styles.theme'))) {
+        if (preg_match('/(?:url|image-set)\s*\(/i', $this->string($styles['css'] ?? '', 'styles.css').$this->string($styles['theme'] ?? '', 'styles.theme'))) {
             $this->fail('assets', 'CSS media requires a qualified managed adapter.');
         }
         foreach (array_merge([$source['nodes']], array_column($this->map($source['blocks'] ?? [], 'blocks'), 'nodes')) as $rawNodes) {
@@ -304,7 +304,7 @@ final class DocumentValidator
                     $this->fail('assets', 'This shared image source needs a managed asset binding.');
                 }
                 foreach ($this->strings($node['style'] ?? [], 'style') as $value) {
-                    if (preg_match('/url\s*\(/i', $value)) {
+                    if (preg_match('/(?:url|image-set)\s*\(/i', $value)) {
                         $this->fail('assets', 'CSS media requires a qualified managed adapter.');
                     }
                 }

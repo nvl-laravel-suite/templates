@@ -44,9 +44,10 @@ return new class extends Migration
                     $t->foreign(['scope_id', 'group_id'])->references(['scope_id', 'id'])->on(Scope::table('groups'))->restrictOnDelete();
                 }
                 if ($key === 'resources') {
-                    $t->string('kind');
-                    $t->string('scope');
-                    $t->string('owner_key');
+                    // Bounded so the composite unique key fits InnoDB's 3072-byte index limit under utf8mb4.
+                    $t->string('kind', 32);
+                    $t->string('scope', 32);
+                    $t->string('owner_key', 64);
                     $t->uuid('group_id')->nullable();
                     $t->uuid('template_id')->nullable();
                     $t->unique(['scope_id', 'kind', 'owner_key', 'key'], 'tpl_resource_key');

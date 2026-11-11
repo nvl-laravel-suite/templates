@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Tests\Document;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -12,7 +13,11 @@ use InvalidArgumentException;
 use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Models\TemplateAsset;
 use Nvl\Templates\Models\TemplateRevision;
+use Nvl\Templates\Services\RenderRequests;
 use Nvl\Templates\Services\TemplateAssets;
+use Nvl\Templates\Services\TemplateCatalog;
+use Nvl\Templates\Services\TemplateReader;
+use Nvl\Templates\Services\TemplateRenderer;
 use Nvl\Templates\Tests\CanonicalTestCase;
 use Nvl\Templates\Tests\Support\DocumentClient;
 use Nvl\Templates\Tests\Support\Documents;
@@ -141,6 +146,43 @@ final class DocumentRollbackTest extends CanonicalTestCase
         [$stored, $bytes] = $assets->contents($asset->id, SystemActor::Background);
         self::assertSame($asset->id, $stored->id);
         self::assertSame($asset->checksum, hash('sha256', $bytes));
+    }
+
+    public function test_malformed_identities_are_not_found_on_the_selected_database(): void
+    {
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $actor = SystemActor::Background;
+        foreach ([
+            'template' => fn () => app(TemplateReader::class)->get('not-a-uuid', $actor),
+            'revision' => fn () => app(TemplateRenderer::class)->render('not-a-uuid', [], $actor),
+            'asset' => fn () => app(TemplateAssets::class)->contents('not-a-uuid', $actor),
+            'render' => fn () => app(RenderRequests::class)->get('not-a-uuid', $actor),
+            'family' => fn () => app(TemplateCatalog::class)->groupRevision('not-a-uuid', 1, $actor),
+        ] as $kind => $lookup) {
+            try {
+                $lookup();
+                self::fail('A malformed '.$kind.' identity was found.');
+            } catch (ModelNotFoundException) {
+                self::addToAssertionCount(1);
+            }
+        }
+
+        // A stored draft that references a malformed resource must stay readable for repair.
+        $api = app(DocumentClient::class);
+        $template = $api->createTemplate('malformed-reference', 'Malformed reference');
+        $document = Documents::standalone();
+        $document['dependencies'] = [['resourceId' => 'not-a-uuid', 'revision' => 1]];
+        $api->saveDraft($template->id, $document, 0);
+        $issues = app(TemplateReader::class)->load($template->id, $actor)['issues'];
+        self::assertSame(['resources'], array_column($issues, 'path'));
+    }
+
+    public function test_the_asset_catalog_lists_retained_images_on_the_selected_database(): void
+    {
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $asset = app(TemplateAssets::class)->upload(UploadedFile::fake()->image('listed.png', 2, 2), SystemActor::Background);
+        $page = app(TemplateCatalog::class)->assets([], SystemActor::Background);
+        self::assertSame([$asset->id], $page->getCollection()->pluck('id')->all());
     }
 
     public function test_native_cleanup_refuses_host_and_other_package_database_names(): void

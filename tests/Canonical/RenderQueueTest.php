@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope;
 use Nvl\Templates\Exceptions\RenderUnavailable as GoneHttpException;
 use Nvl\Templates\Jobs\RenderTemplateJob;
@@ -69,7 +70,7 @@ final class RenderQueueTest extends TestCase
         $request = $this->accepted();
         $renders = app(Templates::class)->renders();
         self::assertSame(0, $renders->recover());
-        $request->update(['status' => 'processing', 'processing_token' => 'live', 'lease_expires_at' => now()->addMinute()]);
+        $request->update(['status' => 'processing', 'processing_token' => (string) Str::uuid(), 'lease_expires_at' => now()->addMinute()]);
         self::assertSame(0, $renders->recover());
         Bus::assertNothingDispatched();
     }
@@ -100,7 +101,7 @@ final class RenderQueueTest extends TestCase
     {
         $request = $this->accepted();
         $request->update(['status' => 'processing', 'attempts' => 1, 'generation' => 3,
-            'processing_token' => 'old-worker', 'lease_expires_at' => now()->subSecond()]);
+            'processing_token' => (string) Str::uuid(), 'lease_expires_at' => now()->subSecond()]);
         Bus::fake();
         $renders = app(Templates::class)->renders();
         self::assertSame(1, $renders->recover());

@@ -8,6 +8,8 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Nvl\Media\Models\Media;
 use Nvl\Templates\Contracts\DocumentCompiler;
 use Nvl\Templates\Exceptions\RetryableRenderException;
@@ -52,6 +54,23 @@ final class RenderExecutionTest extends TestCase
         self::assertSame(1, Media::query()->count());
         self::assertNotNull(Media::query()->find($done->result['mediaId']));
         self::assertNotNull($done->expires_at);
+    }
+
+    public function test_a_malformed_processing_token_is_refused_before_the_request_is_claimed(): void
+    {
+        $accepted = $this->accepted();
+        $renders = app(Templates::class)->renders();
+        try {
+            // PostgreSQL rejects this value for the uuid column and the request would fail for good.
+            $renders->process($accepted->id, null, 'worker-1');
+            self::fail('A malformed processing token was accepted.');
+        } catch (ValidationException $error) {
+            self::assertArrayHasKey('token', $error->errors());
+        }
+        $current = $renders->get($accepted->id);
+        self::assertSame('pending', $current->status);
+        self::assertSame(0, $current->attempts);
+        self::assertSame('completed', $renders->process($accepted->id, null, (string) Str::uuid())->status);
     }
 
     public function test_new_publications_do_not_change_an_accepted_render(): void

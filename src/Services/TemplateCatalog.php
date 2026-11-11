@@ -73,7 +73,7 @@ final readonly class TemplateCatalog
             Access::authorize('read');
             $controls = $this->controls($query, assets: true);
             $builder = TemplateAsset::query()->whereNull('archived_at')
-                ->whereNotNull('media_id')->where('media_id', '!=', '')
+                ->whereNotNull('media_id')
                 ->whereNotNull('media_revision')->where('media_revision', '>', 0)
                 ->where('size', '>', 0)->where('checksum', '!=', '');
             $types = Capabilities::assetTypesByTarget();

@@ -6,6 +6,7 @@ namespace Nvl\Templates\Tests\Canonical;
 
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Nvl\Templates\Models\TemplateResourceRevision;
 use Nvl\Templates\Tests\CanonicalTestCase as TestCase;
@@ -46,6 +47,25 @@ final class ResourceClonerTest extends TestCase
         [$again,$reuse] = app(ResourceCloner::class)->copy($t, $raw);
         self::assertSame($source, $again);
         self::assertSame($map, $reuse);
+    }
+
+    public function test_an_existing_copy_is_reused_when_the_database_returns_its_provenance_keys_in_another_order(): void
+    {
+        $api = app(Templates::class);
+        $g = $api->createGroup('reordered', 'Reordered');
+        $t = $api->createTemplate('reordered-target', 'Target', $g->id);
+        $r = $api->createResource('reordered-source', 'Source', 'content', 'group', $g->id);
+        $api->publishResource($r->id, ['value' => 'One'], 0);
+        $raw = ['dependencies' => [['resourceId' => $r->id, 'revision' => 1]]];
+        [, $map] = app(ResourceCloner::class)->copy($t, $raw);
+        $copy = TemplateResourceRevision::query()->findOrFail($map[$r->id.'@1']['revisionId']);
+        // MySQL's JSON type returns object keys in its own order; emulate that on every driver.
+        DB::table($copy->getTable())->where('id', $copy->id)->update(['provenance' => json_encode(array_reverse($copy->provenance, true), JSON_THROW_ON_ERROR)]);
+
+        [, $again] = app(ResourceCloner::class)->copy($t, $raw);
+
+        self::assertSame($map, $again);
+        self::assertSame(1, TemplateResourceRevision::query()->where('origin_revision_id', $copy->origin_revision_id)->count());
     }
 
     public function test_ordinary_content_objects_with_resource_shaped_fields_are_not_dependencies(): void

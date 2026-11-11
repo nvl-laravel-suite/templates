@@ -115,6 +115,11 @@ final class BindingManifestValidator
             if (in_array($node->nodeType, [XML_COMMENT_NODE, XML_PI_NODE], true) && $this->tokens($node->nodeValue ?? '')) {
                 $this->fail('Bindings are not allowed in comments or instructions.');
             }
+            // Browsers and mail clients end or interpret such comments differently
+            // from this parser, exposing markup that was never validated here.
+            if ($node->nodeType === XML_COMMENT_NODE && strpbrk($node->nodeValue ?? '', '<>') !== false) {
+                $this->fail('Comments must not contain markup.');
+            }
             if ($node->nodeType === XML_TEXT_NODE) {
                 $parent = strtolower($node->parentNode->nodeName ?? '');
                 if ($parent === 'style') {
@@ -183,7 +188,7 @@ final class BindingManifestValidator
     /** @param array<string,Binding> $bindings */
     private function validateCss(string $css, array $bindings): void
     {
-        if (preg_match('/[<>\\\\]|expression\s*\(|@import|url\s*\(|javascript:|file:/i', $css)) {
+        if (preg_match('/[<>\\\\]|expression\s*\(|@import|url\s*\(|image-set\s*\(|javascript:|file:/i', $css)) {
             $this->fail('Unsafe or unsupported stylesheet.');
         }
         preg_match_all(self::TOKEN, $css, $occurrences, PREG_OFFSET_CAPTURE);

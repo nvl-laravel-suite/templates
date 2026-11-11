@@ -862,7 +862,7 @@ final class FamilyMaterializer
 
     private function style(string $property, string $value): void
     {
-        if (! preg_match('/^(--[a-zA-Z][a-zA-Z0-9-]*|[a-zA-Z][a-zA-Z0-9-]*)$/D', $property) || preg_match('/[<>\\\\{};]/', $value) || preg_match('/url\s*\(|expression\s*\(|javascript:|behavior\s*:/i', $value)) {
+        if (! preg_match('/^(--[a-zA-Z][a-zA-Z0-9-]*|[a-zA-Z][a-zA-Z0-9-]*)$/D', $property) || preg_match('/[<>\\\\{};]/', $value) || preg_match('/url\s*\(|image-set\s*\(|expression\s*\(|javascript:|behavior\s*:/i', $value)) {
             $this->fail('Use a plain CSS declaration; media URLs belong in assets.');
         }
     }

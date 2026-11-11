@@ -46,11 +46,6 @@ final class TemplateOperation
         return $this->admitActor($actor);
     }
 
-    public function currentActor(): Authenticatable|SystemActor
-    {
-        return $this->actor();
-    }
-
     /** Keep canonical identity aligned with the currently admitted native context. */
     private function admitActor(Authenticatable|SystemActor $actor): Authenticatable|SystemActor
     {

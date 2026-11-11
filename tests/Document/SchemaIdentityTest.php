@@ -27,6 +27,11 @@ final class SchemaIdentityTest extends CanonicalTestCase
         'resources', 'resource_revisions', 'assets', 'renders', 'family_changes',
     ];
 
+    /** Released contents that a host may still hold as a published copy. */
+    private const array PREVIOUS_CHECKSUMS = [
+        '2026_11_02_000001_nvl_templates_create_document_graph' => '78c6f505ec23071852dd06bf3e1508cfd9940d0c1f18be12c5fe5f20d6bf00b9',
+    ];
+
     private const array MIGRATIONS = [
         '2026_11_02_000001_nvl_templates_create_document_graph',
         '2026_11_02_000002_nvl_templates_add_family_workflows',
@@ -58,7 +63,7 @@ final class SchemaIdentityTest extends CanonicalTestCase
             $path = $this->packageRoot().'/'.$migration['path'];
             self::assertSame($name, $migration['name']);
             self::assertSame(hash_file('sha256', $path), $migration['legacy_checksum']);
-            self::assertNull($migration['previous_checksum']);
+            self::assertSame(self::PREVIOUS_CHECKSUMS[$name] ?? null, $migration['previous_checksum']);
             self::assertSame([
                 'package' => 'templates', 'name' => $name, 'legacy' => $name,
                 'path' => realpath($path), 'canonical' => realpath($path),

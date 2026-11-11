@@ -34,6 +34,8 @@ abstract class TemplateModel extends Model implements Ownable
 
     protected string $tableKey;
 
+    protected static string $builder = TemplateBuilder::class;
+
     public function getTable(): string
     {
         return Scope::table($this->tableKey);
