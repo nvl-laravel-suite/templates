@@ -5,10 +5,18 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+## [7.0.4] - 2026-11-12
+
 ### Fixed
 
 - Keep unscoped Templates readable alongside unrelated adopted resources. The forward migration removes unused ownership columns and preserves owned graphs.
 - Recover a MySQL installation interrupted by the 7.0.2 resource index error with `nvl:templates:schema:recover`.
+
+<!-- NVL GENERATED CHANGES START -->
+### Changed
+
+- recover and isolate Templates ownership migrations
+<!-- NVL GENERATED CHANGES END -->
 
 ## [7.0.3] - 2026-11-11
 
