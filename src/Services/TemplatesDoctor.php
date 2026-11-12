@@ -7,6 +7,8 @@ namespace Nvl\Templates\Services;
 use InvalidArgumentException;
 use Nvl\Media\Services\MediaModelRegistry;
 use Nvl\Support\Ownership\Contracts\OwnershipReadiness;
+use Nvl\Support\Ownership\Services\OwnershipResourceRegistry;
+use Nvl\Support\Ownership\Services\PersistedOwnershipStorage;
 use Nvl\Support\Schema\SchemaIdentities;
 use Nvl\Support\Schema\SchemaShape;
 use Nvl\Templates\Contracts\TemplateAuthorization;
@@ -26,6 +28,7 @@ final readonly class TemplatesDoctor
         private TemplateModelRegistry $models,
         private TemplateAuthorization $authorization,
         private OwnershipReadiness $ownership,
+        private OwnershipResourceRegistry $resources,
     ) {}
 
     /** @return array{scope:string,healthy:bool,checks:array<string,bool>} */
@@ -72,6 +75,9 @@ final readonly class TemplatesDoctor
             $model = $this->models->newInstance();
             $connection = $model->getConnection();
             $schema = $connection->getSchemaBuilder();
+            $owned = $model::ownershipDefinition()->strategy !== 'unscoped';
+            $storage = new PersistedOwnershipStorage;
+            $markers = $owned ? [] : $storage->probe($connection)['markers'];
             $checks = ['media.same_connection' => $connection === MediaModelRegistry::newInstance()->getConnection()];
             $tables = SchemaIdentities::package('templates')['tables'] ?? [];
             $checks['database.document_contract'] = isset($tables['drafts'], $tables['group_revisions'], $tables['family_changes']);
@@ -83,13 +89,28 @@ final readonly class TemplatesDoctor
 
                         continue;
                     }
-                    SchemaShape::assertCompatible($schema, $name, $table['columns'], $table['keys'], $table['foreign_keys']);
+                    $resource = 'templates.'.str_replace('_', '-', $key);
+                    $columns = array_diff_key($table['columns'], ['owner_scope_key' => true, 'owner_reference' => true]);
+                    if ($owned) {
+                        $columns['owner_scope_key'] = 'string';
+                        if ($this->resources->get($resource)->ownership->strategy === 'captured') {
+                            $columns['owner_reference'] = 'json';
+                        }
+                    } else {
+                        $storage->assertMarkers($markers, $resource, $name);
+                        if (array_intersect(['owner_scope_key', 'owner_reference'], $schema->getColumnListing($name)) !== []) {
+                            $checks['database.'.$key] = false;
+
+                            continue;
+                        }
+                    }
+                    SchemaShape::assertCompatible($schema, $name, $columns, $table['keys'], $table['foreign_keys']);
                     $checks['database.'.$key] = true;
                 } catch (Throwable) {
                     $checks['database.'.$key] = false;
                 }
             }
-            if ($model::ownershipDefinition()->strategy !== 'unscoped') {
+            if ($owned) {
                 try {
                     $this->ownership->assertActive('templates.templates');
                     $checks['ownership.active'] = true;

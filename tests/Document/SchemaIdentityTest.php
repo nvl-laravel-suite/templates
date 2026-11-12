@@ -30,12 +30,14 @@ final class SchemaIdentityTest extends CanonicalTestCase
     /** Released contents that a host may still hold as a published copy. */
     private const array PREVIOUS_CHECKSUMS = [
         '2026_11_02_000001_nvl_templates_create_document_graph' => '78c6f505ec23071852dd06bf3e1508cfd9940d0c1f18be12c5fe5f20d6bf00b9',
+        '2026_11_02_000002_nvl_templates_add_family_workflows' => '8c99e7c78f56a917b639fd14f1ee0a8ad7076849e19d743b3bcc13865ba46446',
     ];
 
     private const array MIGRATIONS = [
         '2026_11_02_000001_nvl_templates_create_document_graph',
         '2026_11_02_000002_nvl_templates_add_family_workflows',
         '2026_11_02_000003_nvl_templates_add_render_execution',
+        '2026_11_12_000001_nvl_templates_remove_unscoped_ownership_columns',
     ];
 
     public function test_manifest_describes_every_real_document_column_key_and_foreign_key(): void
@@ -54,7 +56,7 @@ final class SchemaIdentityTest extends CanonicalTestCase
         }
     }
 
-    public function test_native_identity_recognizes_only_the_three_executable_document_migrations(): void
+    public function test_native_identity_recognizes_only_the_executable_document_migrations(): void
     {
         $manifest = $this->identity();
         self::assertSame(self::MIGRATIONS, array_keys($manifest['migrations']));
@@ -64,6 +66,9 @@ final class SchemaIdentityTest extends CanonicalTestCase
             self::assertSame($name, $migration['name']);
             self::assertSame(hash_file('sha256', $path), $migration['legacy_checksum']);
             self::assertSame(self::PREVIOUS_CHECKSUMS[$name] ?? null, $migration['previous_checksum']);
+            if ($name === self::MIGRATIONS[0]) {
+                self::assertSame(['6bfd1b22c1b64b2482ab0c65ac4bb90617120827614c0c824042884ea4c8b3c4'], $migration['previous_checksums']);
+            }
             self::assertSame([
                 'package' => 'templates', 'name' => $name, 'legacy' => $name,
                 'path' => realpath($path), 'canonical' => realpath($path),
@@ -152,7 +157,7 @@ final class SchemaIdentityTest extends CanonicalTestCase
         $table = TemplatesTables::get($key);
         Schema::table($table, function (Blueprint $blueprint) use ($kind): void {
             match ($kind) {
-                'column' => $blueprint->dropColumn('owner_reference'),
+                'column' => $blueprint->dropColumn('name'),
                 'unique' => $blueprint->dropUnique('tpl_resource_key'),
                 'foreign' => $blueprint->dropForeign(['scope_id', 'group_id']),
                 default => throw new LogicException('Unknown schema regression fixture.'),

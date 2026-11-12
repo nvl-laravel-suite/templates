@@ -76,6 +76,7 @@ final class FrontendPublicationTest extends TestCase
             '2031_01_02_030406_nvl_templates_create_document_graph.php',
             '2031_01_02_030407_nvl_templates_add_family_workflows.php',
             '2031_01_02_030408_nvl_templates_add_render_execution.php',
+            '2031_01_02_030409_nvl_templates_remove_unscoped_ownership_columns.php',
         ], array_map(static fn ($file): string => $file->getFilename(), $files));
         foreach ($files as $file) {
             $sources = glob(dirname(__DIR__, 2).'/database/document-migrations/*'.substr($file->getFilename(), 18));

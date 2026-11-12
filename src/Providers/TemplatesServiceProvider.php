@@ -19,6 +19,7 @@ use Nvl\Support\Traits\RegistersNamespacedResources;
 use Nvl\Templates\Console\Commands\PruneTemplateRenders;
 use Nvl\Templates\Console\Commands\PublishTemplateFrontend;
 use Nvl\Templates\Console\Commands\RecoverTemplateRenders;
+use Nvl\Templates\Console\Commands\RecoverTemplatesDocumentSchema;
 use Nvl\Templates\Console\Commands\TemplatesDoctorCommand;
 use Nvl\Templates\Contracts\ContextProvider;
 use Nvl\Templates\Contracts\DnsResolver;
@@ -101,7 +102,7 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
         $this->publishesMigrations([$root.'/database/document-migrations' => database_path('migrations')], 'nvl-templates-migrations');
         $this->publishes([$root.'/resources/boost/skills' => base_path('.agents/skills')], 'nvl-templates-skills');
         if ($this->app->runningInConsole()) {
-            $this->commands([TemplatesDoctorCommand::class, RecoverTemplateRenders::class, PruneTemplateRenders::class, PublishTemplateFrontend::class]);
+            $this->commands([TemplatesDoctorCommand::class, RecoverTemplateRenders::class, PruneTemplateRenders::class, PublishTemplateFrontend::class, RecoverTemplatesDocumentSchema::class]);
         }
     }
 }

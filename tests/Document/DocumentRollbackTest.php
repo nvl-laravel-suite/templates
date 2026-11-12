@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Nvl\Templates\Tests\Document;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
+use LogicException;
 use Nvl\Support\Enums\SystemActor;
+use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Models\TemplateAsset;
 use Nvl\Templates\Models\TemplateRevision;
 use Nvl\Templates\Services\RenderRequests;
@@ -21,6 +26,7 @@ use Nvl\Templates\Services\TemplateRenderer;
 use Nvl\Templates\Tests\CanonicalTestCase;
 use Nvl\Templates\Tests\Support\DocumentClient;
 use Nvl\Templates\Tests\Support\Documents;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class DocumentRollbackTest extends CanonicalTestCase
 {
@@ -194,6 +200,196 @@ final class DocumentRollbackTest extends CanonicalTestCase
             } catch (InvalidArgumentException $error) {
                 self::assertStringContainsString('runner-owned disposable', $error->getMessage());
             }
+        }
+    }
+
+    public function test_placeholder_upgrade_preserves_documents_and_can_be_retried(): void
+    {
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->addLegacyOwnershipPlaceholders();
+        $template = app(DocumentClient::class)->createTemplate('prior-document', 'Prior document');
+        $schema = DB::connection()->getSchemaBuilder();
+        $schema->table(TemplatesTables::Groups, static fn (Blueprint $table) => $table->dropColumn('owner_reference'));
+
+        $migration = require __DIR__.'/../../database/document-migrations/2026_11_12_000001_nvl_templates_remove_unscoped_ownership_columns.php';
+        $migration->up();
+        $migration->up();
+        foreach (config('nvl-templates.tables') as $table) {
+            self::assertFalse($schema->hasColumn($table, 'owner_scope_key'));
+            self::assertFalse($schema->hasColumn($table, 'owner_reference'));
+        }
+        self::assertSame($template->id, app(DocumentClient::class)->getTemplate($template->id)->id);
+        $this->artisan('nvl:templates:doctor', ['--strict' => true, '--scope' => 'database'])->assertSuccessful();
+    }
+
+    #[DataProvider('protectedPlaceholders')]
+    public function test_placeholder_upgrade_checks_all_tables_before_removing_columns(string $protection): void
+    {
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->addLegacyOwnershipPlaceholders();
+        if ($protection === 'value') {
+            $template = app(DocumentClient::class)->createTemplate('prior-document', 'Prior document');
+            DB::table(TemplatesTables::FamilyChanges)->insert([
+                'id' => '3202bd1f-5079-497b-943e-846c80599adb', 'scope_id' => 'app', 'template_id' => $template->id,
+                'operation' => 'detach', 'expected_version' => 0, 'source_checksum' => hash('sha256', '{}'),
+                'inputs' => '{}', 'result' => '{}', 'owner_reference' => '{}',
+            ]);
+        } else {
+            Schema::table(TemplatesTables::FamilyChanges, static fn (Blueprint $table) => $table->index('owner_scope_key', 'host_owner_index'));
+        }
+
+        $migration = require __DIR__.'/../../database/document-migrations/2026_11_12_000001_nvl_templates_remove_unscoped_ownership_columns.php';
+        try {
+            $migration->up();
+            self::fail('The migration must refuse in-use ownership columns.');
+        } catch (LogicException $exception) {
+            self::assertStringContainsString(TemplatesTables::FamilyChanges, $exception->getMessage());
+        }
+        foreach (config('nvl-templates.tables') as $table) {
+            self::assertTrue(Schema::hasColumns($table, ['owner_scope_key', 'owner_reference']));
+        }
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function protectedPlaceholders(): iterable
+    {
+        yield 'non-null ownership value' => ['value'];
+        yield 'ownership index' => ['index'];
+    }
+
+    private function addLegacyOwnershipPlaceholders(): void
+    {
+        foreach (config('nvl-templates.tables') as $table) {
+            Schema::table($table, static function (Blueprint $blueprint): void {
+                $blueprint->string('owner_scope_key', 191)->nullable();
+                $blueprint->text('owner_reference')->nullable();
+            });
+        }
+    }
+
+    public function test_recovers_the_empty_templates_7_0_2_mysql_failure_before_retrying_migration(): void
+    {
+        $this->createInterruptedDocumentGraph();
+        Schema::create('host_upgrade_seed', static fn (Blueprint $table) => $table->string('value'));
+        DB::table('host_upgrade_seed')->insert(['value' => 'retained']);
+
+        $this->artisan('nvl:templates:schema:recover')->expectsOutputToContain('Dry run')->assertSuccessful();
+        self::assertTrue(Schema::hasTable(TemplatesTables::Resources));
+        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertSuccessful();
+        self::assertFalse(Schema::hasTable(TemplatesTables::Resources));
+        self::assertFalse(Schema::hasTable(TemplatesTables::Templates));
+        self::assertFalse(Schema::hasTable(TemplatesTables::Groups));
+
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        self::assertTrue(Schema::hasIndex(TemplatesTables::Resources, ['scope_id', 'kind', 'owner_key', 'key'], 'unique'));
+        self::assertSame('retained', DB::table('host_upgrade_seed')->value('value'));
+        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertSuccessful();
+        self::assertTrue(Schema::hasTable(TemplatesTables::Resources));
+    }
+
+    public function test_recovery_cannot_drop_tables_after_losing_its_mysql_lock_session(): void
+    {
+        $this->createInterruptedDocumentGraph();
+        $source = DB::connection();
+        $session = $source->scalar('select connection_id()', [], false);
+        self::assertIsInt($session);
+        config(['database.connections.templates_recovery_peer' => $source->getConfig()]);
+        $peer = DB::connection('templates_recovery_peer');
+        $interrupted = false;
+        $source->listen(static function (QueryExecuted $query) use ($source, $peer, $session, &$interrupted): void {
+            if ($interrupted || $query->connection !== $source || ! str_starts_with($query->sql, 'select exists(')
+                || ! str_contains($query->sql, '`nvl_templates_resources`')) {
+                return;
+            }
+            $interrupted = true;
+            $peer->unprepared('KILL CONNECTION '.$session);
+            $peer->table(TemplatesTables::Groups)->insert([
+                'id' => 'a59ec01d-e44b-4921-89d1-baf0022170a9', 'scope_id' => 'app', 'key' => 'late', 'name' => 'Late insert',
+            ]);
+        });
+
+        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertFailed();
+        self::assertTrue($interrupted);
+        self::assertSame('Late insert', $peer->table(TemplatesTables::Groups)->value('name'));
+        self::assertTrue($peer->getSchemaBuilder()->hasTable(TemplatesTables::Resources));
+    }
+
+    #[DataProvider('unsafeRecoveryFootprints')]
+    public function test_refuses_to_recover_an_unverified_document_footprint(string $change): void
+    {
+        $this->createInterruptedDocumentGraph();
+        match ($change) {
+            'row' => DB::table(TemplatesTables::Groups)->insert([
+                'id' => '109e65ee-29cb-4ecb-8a5c-afad31e38bc4', 'scope_id' => 'app', 'key' => 'retain', 'name' => 'Retain',
+            ]),
+            'index' => Schema::table(TemplatesTables::Resources, static fn (Blueprint $table) => $table->index('name')),
+            'trigger' => DB::unprepared('create trigger host_retained_group before insert on nvl_templates_groups for each row set NEW.name = NEW.name'),
+            'dependent table' => Schema::create('host_group_reference', static function (Blueprint $table): void {
+                $table->uuid('group_id');
+                $table->foreign('group_id')->references('id')->on(TemplatesTables::Groups);
+            }),
+        };
+
+        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertFailed();
+        self::assertTrue(Schema::hasTable(TemplatesTables::Resources));
+        self::assertTrue(Schema::hasTable(TemplatesTables::Templates));
+        self::assertTrue(Schema::hasTable(TemplatesTables::Groups));
+        if ($change === 'row') {
+            self::assertSame('Retain', DB::table(TemplatesTables::Groups)->value('name'));
+        }
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unsafeRecoveryFootprints(): iterable
+    {
+        foreach (['row', 'index', 'trigger', 'dependent table'] as $change) {
+            yield $change => [$change];
+        }
+    }
+
+    private function createInterruptedDocumentGraph(): void
+    {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            self::markTestSkipped('Templates 7.0.2 recovery requires a native MySQL database.');
+        }
+        $this->artisan('migrate:install')->assertSuccessful();
+
+        try {
+            foreach (['groups', 'templates', 'resources'] as $key) {
+                Schema::create(TemplatesTables::get($key), static function (Blueprint $table) use ($key): void {
+                    $table->charset('utf8mb4');
+                    $table->engine('InnoDB');
+                    $table->uuid('id')->primary();
+                    $table->string('scope_id', 128);
+                    $table->string('owner_scope_key', 191)->nullable();
+                    $table->text('owner_reference')->nullable();
+                    $table->timestamps();
+                    $table->unique(['scope_id', 'id']);
+                    $table->string('key', 255);
+                    $table->string('name', 255);
+                    $table->string('status', 255)->default('active');
+                    $table->unsignedInteger('version')->default(0);
+                    $table->uuid('current_revision_id')->nullable();
+                    if ($key === 'resources') {
+                        $table->string('kind', 255);
+                        $table->string('scope', 255);
+                        $table->string('owner_key', 255);
+                        $table->uuid('group_id')->nullable();
+                        $table->uuid('template_id')->nullable();
+                        $table->unique(['scope_id', 'kind', 'owner_key', 'key'], 'tpl_resource_key');
+                    } else {
+                        if ($key === 'templates') {
+                            $table->uuid('group_id')->nullable();
+                            $table->foreign(['scope_id', 'group_id'])->references(['scope_id', 'id'])->on(TemplatesTables::Groups)->restrictOnDelete();
+                        }
+                        $table->unique(['scope_id', 'key']);
+                    }
+                });
+            }
+            self::fail('Expected the published Templates index to exceed the InnoDB limit.');
+        } catch (QueryException $exception) {
+            self::assertSame(1071, $exception->errorInfo[1]);
+            self::assertStringContainsString('tpl_resource_key', $exception->getSql());
         }
     }
 }

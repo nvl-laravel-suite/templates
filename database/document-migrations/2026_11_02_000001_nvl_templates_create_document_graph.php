@@ -26,8 +26,6 @@ return new class extends Migration
         $base = function (Blueprint $t): void {
             $t->uuid('id')->primary();
             $t->string('scope_id', 128);
-            $t->string('owner_scope_key', 191)->nullable();
-            $t->text('owner_reference')->nullable();
             $t->timestamps();
             $t->unique(['scope_id', 'id']);
         };

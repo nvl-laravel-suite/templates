@@ -129,6 +129,13 @@ final class OwnedDocumentMediaTest extends TestCase
     public function test_fresh_owned_installation_supports_native_document_and_retained_media_workflows(): void
     {
         $this->activate();
+        $migration = require dirname(__DIR__, 3).'/database/document-migrations/2026_11_12_000001_nvl_templates_remove_unscoped_ownership_columns.php';
+        $migration->up();
+        $schema = DB::connection()->getSchemaBuilder();
+        foreach (config('nvl-templates.tables') as $table) {
+            self::assertTrue($schema->hasColumn($table, 'owner_scope_key'));
+        }
+        $this->artisan('nvl:templates:doctor', ['--strict' => true, '--scope' => 'database'])->assertSuccessful();
         $this->within(7, function (TestActor $actor): void {
             self::assertNull(Auth::user());
             [$template, $revision] = $this->published($actor);

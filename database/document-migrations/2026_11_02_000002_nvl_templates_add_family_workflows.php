@@ -27,8 +27,6 @@ return new class extends Migration
         $schema->create(Scope::table('family_changes'), function (Blueprint $t): void {
             $t->uuid('id')->primary();
             $t->string('scope_id', 128);
-            $t->string('owner_scope_key', 191)->nullable();
-            $t->text('owner_reference')->nullable();
             $t->uuid('template_id');
             $t->string('operation');
             $t->unsignedInteger('expected_version');
