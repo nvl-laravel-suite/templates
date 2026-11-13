@@ -5,6 +5,8 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+## [7.0.5] - 2026-11-13
+
 ### Changed
 
 - Maintain the document schema on SQLite and PostgreSQL.
@@ -12,6 +14,12 @@ All notable changes to `nvl/templates` are documented here.
 ### Fixed
 
 - Route post-commit render dispatch through the configured Templates database connection, harden binding and JSON wire guards, and validate `TemplateAuthorization` container bindings strictly.
+
+<!-- NVL GENERATED CHANGES START -->
+### Changed
+
+- harden package runtime safety, PostgreSQL portability and test performance
+<!-- NVL GENERATED CHANGES END -->
 
 ## [7.0.4] - 2026-11-12
 
