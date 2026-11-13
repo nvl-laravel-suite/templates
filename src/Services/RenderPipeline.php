@@ -214,6 +214,9 @@ final class RenderPipeline
             if (($subject !== null && ! is_string($subject)) || ($text !== null && ! is_string($text))) {
                 throw ValidationException::withMessages(['compiler' => ['Compiler sidecars must be strings or null.']]);
             }
+            if ($subject !== null && (preg_match('/[\r\n\x00]/', $subject) === 1 || mb_strlen($subject) > 998)) {
+                throw ValidationException::withMessages(['subject' => ['Subject must be one bounded line.']]);
+            }
             if ($target === 'email') {
                 $finalized = app(EmailProfile::class)->finalize($html, $css);
                 $html = $finalized['html'];

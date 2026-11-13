@@ -55,7 +55,7 @@ final class CompilerTest extends TestCase
 
     public function test_a_compiler_timeout_is_retryable_without_exposing_process_output(): void
     {
-        config()->set('nvl-templates.compiler.command', [PHP_BINARY, '-r', 'usleep(300000);']);
+        config()->set('nvl-templates.compiler.command', [PHP_BINARY, '-n', '-r', 'usleep(100000);']);
         config()->set('nvl-templates.compiler.timeout', 0.01);
         $this->expectException(RetryableRenderException::class);
         $this->expectExceptionMessage('compiler_timeout');
@@ -98,8 +98,30 @@ final class CompilerTest extends TestCase
 
     public function test_a_positive_numeric_string_keeps_the_configured_compiler_usable(): void
     {
-        config()->set('nvl-templates.compiler.command', [PHP_BINARY, '-r', 'echo json_encode(["html" => "<p>Done</p>", "css" => ""]);']);
+        config()->set('nvl-templates.compiler.command', [PHP_BINARY, '-n', '-r', 'echo json_encode(["html" => "<p>Done</p>", "css" => ""]);']);
         config()->set('nvl-templates.compiler.timeout', '1.5');
         self::assertSame(['html' => '<p>Done</p>', 'css' => ''], app(LocalNodeCompiler::class)->compile(Documents::standalone(), ['facts' => ['code' => 'ABC']]));
+    }
+
+    public function test_shared_engine_rejects_control_characters_in_compiled_subject(): void
+    {
+        $driver = new class implements DocumentCompiler
+        {
+            public function compile(array $document, array $data, array $assets = []): array
+            {
+                return ['html' => '<p>Shared</p>', 'css' => '', 'subject' => "Header\r\nBcc: attacker@example.test"];
+            }
+        };
+        app()->instance('test.compiler', $driver);
+        config()->set('nvl-templates.compiler.driver', 'test.compiler');
+        $api = app(Templates::class);
+        $t = $api->createTemplate('dynamic-subject', 'Dynamic Subject');
+        $doc = Documents::standalone();
+        $doc['artifacts']['engine'] = 'shared';
+        $d = $api->saveDraft($t->id, $doc, 0);
+        $r = $api->publish($t->id, $d->version);
+
+        $this->expectException(ValidationException::class);
+        $api->render($r->id, facts: ['code' => 'ABC']);
     }
 }

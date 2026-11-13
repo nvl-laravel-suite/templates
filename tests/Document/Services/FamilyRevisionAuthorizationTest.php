@@ -22,12 +22,15 @@ use Nvl\Templates\Services\TemplateLifecycle;
 use Nvl\Templates\Services\TemplateReader;
 use Nvl\Templates\Support\CanonicalJson;
 use Nvl\Templates\Tests\Support\Documents;
+use Nvl\Templates\Tests\Support\MigratesInMemorySqlite;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class FamilyRevisionAuthorizationTest extends TestCase
 {
+    use MigratesInMemorySqlite;
+
     protected function getPackageProviders($app): array
     {
         return [LocaleServiceProvider::class, TranslatableServiceProvider::class, TemplatesServiceProvider::class];
@@ -43,7 +46,7 @@ final class FamilyRevisionAuthorizationTest extends TestCase
     {
         parent::setUp();
         $this->denyRevision(null);
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->migrateInMemorySqlite();
     }
 
     #[DataProvider('editorSources')]

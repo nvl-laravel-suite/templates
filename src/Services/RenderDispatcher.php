@@ -6,6 +6,7 @@ namespace Nvl\Templates\Services;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Validation\ValidationException;
+use Nvl\Support\Events\ConnectionCommitCallbacks;
 use Nvl\Support\Ownership\ValueObjects\OwnershipJobEnvelope;
 use Nvl\Templates\Exceptions\RenderUnavailable;
 use Nvl\Templates\Jobs\RenderTemplateJob;
@@ -51,7 +52,7 @@ final class RenderDispatcher
             $generation = $record->generation;
             $execution = DocumentInputs::map($record->snapshot['execution'] ?? null, 'execution');
             $envelope = OwnershipJobEnvelope::fromArray(DocumentInputs::map($execution['ownership'] ?? null, 'ownership'));
-            (new TemplateRender)->getConnection()->afterCommit(function () use ($id, $scope, $generation, $envelope): void {
+            app(ConnectionCommitCallbacks::class)->afterCommit((new TemplateRender)->getConnection(), function () use ($id, $scope, $generation, $envelope): void {
                 try {
                     Bus::dispatch(new RenderTemplateJob($id, $scope, $generation, $envelope));
                 } catch (\Throwable) {

@@ -38,6 +38,9 @@ use Nvl\Templates\Support\Compiler;
  */
 final class DocumentValidator
 {
+    /** @var array<array-key,mixed>|null */
+    private static ?array $definitionSchema = null;
+
     public function __construct(private SchemaValidator $schemas, private BindingManifestValidator $manifest) {}
 
     /** @param array<array-key,mixed> $document */
@@ -73,12 +76,14 @@ final class DocumentValidator
         if (isset($document['rendering']) && ($this->map($document['rendering'], 'rendering')['engine'] ?? null) !== ($artifacts['engine'] ?? 'bindings')) {
             $this->fail('rendering.engine', 'The authored engine must match the compiled artifact.');
         }
-        $definitionJson = file_get_contents(__DIR__.'/../../resources/contracts/template-definition.v1.schema.json');
-        if ($definitionJson === false) {
-            throw new \RuntimeException('The bundled definition schema is unavailable.');
+        if (self::$definitionSchema === null) {
+            $definitionJson = file_get_contents(__DIR__.'/../../resources/contracts/template-definition.v1.schema.json');
+            if ($definitionJson === false) {
+                throw new \RuntimeException('The bundled definition schema is unavailable.');
+            }
+            self::$definitionSchema = $this->map(json_decode($definitionJson, true, 64, JSON_THROW_ON_ERROR), 'schema');
         }
-        $definitionSchema = $this->map(json_decode($definitionJson, true, 64, JSON_THROW_ON_ERROR), 'schema');
-        $this->schemas->validate($definition, $definitionSchema, 'source.definition');
+        $this->schemas->validate($definition, self::$definitionSchema, 'source.definition');
         foreach (['Inputs' => 'inputs', 'Settings' => 'settings'] as $suffix => $namespace) {
             $properties = $this->map($this->map($runtimeSchemas[$namespace] ?? [], 'dataSchema')['properties'] ?? [], 'dataSchema.properties');
             foreach ($this->map($document['exposed'.$suffix] ?? [], 'exposed'.$suffix) as $id) {

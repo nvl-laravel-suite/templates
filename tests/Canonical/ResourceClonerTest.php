@@ -59,7 +59,7 @@ final class ResourceClonerTest extends TestCase
         $raw = ['dependencies' => [['resourceId' => $r->id, 'revision' => 1]]];
         [, $map] = app(ResourceCloner::class)->copy($t, $raw);
         $copy = TemplateResourceRevision::query()->findOrFail($map[$r->id.'@1']['revisionId']);
-        // MySQL's JSON type returns object keys in its own order; emulate that on every driver.
+        // Emulate a database reordering the JSON object keys.
         DB::table($copy->getTable())->where('id', $copy->id)->update(['provenance' => json_encode(array_reverse($copy->provenance, true), JSON_THROW_ON_ERROR)]);
 
         [, $again] = app(ResourceCloner::class)->copy($t, $raw);

@@ -70,7 +70,7 @@ final class BindingRenderer
             ['html' => $html, 'css' => $css] = app(EmailProfile::class)->finalize($html, $css);
         }
         $subject = isset($artifact['subject']) ? strtr($artifact['subject'], $plainValues) : null;
-        if ($subject !== null && (preg_match('/[\r\n]/', $subject) || mb_strlen($subject) > 998)) {
+        if ($subject !== null && (preg_match('/[\r\n\x00]/', $subject) === 1 || mb_strlen($subject) > 998)) {
             throw ValidationException::withMessages(['subject' => ['Subject must be one bounded line.']]);
         }
         if (strlen($html.$css) > config('nvl-templates.limits.output_bytes')) {

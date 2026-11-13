@@ -38,11 +38,14 @@ use Nvl\Templates\Services\TemplateReader;
 use Nvl\Templates\Services\TemplateRenderer;
 use Nvl\Templates\Support\CanonicalJson;
 use Nvl\Templates\Tests\Support\Documents;
+use Nvl\Templates\Tests\Support\MigratesInMemorySqlite;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\TestCase;
 
 final class DocumentServicesTest extends TestCase
 {
+    use MigratesInMemorySqlite;
+
     protected function getPackageProviders($app): array
     {
         return [LocaleServiceProvider::class, TranslatableServiceProvider::class, TemplatesServiceProvider::class];
@@ -75,7 +78,7 @@ final class DocumentServicesTest extends TestCase
                 return true;
             }
         });
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->migrateInMemorySqlite();
     }
 
     private function document(): array

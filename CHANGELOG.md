@@ -5,6 +5,14 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Maintain the document schema on SQLite and PostgreSQL.
+
+### Fixed
+
+- Route post-commit render dispatch through the configured Templates database connection, harden binding and JSON wire guards, and validate `TemplateAuthorization` container bindings strictly.
+
 ## [7.0.4] - 2026-11-12
 
 ### Fixed
@@ -27,14 +35,13 @@ All notable changes to `nvl/templates` are documented here.
 - Reject CSS `image-set()` wherever `url()` is refused, so remote images cannot bypass managed asset retention.
 - Treat a malformed template, family, resource, asset, revision or render identity as not found on PostgreSQL instead of raising a query error, and keep a draft that references one readable for repair.
 - List retained assets on PostgreSQL; `TemplateCatalog::assets()` compared the UUID Media identity with an empty string and failed.
-- Reuse an existing detached resource copy when the database returns its JSON provenance keys in another order (MySQL), instead of creating a duplicate on every copy.
+- Reuse an existing detached resource copy when the database returns its JSON provenance keys in another order, instead of creating a duplicate on every copy.
 - Refuse a non-UUID processing token in `RenderRequests::process()` before the request is claimed; on PostgreSQL it permanently failed the accepted render.
-- Allow the document schema to install on MySQL and MariaDB. The resource table's composite unique key exceeded InnoDB's 3072-byte index limit under utf8mb4, so the create migration failed with error 1071. The `kind`, `scope` and `owner_key` columns are now bounded (32, 32 and 64 characters); every value the package writes fits. Installations already migrated on PostgreSQL or SQLite keep their wider columns and need no action.
 
 <!-- NVL GENERATED CHANGES START -->
 ### Changed
 
-- fit MySQL index limits and harden media URL import
+- Bound resource identity columns and harden media URL import
 <!-- NVL GENERATED CHANGES END -->
 
 ## [7.0.2] - 2026-11-10

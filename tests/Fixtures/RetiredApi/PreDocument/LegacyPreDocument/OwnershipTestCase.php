@@ -108,19 +108,18 @@ abstract class OwnershipTestCase extends TestCase
             'auth.providers.users.model' => OwnershipActor::class,
         ]);
         $app['config']->set('nvl-templates.definitions.other', $app['config']->get('nvl-templates.definitions.welcome'));
-        if (in_array(getenv('NVL_OWNERSHIP_TEST_DRIVER'), ['pgsql', 'mysql', 'mariadb'], true)) {
+        if (getenv('NVL_OWNERSHIP_TEST_DRIVER') === 'pgsql') {
             $database = getenv('NVL_OWNERSHIP_TEST_DATABASE');
             if (! is_string($database) || preg_match('/^nvl_own_test_[a-z0-9_]+$/D', $database) !== 1) {
                 throw new \RuntimeException('Native integration tests require a dedicated nvl_own_test_ database.');
             }
-            $driver = (string) getenv('NVL_OWNERSHIP_TEST_DRIVER');
-            $host = getenv('NVL_OWNERSHIP_TEST_HOST') ?: ($driver === 'pgsql' ? '/tmp' : '127.0.0.1');
-            $port = getenv('NVL_OWNERSHIP_TEST_PORT') ?: ($driver === 'pgsql' ? '5432' : '3306');
-            if (! in_array($host, ['127.0.0.1', 'localhost', '::1', ...($driver === 'pgsql' ? ['/tmp'] : [])], true) || ! ctype_digit($port)) {
+            $host = getenv('NVL_OWNERSHIP_TEST_HOST') ?: '/tmp';
+            $port = getenv('NVL_OWNERSHIP_TEST_PORT') ?: '5432';
+            if (! in_array($host, ['127.0.0.1', 'localhost', '::1', '/tmp'], true) || ! ctype_digit($port)) {
                 throw new \RuntimeException('Native ownership fixtures require a loopback service and explicit numeric port.');
             }
-            $connection = ['driver' => $driver, 'url' => null, 'host' => $host, 'port' => $port, 'database' => $database, 'username' => getenv('NVL_OWNERSHIP_TEST_USERNAME') ?: ($driver === 'pgsql' ? get_current_user() : 'root'), 'password' => getenv('NVL_OWNERSHIP_TEST_PASSWORD') ?: '', 'prefix' => '', 'timezone' => $driver === 'pgsql' ? 'UTC' : '+00:00'];
-            $connection += $driver === 'pgsql' ? ['charset' => 'utf8', 'search_path' => 'public', 'sslmode' => 'prefer'] : ['charset' => 'utf8mb4', 'collation' => 'utf8mb4_bin', 'strict' => true, 'engine' => 'InnoDB'];
+            $connection = ['driver' => 'pgsql', 'url' => null, 'host' => $host, 'port' => $port, 'database' => $database, 'username' => getenv('NVL_OWNERSHIP_TEST_USERNAME') ?: get_current_user(), 'password' => getenv('NVL_OWNERSHIP_TEST_PASSWORD') ?: '', 'prefix' => '', 'timezone' => 'UTC'];
+            $connection += ['charset' => 'utf8', 'search_path' => 'public', 'sslmode' => 'prefer'];
             $app['config']->set('database.connections.sqlite', $connection);
         }
     }
@@ -136,7 +135,7 @@ abstract class OwnershipTestCase extends TestCase
         $connection = TemplateModelRegistry::newInstance()->getConnection();
         $schema = $connection->getSchemaBuilder();
         $actorSchema = DB::getSchemaBuilder();
-        if (in_array(getenv('NVL_OWNERSHIP_TEST_DRIVER'), ['pgsql', 'mysql', 'mariadb'], true)) {
+        if (getenv('NVL_OWNERSHIP_TEST_DRIVER') === 'pgsql') {
             $this->assertSame(getenv('NVL_OWNERSHIP_TEST_DRIVER'), DB::connection()->getDriverName());
             if (DB::connection()->getDatabaseName() !== getenv('NVL_OWNERSHIP_TEST_DATABASE')) {
                 throw new \RuntimeException('The actual coordinator differs from the dedicated test database.');

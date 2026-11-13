@@ -221,17 +221,24 @@ final class JsonWire
         return self::readSchema('template-definition.v1');
     }
 
+    /** @var array<string, array<array-key,mixed>> */
+    private static array $cachedSchemas = [];
+
     /** Read only bundled, source-controlled contracts.
      * @return array<array-key,mixed>
      */
     private static function readSchema(string $name): array
     {
+        if (isset(self::$cachedSchemas[$name])) {
+            return self::$cachedSchemas[$name];
+        }
+
         $json = file_get_contents(__DIR__.'/../../resources/contracts/'.$name.'.schema.json');
         if ($json === false) {
             throw new \RuntimeException('The bundled JSON schema is unavailable.');
         }
 
-        return self::map(json_decode($json, true, 64, JSON_THROW_ON_ERROR));
+        return self::$cachedSchemas[$name] = self::map(json_decode($json, true, 64, JSON_THROW_ON_ERROR));
     }
 
     private static function object(mixed $value): \stdClass
@@ -290,11 +297,12 @@ final class JsonWire
             if (isset($candidate['$ref'])) {
                 $candidate = $root;
                 $reference = $branch['$ref'];
-                if (! is_string($reference)) {
-                    throw new \InvalidArgumentException('Schema references must be strings.');
+                if (! is_string($reference) || ! str_starts_with($reference, '#/')) {
+                    throw new \InvalidArgumentException('Schema references must be local JSON pointers.');
                 }
                 foreach (explode('/', substr($reference, 2)) as $part) {
-                    $candidate = self::map($candidate[$part] ?? []);
+                    $key = str_replace(['~1', '~0'], ['/', '~'], $part);
+                    $candidate = self::map($candidate[$key] ?? []);
                 }
             }
             $matches = true;
@@ -308,7 +316,7 @@ final class JsonWire
 
                     continue;
                 }
-                if (isset($property['const']) && (($value[$key] ?? null) !== $property['const'])) {
+                if (array_key_exists('const', $property) && (($value[$key] ?? null) !== $property['const'])) {
                     $matches = false;
                     break;
                 }
@@ -317,13 +325,7 @@ final class JsonWire
                     break;
                 }
             }
-            $type = $candidate['type'] ?? null;
-            $matches = $matches && match ($type) {
-                'object' => is_array($value) && (! array_is_list($value) || $value === []),
-                'array' => is_array($value) && array_is_list($value),
-                'string' => is_string($value), 'number', 'integer' => is_int($value) || is_float($value),
-                'boolean' => is_bool($value), 'null' => $value === null, default => true,
-            };
+            $matches = $matches && self::matchesSchemaType($candidate['type'] ?? null, $value);
             if ($matches) {
                 return self::value($value, $branch, $root, $depth + 1);
             }
@@ -331,7 +333,8 @@ final class JsonWire
         if (! is_array($value)) {
             return $value;
         }
-        if (($schema['type'] ?? null) === 'object') {
+        $schemaTypes = is_array($schema['type'] ?? null) ? $schema['type'] : [$schema['type'] ?? null];
+        if (in_array('object', $schemaTypes, true) && (! in_array('array', $schemaTypes, true) || ! array_is_list($value) || $value === [])) {
             $result = new \stdClass;
             foreach ($value as $key => $item) {
                 $properties = self::map($schema['properties'] ?? []);
@@ -341,11 +344,35 @@ final class JsonWire
 
             return $result;
         }
-        if (($schema['type'] ?? null) === 'array') {
+        if (in_array('array', $schemaTypes, true) && array_is_list($value)) {
             return array_map(fn ($item) => self::value($item, self::map($schema['items'] ?? []), $root, $depth + 1), $value);
         }
 
         return $value;
+    }
+
+    private static function matchesSchemaType(mixed $type, mixed $value): bool
+    {
+        if (is_array($type)) {
+            foreach ($type as $candidateType) {
+                if (is_string($candidateType) && self::matchesSchemaType($candidateType, $value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return match ($type) {
+            'object' => is_array($value) && (! array_is_list($value) || $value === []),
+            'array' => is_array($value) && array_is_list($value),
+            'string' => is_string($value),
+            'number' => is_int($value) || is_float($value),
+            'integer' => is_int($value),
+            'boolean' => is_bool($value),
+            'null' => $value === null,
+            default => true,
+        };
     }
 
     /** Require a decoded JSON container without claiming any type for its values.

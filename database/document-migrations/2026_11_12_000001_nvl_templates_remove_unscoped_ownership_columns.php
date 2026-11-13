@@ -7,7 +7,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Support\Facades\Schema;
 use Nvl\Support\Config\PackageStorage;
-use Nvl\Support\Ownership\Services\OwnershipStorageTables;
 use Nvl\Support\Ownership\Services\PersistedOwnershipStorage;
 use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Support\Scope;
@@ -44,10 +43,8 @@ return new class extends Migration
             return;
         }
 
-        if (in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)) {
-            $this->dropOnMySql($schema, $tables);
-
-            return;
+        if (! in_array($connection->getDriverName(), ['sqlite', 'pgsql'], true)) {
+            throw new LogicException('Templates ownership cleanup requires SQLite or PostgreSQL.');
         }
 
         $connection->transaction(function () use ($schema, $tables, $connection): void {
@@ -64,47 +61,8 @@ return new class extends Migration
     /** Fresh graphs never had these placeholders. Removing NULL-only columns needs no data restoration. */
     public function down(): void {}
 
-    /** @param  array<string, string>  $tables */
-    private function dropOnMySql(Builder $schema, array $tables): void
-    {
-        $connection = $schema->getConnection();
-        $pdo = $connection->getPdo();
-        if (! $pdo instanceof PDO || $pdo->inTransaction() || $connection->transactionLevel() !== 0
-            || $connection->scalar('select database()', [], false) !== $connection->getDatabaseName()) {
-            throw new LogicException('Templates placeholder removal requires its configured MySQL source and no active transaction.');
-        }
-
-        $grammar = $connection->getQueryGrammar();
-        $locks = array_map(static fn (string $table): string => $grammar->wrapTable($table).' WRITE', $tables);
-        if ($schema->getColumnListing(OwnershipStorageTables::Markers) !== []) {
-            $locks[] = $grammar->wrapTable(OwnershipStorageTables::Markers).' READ';
-        }
-        if ($pdo->exec('LOCK TABLES '.implode(', ', $locks)) === false) {
-            throw new LogicException('Templates placeholder removal could not lock the document tables.');
-        }
-        try {
-            foreach ($this->verifiedPlaceholders($schema, $tables) as $table => $columns) {
-                if ($connection->getRawPdo() !== $pdo) {
-                    throw new LogicException('Templates placeholder removal lost its locked MySQL session.');
-                }
-                $drops = array_map(static fn (string $column): string => 'DROP COLUMN '.$grammar->wrap($column), $columns);
-                if ($pdo->exec('ALTER TABLE '.$grammar->wrapTable($table).' '.implode(', ', $drops)) === false) {
-                    throw new LogicException("Templates could not remove unused ownership columns from [{$table}].");
-                }
-            }
-        } finally {
-            try {
-                $pdo->exec('UNLOCK TABLES');
-            } catch (PDOException) {
-                if ($connection->getRawPdo() === $pdo) {
-                    $connection->disconnect();
-                }
-            }
-        }
-    }
-
     /**
-     * Inspect the whole graph before changing any table, including on engines with implicit DDL commits.
+     * Inspect the whole graph before changing any table.
      *
      * @param  array<string, string>  $tables
      * @return array<string, non-empty-list<string>>

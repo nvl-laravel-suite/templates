@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Tests\Canonical;
 
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -16,14 +15,16 @@ use Nvl\Templates\Models\TemplateRender;
 use Nvl\Templates\Tests\CanonicalTestCase as TestCase;
 use Nvl\Templates\Tests\Support\DocumentClient as Templates;
 use Nvl\Templates\Tests\Support\Documents;
+use Nvl\Templates\Tests\Support\MigratesInMemorySqlite;
 
 final class RenderQueueTest extends TestCase
 {
-    use DatabaseMigrations;
+    use MigratesInMemorySqlite;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->migrateInMemorySqlite();
         config()->set('nvl-templates.rendering.queue.enabled', true);
         Storage::fake('local');
     }

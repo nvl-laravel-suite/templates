@@ -35,11 +35,14 @@ use Nvl\Templates\Services\RetainedMedia;
 use Nvl\Templates\Services\TemplateAssets;
 use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateOperation;
+use Nvl\Templates\Tests\Support\MigratesInMemorySqlite;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\TestCase;
 
 final class RetainedMediaTest extends TestCase
 {
+    use MigratesInMemorySqlite;
+
     private MutableMediaPolicy $policy;
 
     protected function getPackageProviders($app): array
@@ -70,7 +73,7 @@ final class RetainedMediaTest extends TestCase
             public function authorize(TemplateAbility $ability, Authenticatable|SystemActor $actor, array $context = []): void {}
         });
         Storage::fake('retained');
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->migrateInMemorySqlite();
     }
 
     public function test_native_upload_has_private_owner_identity_and_never_deduplicates_retained_assets(): void

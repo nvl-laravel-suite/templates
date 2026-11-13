@@ -15,29 +15,6 @@ The original eight legacy migration files (six in `database/migrations`, two in 
 
 There is no automatic Blade/Content snapshot conversion. A renderer change, SQL rename or checksum rewrite does not prove equivalent source authority, media ownership or personalized output.
 
-### Recover an interrupted 7.0.2 install on MySQL
-
-Error 1071 for `tpl_resource_key` can leave three empty document tables behind
-with no completed graph migration. Upgrade the package code first so the
-corrected, bounded resource columns are available. If the host publishes its
-own migrations, update the pending graph migration from the corrected package
-and keep its existing filename. Back up the database and stop writes while
-recovering the schema.
-
-```bash
-php artisan nvl:templates:schema:recover --no-interaction
-php artisan nvl:templates:schema:recover --apply --no-interaction
-php artisan migrate --force --no-interaction
-```
-
-Use a MySQL account that can inspect triggers and lock the document tables.
-Use the same `--database` option for recovery and migration when Laravel's
-migration repository uses a named connection. The first command inspects the
-footprint without writing. `--apply` locks and rechecks the three empty tables
-before removing them. Recovery refuses populated or unfamiliar schemas and
-leaves migration history and unrelated tables intact. If verification fails,
-review the existing tables against the backup before retrying.
-
 ### Upgrade an existing 7.0.3 document graph
 
 Ownership adoption supplies its technical columns when the host configures

@@ -19,12 +19,15 @@ use Nvl\Templates\Providers\TemplatesServiceProvider;
 use Nvl\Templates\Services\TemplateFamilies;
 use Nvl\Templates\Services\TemplateLifecycle;
 use Nvl\Templates\Services\TemplateRenderer;
+use Nvl\Templates\Tests\Support\MigratesInMemorySqlite;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class ArtifactIntegrityTest extends TestCase
 {
+    use MigratesInMemorySqlite;
+
     protected function getPackageProviders($app): array
     {
         return [LocaleServiceProvider::class, TranslatableServiceProvider::class, TemplatesServiceProvider::class];
@@ -43,7 +46,7 @@ final class ArtifactIntegrityTest extends TestCase
         {
             public function authorize(TemplateAbility $ability, Authenticatable|SystemActor $actor, array $context = []): void {}
         });
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->migrateInMemorySqlite();
     }
 
     #[DataProvider('browserEngines')]

@@ -19,7 +19,6 @@ use Nvl\Support\Traits\RegistersNamespacedResources;
 use Nvl\Templates\Console\Commands\PruneTemplateRenders;
 use Nvl\Templates\Console\Commands\PublishTemplateFrontend;
 use Nvl\Templates\Console\Commands\RecoverTemplateRenders;
-use Nvl\Templates\Console\Commands\RecoverTemplatesDocumentSchema;
 use Nvl\Templates\Console\Commands\TemplatesDoctorCommand;
 use Nvl\Templates\Contracts\ContextProvider;
 use Nvl\Templates\Contracts\DnsResolver;
@@ -54,11 +53,18 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
         $this->app->singleton(TemplateModelRegistry::class);
         $this->app->booting(fn () => $this->app->make(TemplateModelRegistry::class)->prepare());
         $this->app->scoped(TemplateOperation::class);
-        $policy = config('nvl-templates.authorization.class', ConfiguredTemplateAuthorization::class);
-        if (! is_string($policy) || ! is_a($policy, TemplateAuthorization::class, true)) {
-            throw new InvalidArgumentException('Templates authorization must implement TemplateAuthorization.');
-        }
-        $this->app->bindIf(TemplateAuthorization::class, $policy);
+        $this->app->bindIf(TemplateAuthorization::class, function (Application $app): TemplateAuthorization {
+            $policy = config('nvl-templates.authorization.class', ConfiguredTemplateAuthorization::class);
+            if (! is_string($policy) || ! is_a($policy, TemplateAuthorization::class, true)) {
+                throw new InvalidArgumentException('Templates authorization must implement TemplateAuthorization.');
+            }
+            $service = $app->make($policy);
+            if (! $service instanceof TemplateAuthorization) {
+                throw new InvalidArgumentException('Templates authorization must implement TemplateAuthorization.');
+            }
+
+            return $service;
+        });
         $this->app->bindIf(ContextProvider::class, function (Application $app): ContextProvider {
             $binding = config('nvl-templates.context_provider') ?: EmptyContextProvider::class;
             if (! is_string($binding)) {
@@ -102,7 +108,7 @@ final class TemplatesServiceProvider extends ServiceProvider implements Ownershi
         $this->publishesMigrations([$root.'/database/document-migrations' => database_path('migrations')], 'nvl-templates-migrations');
         $this->publishes([$root.'/resources/boost/skills' => base_path('.agents/skills')], 'nvl-templates-skills');
         if ($this->app->runningInConsole()) {
-            $this->commands([TemplatesDoctorCommand::class, RecoverTemplateRenders::class, PruneTemplateRenders::class, PublishTemplateFrontend::class, RecoverTemplatesDocumentSchema::class]);
+            $this->commands([TemplatesDoctorCommand::class, RecoverTemplateRenders::class, PruneTemplateRenders::class, PublishTemplateFrontend::class]);
         }
     }
 }

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Nvl\Templates\Tests\Document;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\Events\QueryExecuted;
-use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -77,7 +75,7 @@ final class DocumentRollbackTest extends CanonicalTestCase
 
     private static function validateNativeDatabase(string $driver, string $database): void
     {
-        if (! in_array($driver, ['pgsql', 'mysql', 'mariadb'], true)
+        if ($driver !== 'pgsql'
             || preg_match('/\Anvl_templates_test_[a-f0-9]{8}_ci\z/D', $database) !== 1) {
             throw new InvalidArgumentException('Native Templates checks require the runner-owned disposable database.');
         }
@@ -264,132 +262,6 @@ final class DocumentRollbackTest extends CanonicalTestCase
                 $blueprint->string('owner_scope_key', 191)->nullable();
                 $blueprint->text('owner_reference')->nullable();
             });
-        }
-    }
-
-    public function test_recovers_the_empty_templates_7_0_2_mysql_failure_before_retrying_migration(): void
-    {
-        $this->createInterruptedDocumentGraph();
-        Schema::create('host_upgrade_seed', static fn (Blueprint $table) => $table->string('value'));
-        DB::table('host_upgrade_seed')->insert(['value' => 'retained']);
-
-        $this->artisan('nvl:templates:schema:recover')->expectsOutputToContain('Dry run')->assertSuccessful();
-        self::assertTrue(Schema::hasTable(TemplatesTables::Resources));
-        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertSuccessful();
-        self::assertFalse(Schema::hasTable(TemplatesTables::Resources));
-        self::assertFalse(Schema::hasTable(TemplatesTables::Templates));
-        self::assertFalse(Schema::hasTable(TemplatesTables::Groups));
-
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
-        self::assertTrue(Schema::hasIndex(TemplatesTables::Resources, ['scope_id', 'kind', 'owner_key', 'key'], 'unique'));
-        self::assertSame('retained', DB::table('host_upgrade_seed')->value('value'));
-        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertSuccessful();
-        self::assertTrue(Schema::hasTable(TemplatesTables::Resources));
-    }
-
-    public function test_recovery_cannot_drop_tables_after_losing_its_mysql_lock_session(): void
-    {
-        $this->createInterruptedDocumentGraph();
-        $source = DB::connection();
-        $session = $source->scalar('select connection_id()', [], false);
-        self::assertIsInt($session);
-        config(['database.connections.templates_recovery_peer' => $source->getConfig()]);
-        $peer = DB::connection('templates_recovery_peer');
-        $interrupted = false;
-        $source->listen(static function (QueryExecuted $query) use ($source, $peer, $session, &$interrupted): void {
-            if ($interrupted || $query->connection !== $source || ! str_starts_with($query->sql, 'select exists(')
-                || ! str_contains($query->sql, '`nvl_templates_resources`')) {
-                return;
-            }
-            $interrupted = true;
-            $peer->unprepared('KILL CONNECTION '.$session);
-            $peer->table(TemplatesTables::Groups)->insert([
-                'id' => 'a59ec01d-e44b-4921-89d1-baf0022170a9', 'scope_id' => 'app', 'key' => 'late', 'name' => 'Late insert',
-            ]);
-        });
-
-        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertFailed();
-        self::assertTrue($interrupted);
-        self::assertSame('Late insert', $peer->table(TemplatesTables::Groups)->value('name'));
-        self::assertTrue($peer->getSchemaBuilder()->hasTable(TemplatesTables::Resources));
-    }
-
-    #[DataProvider('unsafeRecoveryFootprints')]
-    public function test_refuses_to_recover_an_unverified_document_footprint(string $change): void
-    {
-        $this->createInterruptedDocumentGraph();
-        match ($change) {
-            'row' => DB::table(TemplatesTables::Groups)->insert([
-                'id' => '109e65ee-29cb-4ecb-8a5c-afad31e38bc4', 'scope_id' => 'app', 'key' => 'retain', 'name' => 'Retain',
-            ]),
-            'index' => Schema::table(TemplatesTables::Resources, static fn (Blueprint $table) => $table->index('name')),
-            'trigger' => DB::unprepared('create trigger host_retained_group before insert on nvl_templates_groups for each row set NEW.name = NEW.name'),
-            'dependent table' => Schema::create('host_group_reference', static function (Blueprint $table): void {
-                $table->uuid('group_id');
-                $table->foreign('group_id')->references('id')->on(TemplatesTables::Groups);
-            }),
-        };
-
-        $this->artisan('nvl:templates:schema:recover', ['--apply' => true])->assertFailed();
-        self::assertTrue(Schema::hasTable(TemplatesTables::Resources));
-        self::assertTrue(Schema::hasTable(TemplatesTables::Templates));
-        self::assertTrue(Schema::hasTable(TemplatesTables::Groups));
-        if ($change === 'row') {
-            self::assertSame('Retain', DB::table(TemplatesTables::Groups)->value('name'));
-        }
-    }
-
-    /** @return iterable<string, array{string}> */
-    public static function unsafeRecoveryFootprints(): iterable
-    {
-        foreach (['row', 'index', 'trigger', 'dependent table'] as $change) {
-            yield $change => [$change];
-        }
-    }
-
-    private function createInterruptedDocumentGraph(): void
-    {
-        if (DB::connection()->getDriverName() !== 'mysql') {
-            self::markTestSkipped('Templates 7.0.2 recovery requires a native MySQL database.');
-        }
-        $this->artisan('migrate:install')->assertSuccessful();
-
-        try {
-            foreach (['groups', 'templates', 'resources'] as $key) {
-                Schema::create(TemplatesTables::get($key), static function (Blueprint $table) use ($key): void {
-                    $table->charset('utf8mb4');
-                    $table->engine('InnoDB');
-                    $table->uuid('id')->primary();
-                    $table->string('scope_id', 128);
-                    $table->string('owner_scope_key', 191)->nullable();
-                    $table->text('owner_reference')->nullable();
-                    $table->timestamps();
-                    $table->unique(['scope_id', 'id']);
-                    $table->string('key', 255);
-                    $table->string('name', 255);
-                    $table->string('status', 255)->default('active');
-                    $table->unsignedInteger('version')->default(0);
-                    $table->uuid('current_revision_id')->nullable();
-                    if ($key === 'resources') {
-                        $table->string('kind', 255);
-                        $table->string('scope', 255);
-                        $table->string('owner_key', 255);
-                        $table->uuid('group_id')->nullable();
-                        $table->uuid('template_id')->nullable();
-                        $table->unique(['scope_id', 'kind', 'owner_key', 'key'], 'tpl_resource_key');
-                    } else {
-                        if ($key === 'templates') {
-                            $table->uuid('group_id')->nullable();
-                            $table->foreign(['scope_id', 'group_id'])->references(['scope_id', 'id'])->on(TemplatesTables::Groups)->restrictOnDelete();
-                        }
-                        $table->unique(['scope_id', 'key']);
-                    }
-                });
-            }
-            self::fail('Expected the published Templates index to exceed the InnoDB limit.');
-        } catch (QueryException $exception) {
-            self::assertSame(1071, $exception->errorInfo[1]);
-            self::assertStringContainsString('tpl_resource_key', $exception->getSql());
         }
     }
 }

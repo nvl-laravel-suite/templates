@@ -27,10 +27,11 @@ final class SchemaIdentityTest extends CanonicalTestCase
         'resources', 'resource_revisions', 'assets', 'renders', 'family_changes',
     ];
 
-    /** Released contents that a host may still hold as a published copy. */
+    /** Historical contents that a host may still hold as a published copy. */
     private const array PREVIOUS_CHECKSUMS = [
         '2026_11_02_000001_nvl_templates_create_document_graph' => '78c6f505ec23071852dd06bf3e1508cfd9940d0c1f18be12c5fe5f20d6bf00b9',
         '2026_11_02_000002_nvl_templates_add_family_workflows' => '8c99e7c78f56a917b639fd14f1ee0a8ad7076849e19d743b3bcc13865ba46446',
+        '2026_11_12_000001_nvl_templates_remove_unscoped_ownership_columns' => '91be3ea618b62f87321f84d56860b97eaf56c36be34810c22e913f2537599485',
     ];
 
     private const array MIGRATIONS = [
@@ -67,7 +68,10 @@ final class SchemaIdentityTest extends CanonicalTestCase
             self::assertSame(hash_file('sha256', $path), $migration['legacy_checksum']);
             self::assertSame(self::PREVIOUS_CHECKSUMS[$name] ?? null, $migration['previous_checksum']);
             if ($name === self::MIGRATIONS[0]) {
-                self::assertSame(['6bfd1b22c1b64b2482ab0c65ac4bb90617120827614c0c824042884ea4c8b3c4'], $migration['previous_checksums']);
+                self::assertSame([
+                    '6bfd1b22c1b64b2482ab0c65ac4bb90617120827614c0c824042884ea4c8b3c4',
+                    '594abc52adb33457948ae7bc3e2ff016da375db5804ea5247d22a7f1beef6815',
+                ], $migration['previous_checksums']);
             }
             self::assertSame([
                 'package' => 'templates', 'name' => $name, 'legacy' => $name,

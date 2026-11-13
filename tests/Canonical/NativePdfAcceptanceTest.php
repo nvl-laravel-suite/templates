@@ -33,19 +33,38 @@ use Symfony\Component\Process\Process;
 
 uses(CanonicalTestCase::class, RefreshDatabase::class);
 
-beforeEach(function (): void {
+$sharedMpdfDirectory = null;
+$resolvedPopplerTools = null;
+
+afterAll(function () use (&$sharedMpdfDirectory): void {
+    if (is_string($sharedMpdfDirectory) && is_dir($sharedMpdfDirectory)) {
+        File::deleteDirectory($sharedMpdfDirectory);
+        $sharedMpdfDirectory = null;
+    }
+});
+
+beforeEach(function () use (&$sharedMpdfDirectory, &$resolvedPopplerTools): void {
     if (! class_exists(Mpdf::class)) {
         $this->markTestSkipped('Native PDF acceptance requires the optional development dependency mpdf/mpdf.');
     }
-    foreach (['pdfinfo', 'pdftotext', 'pdfimages', 'pdftoppm'] as $tool) {
-        if ((new ExecutableFinder)->find($tool) === null) {
+    if ($resolvedPopplerTools === null) {
+        $finder = new ExecutableFinder;
+        $resolvedPopplerTools = [];
+        foreach (['pdfinfo', 'pdftotext', 'pdfimages', 'pdftoppm'] as $tool) {
+            $resolvedPopplerTools[$tool] = $finder->find($tool);
+        }
+    }
+    foreach ($resolvedPopplerTools as $tool => $binary) {
+        if ($binary === null) {
             $this->markTestSkipped('Native PDF acceptance requires the local Poppler tool '.$tool.'.');
         }
     }
 
-    $temporaryDirectory = sys_get_temp_dir().'/nvl-native-mpdf-'.bin2hex(random_bytes(10));
-    File::ensureDirectoryExists($temporaryDirectory, 0700);
-    app()->instance(NativeMpdfAcceptanceDriver::class, new NativeMpdfAcceptanceDriver($temporaryDirectory));
+    if ($sharedMpdfDirectory === null || ! is_dir($sharedMpdfDirectory)) {
+        $sharedMpdfDirectory = sys_get_temp_dir().'/nvl-native-mpdf-'.bin2hex(random_bytes(10));
+        File::ensureDirectoryExists($sharedMpdfDirectory, 0700);
+    }
+    app()->instance(NativeMpdfAcceptanceDriver::class, new NativeMpdfAcceptanceDriver($sharedMpdfDirectory));
     app()->instance(MediaAuthorization::class, new NativePdfAcceptanceMediaPolicy);
     config()->set([
         'nvl-templates.pdf.driver' => NativeMpdfAcceptanceDriver::class,
@@ -53,12 +72,6 @@ beforeEach(function (): void {
         'nvl-media.delivery.disks.local' => ['public' => false, 'private' => ['mode' => 'application', 'allowed' => ['application']]],
     ]);
     Http::preventStrayRequests();
-});
-
-afterEach(function (): void {
-    if (app()->bound(NativeMpdfAcceptanceDriver::class)) {
-        File::deleteDirectory(app(NativeMpdfAcceptanceDriver::class)->temporaryDirectory);
-    }
 });
 
 /** @return array{revision: TemplateRevision, asset: TemplateAsset} */

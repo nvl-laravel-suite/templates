@@ -36,11 +36,14 @@ use Nvl\Templates\Services\TemplateModelRegistry;
 use Nvl\Templates\Services\TemplateReader;
 use Nvl\Templates\Services\TemplateRenderer;
 use Nvl\Templates\Support\CanonicalJson;
+use Nvl\Templates\Tests\Support\MigratesInMemorySqlite;
 use Nvl\Translatable\Providers\TranslatableServiceProvider;
 use Orchestra\Testbench\TestCase;
 
 final class OwnedDocumentMediaTest extends TestCase
 {
+    use MigratesInMemorySqlite;
+
     private array $originalMorphMap = [];
 
     protected function getPackageProviders($app): array
@@ -68,24 +71,25 @@ final class OwnedDocumentMediaTest extends TestCase
     {
         $this->originalMorphMap = Relation::morphMap();
         parent::setUp();
-        $schema = DB::getSchemaBuilder();
-        $schema->create('template_test_companies', function (Blueprint $table): void {
-            $table->unsignedBigInteger('id')->primary();
-        });
-        $schema->create('template_test_actors', function (Blueprint $table): void {
-            $table->unsignedBigInteger('id')->primary();
-            $table->unsignedBigInteger('company_id');
-            $table->foreign('company_id')->references('id')->on('template_test_companies');
+        $this->migrateInMemorySqlite(function (): void {
+            $schema = DB::getSchemaBuilder();
+            $schema->create('template_test_companies', function (Blueprint $table): void {
+                $table->unsignedBigInteger('id')->primary();
+            });
+            $schema->create('template_test_actors', function (Blueprint $table): void {
+                $table->unsignedBigInteger('id')->primary();
+                $table->unsignedBigInteger('company_id');
+                $table->foreign('company_id')->references('id')->on('template_test_companies');
+            });
+            foreach ([TemplateModelRegistry::newInstance()->getTable(), MediaModelRegistry::newInstance()->getTable()] as $table) {
+                $schema->table($table, function (Blueprint $table): void {
+                    $table->unsignedBigInteger('company_id')->nullable();
+                    $table->foreign('company_id')->references('id')->on('template_test_companies');
+                });
+            }
         });
         TestCompany::query()->insert([['id' => 7], ['id' => 8]]);
         TestActor::query()->insert([['id' => 1, 'company_id' => 7], ['id' => 2, 'company_id' => 8]]);
-        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
-        foreach ([TemplateModelRegistry::newInstance()->getTable(), MediaModelRegistry::newInstance()->getTable()] as $table) {
-            $schema->table($table, function (Blueprint $table): void {
-                $table->unsignedBigInteger('company_id')->nullable();
-                $table->foreign('company_id')->references('id')->on('template_test_companies');
-            });
-        }
         Storage::fake('retained');
     }
 
