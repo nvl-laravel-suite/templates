@@ -30,6 +30,9 @@ after their existing document migrations. Keep previously applied filenames
 and update the Core migration declarations. Then run `php artisan migrate`
 and `php artisan nvl:templates:doctor --strict` on the configured source.
 
+The `nvl:templates:schema:recover` command from 7.0.4 was removed in
+7.0.5. Templates supports SQLite and PostgreSQL only.
+
 ## Application code
 
 Replace code definitions, the fluent `Template`, `TemplateDefinitions`, assignments, version/renderer registries and old importer with the focused native services documented in [README.md](README.md). There is no compatibility facade, package HTTP layer or package-owned application UI.

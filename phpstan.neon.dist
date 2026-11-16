@@ -8,7 +8,6 @@ parameters:
     excludePaths:
         analyseAndScan:
             - .temp/*
-            - tests/Fixtures/RetiredApi/*
 
     paths:
         - database/factories
