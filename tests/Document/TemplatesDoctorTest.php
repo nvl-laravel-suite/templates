@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Nvl\Templates\Tests\Document;
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Nvl\Support\Doctor\DoctorContributor;
@@ -37,6 +38,20 @@ final class TemplatesDoctorTest extends CanonicalTestCase
         foreach ($templates[0]->inspect() as $check) {
             self::assertTrue($check->passed);
         }
+    }
+
+    public function test_partial_replacement_of_released_uniqueness_fails_readiness(): void
+    {
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $index = collect(Schema::getIndexes('nvl_templates_groups'))->first(static fn (array $index): bool => $index['unique'] && $index['columns'] === ['scope_id', 'key']);
+        self::assertIsArray($index);
+        Schema::table('nvl_templates_groups', static fn (Blueprint $table) => $table->dropUnique($index['name']));
+        DB::statement("create unique index {$index['name']} on nvl_templates_groups (scope_id, key) where status = 'active'");
+
+        $report = app(TemplatesDoctor::class)->inspect();
+
+        self::assertFalse($report['healthy']);
+        self::assertFalse($report['checks']['database.groups']);
     }
 
     public function test_default_deny_and_invalid_limits_are_reported_as_unready(): void
