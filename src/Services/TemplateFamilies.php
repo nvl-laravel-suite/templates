@@ -12,6 +12,7 @@ use Nvl\Templates\Models\TemplateGroup;
 use Nvl\Templates\Models\TemplateGroupRevision;
 use Nvl\Templates\Support\Access;
 use Nvl\Templates\Support\CanonicalJson;
+use Nvl\Templates\Support\StoredInteger;
 
 /**
  * Native document operations.
@@ -48,6 +49,8 @@ final class TemplateFamilies
      */
     public function publish(string $groupId, array $document, int $expectedRevision, Authenticatable|SystemActor $actor): TemplateGroupRevision
     {
+        StoredInteger::assert('expected_revision', $expectedRevision);
+
         return $this->operation->run($actor, function () use ($groupId, $document, $expectedRevision) {
             Access::authorize('manage');
 

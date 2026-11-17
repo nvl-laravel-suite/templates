@@ -13,6 +13,7 @@ use Nvl\Templates\Models\TemplateGroup;
 use Nvl\Templates\Models\TemplateRevision;
 use Nvl\Templates\Support\Access;
 use Nvl\Templates\Support\CanonicalJson;
+use Nvl\Templates\Support\StoredInteger;
 
 /**
  * Native document operations.
@@ -52,6 +53,8 @@ final class TemplateLifecycle
      */
     public function saveDraft(string $templateId, array $document, int $expectedVersion, Authenticatable|SystemActor $actor): TemplateDraft
     {
+        StoredInteger::assert('expected_version', $expectedVersion);
+
         return $this->operation->run($actor, function () use ($templateId, $document, $expectedVersion) {
             Access::authorize('manage');
 
@@ -76,6 +79,8 @@ final class TemplateLifecycle
      */
     public function publish(string $templateId, int $expectedVersion, Authenticatable|SystemActor $actor): TemplateRevision
     {
+        StoredInteger::assert('expected_version', $expectedVersion);
+
         return $this->operation->run($actor, function () use ($templateId, $expectedVersion) {
             Access::authorize('manage');
 

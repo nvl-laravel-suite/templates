@@ -12,6 +12,7 @@ use Nvl\Templates\Models\TemplateGroupRevision;
 use Nvl\Templates\Support\Access;
 use Nvl\Templates\Support\CanonicalJson;
 use Nvl\Templates\Support\Compiler;
+use Nvl\Templates\Support\StoredInteger;
 
 /**
  * Resolves raw authoring authority inside an admitted operation.
@@ -85,9 +86,10 @@ final class DocumentResolver
             array_diff(array_keys($groupPin), ['id', 'revision'])) {
             throw ValidationException::withMessages(['source' => ['A family variant stores only its exact family pin and declared overrides.']]);
         }
+        $pinnedRevision = StoredInteger::assert('source.group.revision', $groupPin['revision'] ?? null, 1);
         $group = TemplateGroup::query()->findOrFail($template->group_id);
         Access::authorize('read', $group);
-        $family = TemplateGroupRevision::query()->where('group_id', $template->group_id)->where('revision', $groupPin['revision'] ?? 0)->firstOrFail();
+        $family = TemplateGroupRevision::query()->where('group_id', $template->group_id)->where('revision', $pinnedRevision)->firstOrFail();
         Access::authorize('read', $family);
         if (($source['target'] ?? null) !== $family->document['target']) {
             throw ValidationException::withMessages(['target' => ['A variant must keep the pinned family output target.']]);

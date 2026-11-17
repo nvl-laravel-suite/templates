@@ -17,6 +17,7 @@ use Nvl\Templates\Support\Access;
 use Nvl\Templates\Support\CanonicalJson;
 use Nvl\Templates\Support\Pdf;
 use Nvl\Templates\Support\RenderConfiguration;
+use Nvl\Templates\Support\StoredInteger;
 
 /**
  * Durable bounded render acceptance and recovery.
@@ -142,6 +143,10 @@ final class RenderRequests
      */
     public function process(string $id, ?int $generation, ?string $token, Authenticatable|SystemActor $actor): TemplateRender
     {
+        if ($generation !== null) {
+            StoredInteger::assert('generation', $generation);
+        }
+
         return $this->operation->run($actor, function () use ($id, $generation, $token) {
             $record = $this->get($id, $this->operation->actor());
 

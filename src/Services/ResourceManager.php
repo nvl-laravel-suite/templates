@@ -16,6 +16,7 @@ use Nvl\Templates\Models\TemplateResource;
 use Nvl\Templates\Models\TemplateResourceRevision;
 use Nvl\Templates\Support\Access;
 use Nvl\Templates\Support\CanonicalJson;
+use Nvl\Templates\Support\StoredInteger;
 
 /**
  * Complete explicit-actor domain operations.
@@ -55,6 +56,8 @@ final class ResourceManager
      */
     public function publish(string $id, array $document, int $expectedRevision, Authenticatable|SystemActor $actor): TemplateResourceRevision
     {
+        StoredInteger::assert('expected_revision', $expectedRevision);
+
         return $this->operation->run($actor, function () use ($id, $document, $expectedRevision) {
             return (new TemplateResource)->getConnection()->transaction(function () use ($id, $document, $expectedRevision): TemplateResourceRevision {
                 $resource = TemplateResource::query()->lockForUpdate()->findOrFail($id);
@@ -98,6 +101,7 @@ final class ResourceManager
     public function revisionFor(string $templateId, string $resourceId, int $revision, Authenticatable|SystemActor $actor): TemplateResourceRevision
     {
         return $this->operation->run($actor, function () use ($templateId, $resourceId, $revision) {
+            StoredInteger::assert('revision', $revision, 1);
             $template = TemplateModelRegistry::query()->findOrFail($templateId);
             Access::authorize('read', $template);
             $template = app(DocumentResolver::class)->authoringTemplate($template);
@@ -141,7 +145,7 @@ final class ResourceManager
             $this->fail('Resource dependency depth exceeded.');
         }
         $id = is_array($ref) ? ($ref['resourceId'] ?? $ref['id'] ?? null) : null;
-        if (! is_string($id) || $id === '' || ! is_int($ref['revision'] ?? null) || $ref['revision'] < 1) {
+        if (! is_string($id) || $id === '' || ! is_int($ref['revision'] ?? null) || $ref['revision'] < 1 || $ref['revision'] > StoredInteger::Maximum) {
             $this->fail('A resource reference needs an identity and a positive integer revision.');
         }
         $resource = TemplateResource::query()->findOrFail($id);

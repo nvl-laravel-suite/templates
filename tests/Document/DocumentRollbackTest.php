@@ -10,17 +10,21 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use LogicException;
 use Nvl\Support\Enums\SystemActor;
 use Nvl\Templates\Definitions\Tables\TemplatesTables;
 use Nvl\Templates\Models\TemplateAsset;
 use Nvl\Templates\Models\TemplateRevision;
+use Nvl\Templates\Services\FamilyLifecycle;
 use Nvl\Templates\Services\RenderRequests;
+use Nvl\Templates\Services\ResourceManager;
 use Nvl\Templates\Services\TemplateAssets;
 use Nvl\Templates\Services\TemplateCatalog;
 use Nvl\Templates\Services\TemplateReader;
 use Nvl\Templates\Services\TemplateRenderer;
+use Nvl\Templates\Support\CanonicalJson;
 use Nvl\Templates\Tests\CanonicalTestCase;
 use Nvl\Templates\Tests\Support\DocumentClient;
 use Nvl\Templates\Tests\Support\Documents;
@@ -179,6 +183,80 @@ final class DocumentRollbackTest extends CanonicalTestCase
         $api->saveDraft($template->id, $document, 0);
         $issues = app(TemplateReader::class)->load($template->id, $actor)['issues'];
         self::assertSame(['resources'], array_column($issues, 'path'));
+    }
+
+    public function test_out_of_range_revision_lookups_fail_validation_without_aborting_the_caller_transaction(): void
+    {
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $actor = SystemActor::Background;
+        $api = app(DocumentClient::class);
+        $family = $api->createGroup('range-family', 'Range family');
+        $template = $api->createTemplate('range-template', 'Range template');
+        $connection = DB::connection();
+        foreach ([
+            'family' => fn () => app(TemplateCatalog::class)->groupRevision($family->id, 2147483648, $actor),
+            'resource' => fn () => app(ResourceManager::class)->revisionFor($template->id, $template->id, 2147483648, $actor),
+            'non-positive resource' => fn () => app(ResourceManager::class)->revisionFor($template->id, $template->id, 0, $actor),
+        ] as $kind => $lookup) {
+            $connection->beginTransaction();
+            try {
+                try {
+                    $lookup();
+                    self::fail('An out-of-range '.$kind.' revision was accepted.');
+                } catch (ValidationException $exception) {
+                    self::assertArrayHasKey('revision', $exception->errors());
+                }
+                self::assertSame($template->id, $api->getTemplate($template->id)->id);
+            } finally {
+                $connection->rollBack();
+            }
+        }
+    }
+
+    public function test_out_of_range_integer_inputs_fail_validation_without_aborting_the_caller_transaction(): void
+    {
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $actor = SystemActor::Background;
+        $api = app(DocumentClient::class);
+        $family = $api->createGroup('range-family', 'Range family');
+        $api->publishGroup($family->id, Documents::standalone('Family'), 0);
+        $variant = $api->createTemplate('range-variant', 'Range variant', $family->id);
+        $source = Documents::variant($family->id, 1, 'Variant');
+        $api->saveDraft($variant->id, $source, 0);
+        $standalone = $api->createTemplate('range-standalone', 'Range standalone');
+        $resource = $api->createResource('range-resource', 'Range resource', 'content');
+        $api->publishResource($resource->id, ['value' => 'Published'], 0);
+        $pinned = Documents::standalone();
+        $pinned['dependencies'] = [['resourceId' => $resource->id, 'revision' => 2147483648]];
+        $connection = DB::connection();
+        foreach ([
+            'draft version' => fn () => $api->saveDraft($standalone->id, Documents::standalone(), 2147483648),
+            'negative draft version' => fn () => $api->saveDraft($standalone->id, Documents::standalone(), -1),
+            'publication version' => fn () => $api->publish($variant->id, 2147483648),
+            'family publication revision' => fn () => $api->publishGroup($family->id, Documents::standalone(), 2147483648),
+            'resource publication revision' => fn () => $api->publishResource($resource->id, ['value' => 'Next'], 2147483648),
+            'family change version' => fn () => app(FamilyLifecycle::class)->prepare($variant->id, 'detach', null, 2147483648, CanonicalJson::hash($source), $actor),
+            'family change target revision' => fn () => app(FamilyLifecycle::class)->prepare($variant->id, 'rebase', ['groupId' => $family->id, 'revision' => 2147483648], 1, CanonicalJson::hash($source), $actor),
+            'family pin revision' => fn () => $api->saveDraft($variant->id, Documents::variant($family->id, 2147483648, 'Pinned'), 1),
+            'render generation' => fn () => $api->renders()->process($variant->id, 2147483648),
+            'dependency revision' => function () use ($api, $standalone, $pinned): void {
+                $draft = $api->saveDraft($standalone->id, $pinned, 0);
+                $api->publish($standalone->id, $draft->version);
+            },
+        ] as $kind => $operation) {
+            $connection->beginTransaction();
+            try {
+                try {
+                    $operation();
+                    self::fail('An out-of-range '.$kind.' was accepted.');
+                } catch (ValidationException) {
+                    self::addToAssertionCount(1);
+                }
+                self::assertSame($variant->id, $api->getTemplate($variant->id)->id);
+            } finally {
+                $connection->rollBack();
+            }
+        }
     }
 
     public function test_the_asset_catalog_lists_retained_images_on_the_selected_database(): void

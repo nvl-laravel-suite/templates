@@ -18,6 +18,7 @@ use Nvl\Templates\Models\TemplateGroupRevision;
 use Nvl\Templates\Models\TemplateResource;
 use Nvl\Templates\Support\Access;
 use Nvl\Templates\Support\Capabilities;
+use Nvl\Templates\Support\StoredInteger;
 
 /**
  * Native metadata catalogs with explicit actor admission and bounded pagination.
@@ -88,9 +89,7 @@ final readonly class TemplateCatalog
     {
         return $this->operation->run($actor, function () use ($groupId, $revision): TemplateGroupRevision {
             Access::authorize('read');
-            if ($revision < 1) {
-                throw ValidationException::withMessages(['revision' => ['Use a positive published family revision.']]);
-            }
+            StoredInteger::assert('revision', $revision, 1);
             $group = TemplateGroup::query()->findOrFail($groupId);
             Access::authorize('read', $group);
             $release = TemplateGroupRevision::query()->where('group_id', $group->id)->where('revision', $revision)->firstOrFail();

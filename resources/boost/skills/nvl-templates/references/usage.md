@@ -185,7 +185,7 @@ The current public service is `Nvl\Templates\Services\ResourceManager`:
 - Scope `tenant` requires null owner ID; `group` requires the family ID; `template` requires the configured template ID. These catalog scopes do not grant native ownership or business permission.
 - `publish($resourceId,$body,$expectedRevision,$actor)` creates an immutable body revision; initial revision is `0`.
 - `catalog($templateId,?string $kind,$actor)` returns only readable, active resources visible to the authoring basis.
-- `revisionFor($templateId,$resourceId,$revision,$actor)` reads one exact visible immutable revision.
+- `revisionFor($templateId,$resourceId,$revision,$actor)` reads one exact visible immutable revision. A revision outside 1..2147483647 fails validation before any query.
 
 A content reference is `['kind'=>'content','resourceId'=>$resource->id,'revision'=>$revision->revision,'path'=>'headline']`, where the published resource body actually contains that path. Preserve the reference in raw source; publication resolves/pins its dependency closure. Tenant-scoped resources cannot depend on narrower resources; group resources cannot depend on template-only resources. Cycles/depth violations reject. A proposed detach/regroup basis also affects catalog visibility. Do not replace this with unrestricted model enumeration.
 
@@ -210,7 +210,7 @@ Use `Nvl\Templates\Services\TemplateCatalog` instead of model-wide enumeration:
 - `templates(array $query,$actor)` returns a native `Illuminate\Pagination\LengthAwarePaginator` of the configured Template models.
 - `groups(array $query,$actor)` returns the same native paginator with TemplateGroup models.
 - `assets(array $query,$actor)` returns a paginator of retained asset **metadata**, filtering unavailable/archived identities and target MIME types before pagination. It resolves no byte URLs.
-- `groupRevision(string $groupId,int $revision,$actor)` reads one exact published TemplateGroupRevision after current family/revision authorization. Its `source` retains authoring references; `document` is the immutable effective snapshot.
+- `groupRevision(string $groupId,int $revision,$actor)` reads one exact published TemplateGroupRevision after current family/revision authorization; a revision outside 1..2147483647 fails validation before any query. Its `source` retains authoring references; `document` is the immutable effective snapshot.
 
 The closed query shape accepts only strict integer `page` (1–1,000,000) and `per_page` (1–100); defaults are `1/25`, or `1/30` for assets. Only assets additionally accept `target: 'email'|'document'` (default `document`). Unknown filters, numeric strings and null controls reject. Validate/normalize HTTP query strings at the host boundary before native calls. Do not request a hidden unbounded “all” page.
 

@@ -22,6 +22,7 @@ use Nvl\Templates\Support\Access;
 use Nvl\Templates\Support\CanonicalJson;
 use Nvl\Templates\Support\JsonWire;
 use Nvl\Templates\Support\PreviewPayload;
+use Nvl\Templates\Support\StoredInteger;
 
 /**
  * Complete explicit-actor domain operations.
@@ -76,6 +77,8 @@ final class FamilyLifecycle
      */
     public function prepare(string $templateId, string $operation, ?array $target, int $expectedVersion, string $sourceChecksum, Authenticatable|SystemActor $actor): array
     {
+        StoredInteger::assert('expected_version', $expectedVersion);
+
         return $this->operation->run($actor, function () use ($templateId, $operation, $target, $expectedVersion, $sourceChecksum) {
             return TemplateModelRegistry::newInstance()->getConnection()->transaction(function () use ($templateId, $operation, $target, $expectedVersion, $sourceChecksum): array {
                 $template = TemplateModelRegistry::query()->findOrFail($templateId);
@@ -128,6 +131,8 @@ final class FamilyLifecycle
      */
     public function review(string $templateId, string $candidateId, array $resolutions, int $expectedVersion, string $sourceChecksum, Authenticatable|SystemActor $actor): array
     {
+        StoredInteger::assert('expected_version', $expectedVersion);
+
         return $this->operation->run($actor, function () use ($templateId, $candidateId, $resolutions, $expectedVersion, $sourceChecksum) {
             $template = TemplateModelRegistry::query()->findOrFail($templateId);
             Access::authorize('manage', $template);
@@ -165,6 +170,8 @@ final class FamilyLifecycle
      */
     public function apply(string $templateId, string $candidateId, array $resolutions, int $expectedVersion, string $sourceChecksum, Authenticatable|SystemActor $actor): array
     {
+        StoredInteger::assert('expected_version', $expectedVersion);
+
         return $this->operation->run($actor, function () use ($templateId, $candidateId, $resolutions, $expectedVersion, $sourceChecksum) {
             return TemplateModelRegistry::newInstance()->getConnection()->transaction(function () use ($templateId, $candidateId, $resolutions, $expectedVersion, $sourceChecksum): array {
                 $template = TemplateModelRegistry::query()->lockForUpdate()->findOrFail($templateId);
@@ -299,6 +306,7 @@ final class FamilyLifecycle
             if (! is_string($target['groupId'] ?? null) || ! is_int($target['revision'] ?? null)) {
                 $this->fail('target', 'Choose an exact family revision.');
             }
+            StoredInteger::assert('target.revision', $target['revision'], 1);
             $group = TemplateGroup::query()->findOrFail($target['groupId']);
             Access::authorize('read', $group);
             $family = TemplateGroupRevision::query()->where('group_id', $group->id)->where('revision', $target['revision'])->firstOrFail();
@@ -817,7 +825,7 @@ final class FamilyLifecycle
             $this->fail('target', 'Choose an exact family revision.');
         }
 
-        return ['groupId' => $target['groupId'], 'revision' => $target['revision']];
+        return ['groupId' => $target['groupId'], 'revision' => StoredInteger::assert('target.revision', $target['revision'], 1)];
     }
 
     /** @return list<string> */
