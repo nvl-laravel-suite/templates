@@ -5,10 +5,18 @@ All notable changes to `nvl/templates` are documented here.
 
 ## [Unreleased]
 
+## [7.2.0] - 2026-11-17
+
 ### Fixed
 
 - `TemplateCatalog::groupRevision()` and `ResourceManager::revisionFor()` reject a revision above 2147483647 with a `ValidationException` before querying, so an oversized value no longer aborts the caller's PostgreSQL transaction. `revisionFor()` also rejects a revision below 1 the same way instead of reporting it not found.
 - Every other integer that reaches a 32-bit revision, version or generation column is checked the same way before any query: the expected version or revision of `TemplateLifecycle::saveDraft()`/`publish()`, `TemplateFamilies::publish()`, `ResourceManager::publish()` and `FamilyLifecycle::prepare()`/`review()`/`apply()` (0 to 2147483647), the `FamilyLifecycle` target revision, a variant's `source.group.revision` pin and a document's resource dependency revision (1 to 2147483647), and the `RenderRequests::process()` generation. Out-of-range values now fail with a `ValidationException` instead of a database error or a draft conflict.
+
+<!-- NVL GENERATED CHANGES START -->
+### Changed
+
+- consumer-audit fixes across the suite, UTC timestamps, core/forms release ordering
+<!-- NVL GENERATED CHANGES END -->
 
 ## [7.1.0] - 2026-11-16
 
